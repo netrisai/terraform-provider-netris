@@ -1,4 +1,4 @@
 .terraform*
 .DS_Store*
 scripts/
-terraform.tfstate
+terraform.tfstate*
