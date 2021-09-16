@@ -8,9 +8,9 @@ terraform {
 }
 
 provider "netris" {
-  address = "https://dev.netris.ai"
-  login = "netris"
-  password = "newNet0ps"
+  # address = ""                         # overwrite env: NETRIS_ADDRESS
+  # login = ""                           # overwrite env: NETRIS_LOGIN
+  # password = ""                        # overwrite env: NETRIS_PASSWORD
 }
 
 resource "netris_bgp" "artash-testt" {
