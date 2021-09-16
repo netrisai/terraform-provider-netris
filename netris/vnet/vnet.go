@@ -1,4 +1,4 @@
-package netris
+package vnet
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func resourceVNet() *schema.Resource {
+func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"vnetid": {
