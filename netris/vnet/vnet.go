@@ -22,7 +22,6 @@ func Resource() *schema.Resource {
 			"vnetid": {
 				Type:             schema.TypeInt,
 				Optional:         true,
-				Description:      "The name of the resource, also acts as it's unique ID",
 				DiffSuppressFunc: DiffSuppress,
 			},
 			"name": {
@@ -31,15 +30,13 @@ func Resource() *schema.Resource {
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
 			"owner": {
-				Required:    true,
-				Type:        schema.TypeString,
-				ForceNew:    true,
-				Description: "A description of an item",
+				Required: true,
+				Type:     schema.TypeString,
+				ForceNew: true,
 			},
 			"state": {
-				Required:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				Required: true,
+				Type:     schema.TypeString,
 			},
 			"sites": {
 				Required: true,
@@ -51,9 +48,8 @@ func Resource() *schema.Resource {
 							Required: true,
 						},
 						"ports": {
-							Optional:    true,
-							Type:        schema.TypeList,
-							Description: "Switch Ports",
+							Optional: true,
+							Type:     schema.TypeList,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"name": {
@@ -68,9 +64,8 @@ func Resource() *schema.Resource {
 							},
 						},
 						"gateways": {
-							Optional:    true,
-							Type:        schema.TypeList,
-							Description: "Gateways",
+							Optional: true,
+							Type:     schema.TypeList,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"prefix": {
@@ -335,6 +330,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Gateways:     gatewayList,
 		Ports:        members,
 	}
+
+	js, _ := json.Marshal(vnetUpdate)
+	log.Println("[DEBUG]", string(js))
 
 	reply, err := clientset.VNet().Update(d.Get("vnetid").(int), vnetUpdate)
 	if err != nil {
