@@ -292,7 +292,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	localIP, cidr, _ := net.ParseCIDR(d.Get("localip").(string))
+	localIPString := d.Get("localip").(string)
+
+	localIP, cidr, _ := net.ParseCIDR(localIPString)
 	remoteIP, _, _ := net.ParseCIDR(d.Get("remoteip").(string))
 	prefixLength, _ := cidr.Mask.Size()
 	if localIP.To4() != nil {
@@ -320,15 +322,18 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	bgpAdd := &bgp.EBGPAdd{
-		Name:               d.Get("name").(string),
-		SiteID:             siteID,
-		Vlan:               vlanID,
-		AllowasIn:          d.Get("allowasin").(int),
-		BgpPassword:        d.Get("bgppassword").(string),
-		Community:          strings.Join(communityArr, "\n"),
-		Description:        d.Get("description").(string),
-		IPVersion:          ipVersion,
-		LocalIP:            localIP.String(),
+		Name:        d.Get("name").(string),
+		SiteID:      siteID,
+		Vlan:        vlanID,
+		AllowasIn:   d.Get("allowasin").(int),
+		BgpPassword: d.Get("bgppassword").(string),
+		Community:   strings.Join(communityArr, "\n"),
+		Description: d.Get("description").(string),
+		IPVersion:   ipVersion,
+		LocalIP: bgp.LocalIP{
+			IPFamily: ipVersion,
+			Prefix:   localIPString,
+		},
 		RemoteIP:           remoteIP.String(),
 		LocalPreference:    localPreference,
 		Multihop:           multihopHop,
@@ -628,7 +633,10 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	// 	Community:          strings.Join(communityArr, "\n"),
 	// 	Description:        d.Get("description").(string),
 	// 	IPVersion:          ipVersion,
-	// 	LocalIP:            localIP.String(),
+	// LocalIP: bgp.LocalIP{
+	// 	IPFamily: ipVersion,
+	// 	Prefix:   localIP.String(),
+	// },
 	// 	RemoteIP:           remoteIP.String(),
 	// 	LocalPreference:    localPreference,
 	// 	Multihop:           multihopHop,

@@ -8,8 +8,8 @@ resource "netris_bgp" "artash-testt" {
     name = "artash-test"
     vlanid = 4
   }
-  localip = "1.0.32.1/24"
-  remoteip = "1.0.32.2/24"
+  localip = "1.0.32.1/20"
+  remoteip = "1.0.32.2/20"
   description = "someDesc"
   state = "enabled"
   terminateonswitch = {
