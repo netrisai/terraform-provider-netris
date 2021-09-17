@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/netrisai/terraform-provider-netris/netris/allocation"
 	"github.com/netrisai/terraform-provider-netris/netris/bgp"
 	"github.com/netrisai/terraform-provider-netris/netris/vnet"
 )
@@ -31,6 +32,7 @@ func Provider() terraform.ResourceProvider {
 		ResourcesMap: map[string]*schema.Resource{
 			"netris_vnet": vnet.Resource(),
 			"netris_bgp":  bgp.Resource(),
+			"netris_ipam": allocation.Resource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
