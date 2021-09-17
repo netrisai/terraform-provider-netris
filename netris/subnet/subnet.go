@@ -144,7 +144,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	id := d.Get("subnetid").(int)
-	ipam := getByID(ipams, id)
+	ipam := GetByID(ipams, id)
 	if ipam == nil {
 		return nil
 	}
@@ -253,7 +253,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 		return false, err
 	}
 	id := d.Get("subnetid").(int)
-	if ipam := getByID(ipams, id); ipam == nil {
+	if ipam := GetByID(ipams, id); ipam == nil {
 		return false, nil
 	}
 
@@ -268,7 +268,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 		return []*schema.ResourceData{d}, err
 	}
 	prefix := d.Id()
-	ipam := getByPrefix(ipams, prefix)
+	ipam := GetByPrefix(ipams, prefix)
 	if ipam == nil {
 		return []*schema.ResourceData{d}, fmt.Errorf("Allocation '%s' not found", prefix)
 	}
@@ -281,12 +281,12 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	return []*schema.ResourceData{d}, nil
 }
 
-func getByPrefix(list []*ipam.IPAM, prefix string) *ipam.IPAM {
+func GetByPrefix(list []*ipam.IPAM, prefix string) *ipam.IPAM {
 	for _, s := range list {
 		if s.Prefix == prefix {
 			return s
 		} else if len(s.Children) > 0 {
-			if p := getByPrefix(s.Children, prefix); p != nil {
+			if p := GetByPrefix(s.Children, prefix); p != nil {
 				return p
 			}
 		}
@@ -294,12 +294,12 @@ func getByPrefix(list []*ipam.IPAM, prefix string) *ipam.IPAM {
 	return nil
 }
 
-func getByID(list []*ipam.IPAM, id int) *ipam.IPAM {
+func GetByID(list []*ipam.IPAM, id int) *ipam.IPAM {
 	for _, s := range list {
 		if s.ID == id {
 			return s
 		} else if len(s.Children) > 0 {
-			if p := getByID(s.Children, id); p != nil {
+			if p := GetByID(s.Children, id); p != nil {
 				return p
 			}
 		}

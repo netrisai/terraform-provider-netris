@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 
 	"github.com/netrisai/netriswebapi/http"
+	"github.com/netrisai/netriswebapi/v2/types/ipam"
 	"github.com/netrisai/netriswebapi/v2/types/vnet"
+	"github.com/netrisai/terraform-provider-netris/netris/subnet"
 
 	api "github.com/netrisai/netriswebapi/v2"
 
@@ -38,36 +41,48 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "A description of an item",
 			},
-			"ports": {
-				Optional:    true,
-				Type:        schema.TypeList,
-				Description: "Switch Ports",
+			"sites": {
+				Required: true,
+				Type:     schema.TypeList,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": {
 							Type:     schema.TypeString,
-							Optional: true,
-						},
-						"vlanid": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-			},
-			"gateways": {
-				Optional:    true,
-				Type:        schema.TypeList,
-				Description: "Gateways",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"prefix": {
-							Type:     schema.TypeString,
 							Required: true,
 						},
-						"vlanid": {
-							Type:     schema.TypeString,
-							Optional: true,
+						"ports": {
+							Optional:    true,
+							Type:        schema.TypeList,
+							Description: "Switch Ports",
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"name": {
+										Type:     schema.TypeString,
+										Optional: true,
+									},
+									"vlanid": {
+										Type:     schema.TypeString,
+										Optional: true,
+									},
+								},
+							},
+						},
+						"gateways": {
+							Optional:    true,
+							Type:        schema.TypeList,
+							Description: "Gateways",
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"prefix": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"vlanid": {
+										Type:     schema.TypeString,
+										Optional: true,
+									},
+								},
+							},
 						},
 					},
 				},
@@ -91,33 +106,51 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	gateways := d.Get("gateways").([]interface{})
-	gatewayList := []vnet.VNetAddGateway{}
-	for _, gw := range gateways {
-		gateway := gw.(map[string]interface{})
-		gatewayList = append(gatewayList, vnet.VNetAddGateway{
-			Prefix: gateway["prefix"].(string),
-			Vlan:   gateway["vlanid"].(string),
-		})
+	sites := d.Get("sites").([]interface{})
+	var sitesList []map[string]interface{}
+	for _, site := range sites {
+		sitesList = append(sitesList, site.(map[string]interface{}))
 	}
 
+	siteNames := []vnet.VNetAddSite{}
 	members := []vnet.VNetAddPort{}
-	ports := d.Get("ports").([]interface{})
-	for _, p := range ports {
-		port := p.(map[string]interface{})
-		members = append(members, vnet.VNetAddPort{
-			Name:  port["name"].(string),
-			Vlan:  port["vlanid"].(string),
-			Lacp:  "off",
-			State: "active",
-		})
+	gatewayList := []vnet.VNetAddGateway{}
+
+	for _, site := range sitesList {
+		if siteName, ok := site["name"]; ok {
+			siteNames = append(siteNames, vnet.VNetAddSite{Name: siteName.(string)})
+		}
+		if gws, ok := site["gateways"]; ok {
+			gateways := gws.([]interface{})
+
+			for _, gw := range gateways {
+				gateway := gw.(map[string]interface{})
+				gatewayList = append(gatewayList, vnet.VNetAddGateway{
+					Prefix: gateway["prefix"].(string),
+					Vlan:   gateway["vlanid"].(string),
+				})
+			}
+		}
+		if p, ok := site["ports"]; ok {
+
+			ports := p.([]interface{})
+			for _, p := range ports {
+				port := p.(map[string]interface{})
+				members = append(members, vnet.VNetAddPort{
+					Name:  port["name"].(string),
+					Vlan:  port["vlanid"].(string),
+					Lacp:  "off",
+					State: "active",
+				})
+			}
+		}
 	}
 
 	vnetAdd := &vnet.VNetAdd{
 		Name:         d.Get("name").(string),
 		Tenant:       vnet.VNetAddTenant{Name: d.Get("owner").(string)},
 		GuestTenants: []vnet.VNetAddTenant{},
-		Sites:        []vnet.VNetAddSite{{Name: "Yerevan"}},
+		Sites:        siteNames,
 		State:        d.Get("state").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
@@ -186,26 +219,65 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	portList := make([]interface{}, 0)
-	for _, port := range vnet.Ports {
-		m := make(map[string]interface{})
-		m["name"] = fmt.Sprintf("%s@%s", port.Port, port.SwitchName)
-		m["vlanid"] = port.Vlan
-		portList = append(portList, m)
-	}
-	err = d.Set("ports", portList)
+	subnets, err := clientset.IPAM().GetSubnets()
 	if err != nil {
 		return err
 	}
 
-	gatewayList := make([]interface{}, 0)
-	for _, gateway := range vnet.Gateways {
-		m := make(map[string]interface{})
-		m["prefix"] = gateway.Prefix
-		m["vlanid"] = gateway.Vlan
-		gatewayList = append(gatewayList, m)
+	hostsList := make(map[int][]*ipam.Host)
+
+	var sites []map[string]interface{}
+	for _, site := range vnet.Sites {
+		s := make(map[string]interface{})
+		portList := make([]interface{}, 0)
+		for _, port := range vnet.Ports {
+			if port.Site.ID == site.ID {
+				m := make(map[string]interface{})
+				m["name"] = fmt.Sprintf("%s@%s", port.Port, port.SwitchName)
+				m["vlanid"] = port.Vlan
+				portList = append(portList, m)
+			}
+		}
+		gatewayList := make([]interface{}, 0)
+		for _, gateway := range vnet.Gateways {
+			siteID := 0
+			ip, ipNet, err := net.ParseCIDR(gateway.Prefix)
+			if err != nil {
+				return err
+			}
+			var hosts []*ipam.Host
+			var ok bool
+			subnet := subnet.GetByPrefix(subnets, ipNet.String())
+			if hosts, ok = hostsList[subnet.ID]; !ok {
+				var err error
+				hosts, err = clientset.IPAM().GetHosts(subnet.ID)
+				if err != nil {
+					return err
+				}
+				hostsList[subnet.ID] = hosts
+			}
+
+			for _, host := range hosts {
+				if ip.String() == host.Address {
+					if len(subnet.Sites) > 1 {
+						siteID = subnet.Sites[0].ID
+					}
+				}
+			}
+			if siteID == site.ID {
+				m := make(map[string]interface{})
+				m["prefix"] = gateway.Prefix
+				m["vlanid"] = gateway.Vlan
+				gatewayList = append(gatewayList, m)
+			}
+		}
+		s["name"] = site.Name
+		s["ports"] = portList
+		s["gateways"] = gatewayList
+		sites = append(sites, s)
 	}
-	err = d.Set("gateways", gatewayList)
+
+	err = d.Set("sites", sites)
 	if err != nil {
 		return err
 	}
@@ -215,32 +287,50 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	gateways := d.Get("gateways").([]interface{})
-	gatewayList := []vnet.VNetUpdateGateway{}
-	for _, gw := range gateways {
-		gateway := gw.(map[string]interface{})
-		gatewayList = append(gatewayList, vnet.VNetUpdateGateway{
-			Prefix: gateway["prefix"].(string),
-			Vlan:   gateway["vlanid"].(string),
-		})
+	sites := d.Get("sites").([]interface{})
+	var sitesList []map[string]interface{}
+	for _, site := range sites {
+		sitesList = append(sitesList, site.(map[string]interface{}))
 	}
 
+	siteNames := []vnet.VNetUpdateSite{}
 	members := []vnet.VNetUpdatePort{}
-	ports := d.Get("ports").([]interface{})
-	for _, p := range ports {
-		port := p.(map[string]interface{})
-		members = append(members, vnet.VNetUpdatePort{
-			Vlan:  port["vlanid"].(string),
-			Name:  port["name"].(string),
-			Lacp:  "off",
-			State: "active",
-		})
+	gatewayList := []vnet.VNetUpdateGateway{}
+
+	for _, site := range sitesList {
+		if siteName, ok := site["name"]; ok {
+			siteNames = append(siteNames, vnet.VNetUpdateSite{Name: siteName.(string)})
+		}
+		if gws, ok := site["gateways"]; ok {
+			gateways := gws.([]interface{})
+
+			for _, gw := range gateways {
+				gateway := gw.(map[string]interface{})
+				gatewayList = append(gatewayList, vnet.VNetUpdateGateway{
+					Prefix: gateway["prefix"].(string),
+					Vlan:   gateway["vlanid"].(string),
+				})
+			}
+		}
+		if p, ok := site["ports"]; ok {
+
+			ports := p.([]interface{})
+			for _, p := range ports {
+				port := p.(map[string]interface{})
+				members = append(members, vnet.VNetUpdatePort{
+					Name:  port["name"].(string),
+					Vlan:  port["vlanid"].(string),
+					Lacp:  "off",
+					State: "active",
+				})
+			}
+		}
 	}
 
 	vnetUpdate := &vnet.VNetUpdate{
 		Name:         d.Get("name").(string),
 		GuestTenants: []vnet.VNetUpdateGuestTenant{},
-		Sites:        []vnet.VNetUpdateSite{{Name: "Yerevan"}},
+		Sites:        siteNames,
 		State:        d.Get("state").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
