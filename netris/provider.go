@@ -30,9 +30,9 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"netris_vnet": vnet.Resource(),
-			"netris_bgp":  bgp.Resource(),
-			"netris_ipam": allocation.Resource(),
+			"netris_vnet":       vnet.Resource(),
+			"netris_bgp":        bgp.Resource(),
+			"netris_allocation": allocation.Resource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
