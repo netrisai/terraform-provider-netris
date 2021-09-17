@@ -31,6 +31,7 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeString,
 			},
 			"tenant": {
+				ForceNew: true,
 				Required: true,
 				Type:     schema.TypeString,
 			},
@@ -112,10 +113,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	prefix := d.Get("prefix").(string)
-	ipam := getByPrefix(ipams, prefix)
+	id := d.Get("ipamid").(int)
+	ipam := getByID(ipams, id)
 	if ipam == nil {
-		return fmt.Errorf("prefix '%s' not found", prefix)
+		return nil
 	}
 
 	d.SetId(ipam.Name)
@@ -191,9 +192,9 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	prefix := d.Get("prefix").(string)
-	if ipam := getByPrefix(ipams, prefix); ipam == nil {
-		return false, fmt.Errorf("prefix '%s' not found", prefix)
+	id := d.Get("ipamid").(int)
+	if ipam := getByID(ipams, id); ipam == nil {
+		return false, nil
 	}
 
 	return true, nil
@@ -206,10 +207,10 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	if err != nil {
 		return []*schema.ResourceData{d}, err
 	}
-	prefix := d.Get("prefix").(string)
+	prefix := d.Id()
 	ipam := getByPrefix(ipams, prefix)
 	if ipam == nil {
-		return []*schema.ResourceData{d}, fmt.Errorf("prefix '%s' not found", prefix)
+		return []*schema.ResourceData{d}, fmt.Errorf("Allocation '%s' not found", prefix)
 	}
 
 	err = d.Set("ipamid", ipam.ID)
@@ -226,6 +227,19 @@ func getByPrefix(list []*ipam.IPAM, prefix string) *ipam.IPAM {
 			return s
 		} else if len(s.Children) > 0 {
 			if p := getByPrefix(s.Children, prefix); p != nil {
+				return p
+			}
+		}
+	}
+	return nil
+}
+
+func getByID(list []*ipam.IPAM, id int) *ipam.IPAM {
+	for _, s := range list {
+		if s.ID == id {
+			return s
+		} else if len(s.Children) > 0 {
+			if p := getByID(s.Children, id); p != nil {
 				return p
 			}
 		}
