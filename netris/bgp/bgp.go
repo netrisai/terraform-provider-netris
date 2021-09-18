@@ -421,7 +421,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if bgp == nil {
-		return fmt.Errorf("'%s' bgp not found", d.Get("name").(string))
+		return nil
 	}
 
 	d.SetId(bgp.Name)
