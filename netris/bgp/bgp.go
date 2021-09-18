@@ -460,30 +460,104 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("localip", fmt.Sprintf("%s/%d", bgp.LocalIP, bgp.PrefixLength))
+	if err != nil {
+		return err
+	}
+	err = d.Set("remoteip", fmt.Sprintf("%s/%d", bgp.RemoteIP, bgp.PrefixLength))
+	if err != nil {
+		return err
+	}
+	err = d.Set("description", bgp.Description)
+	if err != nil {
+		return err
+	}
+	err = d.Set("state", bgp.Status)
+	if err != nil {
+		return err
+	}
 
-	// portList := make([]interface{}, 0)
-	// for _, port := range vnet.Ports {
-	// 	m := make(map[string]interface{})
-	// 	m["name"] = fmt.Sprintf("%s@%s", port.Port, port.SwitchName)
-	// 	m["vlanid"] = port.Vlan
-	// 	portList = append(portList, m)
-	// }
-	// err = d.Set("ports", portList)
-	// if err != nil {
-	// 	return err
-	// }
+	terminateOnSwitchMap := d.Get("terminateonswitch").(map[string]interface{})
+	terminateOnSwitchEnabled := "false"
+	terminateOnSwitchName := terminateOnSwitchMap["switchname"].(string)
+	if bgp.TerminateOnSwitch == "yes" {
+		terminateOnSwitchEnabled = "false"
+		terminateOnSwitchName = bgp.TermSwName
+	}
+	terminateOnSwitchMap["enabled"] = terminateOnSwitchEnabled
+	terminateOnSwitchMap["switchname"] = terminateOnSwitchName
+	err = d.Set("terminateonswitch", terminateOnSwitchMap)
+	if err != nil {
+		return err
+	}
 
-	// gatewayList := make([]interface{}, 0)
-	// for _, gateway := range vnet.Gateways {
-	// 	m := make(map[string]interface{})
-	// 	m["prefix"] = gateway.Prefix
-	// 	m["vlanid"] = gateway.Vlan
-	// 	gatewayList = append(gatewayList, m)
-	// }
-	// err = d.Set("gateways", gatewayList)
-	// if err != nil {
-	// 	return err
-	// }
+	multihop := make(map[string]interface{})
+	multihop["neighboraddress"] = bgp.NeighborAddress
+	multihop["updatesource"] = bgp.UpdateSource
+	multihop["hops"] = strconv.Itoa(bgp.Multihop)
+	err = d.Set("multihop", multihop)
+	if err != nil {
+		return err
+	}
+
+	err = d.Set("bgppassword", bgp.BgpPassword)
+	if err != nil {
+		return err
+	}
+	err = d.Set("allowasin", bgp.AllowasIn)
+	if err != nil {
+		return err
+	}
+	var defaultOriginate bool
+	if bgp.DefaultOriginate == "enabled" {
+		defaultOriginate = true
+	}
+	err = d.Set("defaultoriginate", defaultOriginate)
+	if err != nil {
+		return err
+	}
+	err = d.Set("prefixinboundmax", strconv.Itoa(bgp.PrefixLimit))
+	if err != nil {
+		return err
+	}
+	err = d.Set("inboundroutemap", bgp.InboundRouteMap)
+	if err != nil {
+		return err
+	}
+	err = d.Set("outboundroutemap", bgp.OutboundRouteMap)
+	if err != nil {
+		return err
+	}
+	err = d.Set("localpreference", bgp.LocalPreference)
+	if err != nil {
+		return err
+	}
+	err = d.Set("weight", bgp.Weight)
+	if err != nil {
+		return err
+	}
+	err = d.Set("prependinbound", bgp.PrependInbound)
+	if err != nil {
+		return err
+	}
+	err = d.Set("prependoutbound", bgp.PrependOutbound)
+	if err != nil {
+		return err
+	}
+
+	err = d.Set("prefixlistinbound", strings.Split(bgp.PrefixListInbound, "\n"))
+	if err != nil {
+		return err
+	}
+	err = d.Set("prefixlistoutbound", strings.Split(bgp.PrefixListOutbound, "\n"))
+	if err != nil {
+		return err
+	}
+	err = d.Set("sendbgpcommunity", strings.Split(bgp.Community, ","))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
