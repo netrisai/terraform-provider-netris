@@ -488,221 +488,226 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
-	// clientset := m.(*api.Clientset)
+	clientset := m.(*api.Clientset)
 
-	// sites, err := clientset.Site().Get()
-	// if err != nil {
-	// 	return err
-	// }
-	// var (
-	// 	vlanID            = 1
-	// 	siteID            int
-	// 	nfvID             int
-	// 	nfvPortID         int
-	// 	state             = "enabled"
-	// 	terminateOnSwitch = "no"
-	// 	termSwitchID      int
-	// 	portID            int
-	// 	vnetID            int
-	// 	ipVersion         = "ipv6"
-	// )
+	sites, err := clientset.Site().Get()
+	if err != nil {
+		return err
+	}
+	var (
+		vlanID            = 1
+		siteID            int
+		nfvID             int
+		nfvPortID         int
+		state             = "enabled"
+		terminateOnSwitch = "no"
+		termSwitchID      int
+		portID            int
+		vnetID            int
+		ipVersion         = "ipv6"
+	)
 
-	// originate := "disabled"
-	// localPreference := 100
+	originate := "disabled"
+	localPreference := 100
 
-	// siteName := d.Get("site").(string)
-	// for _, site := range sites {
-	// 	if siteName == site.Name {
-	// 		siteID = site.ID
-	// 	}
-	// }
-	// if siteID == 0 {
-	// 	return fmt.Errorf("site '%s' not found", siteName)
-	// }
+	siteName := d.Get("site").(string)
+	for _, site := range sites {
+		if siteName == site.Name {
+			siteID = site.ID
+		}
+	}
+	if siteID == 0 {
+		return fmt.Errorf("site '%s' not found", siteName)
+	}
 
-	// if d.Get("defaultoriginate").(bool) {
-	// 	originate = "enabled"
-	// }
+	if d.Get("defaultoriginate").(bool) {
+		originate = "enabled"
+	}
 
-	// softgate := d.Get("softgate").(string)
+	softgate := d.Get("softgate").(string)
 
-	// transport := d.Get("transport").(map[string]interface{})
-	// transportName := transport["name"].(string)
-	// transportType := transport["type"].(string)
-	// transportVlanID, _ := strconv.Atoi(transport["vlanid"].(string))
+	transport := d.Get("transport").(map[string]interface{})
+	transportName := transport["name"].(string)
+	transportType := transport["type"].(string)
+	transportVlanID := 0
+	if transport["vlanid"] != nil {
+		transportVlanID, _ = strconv.Atoi(transport["vlanid"].(string))
+	}
 
-	// if transportVlanID > 1 {
-	// 	vlanID = transportVlanID
-	// }
+	if transportVlanID > 1 {
+		vlanID = transportVlanID
+	}
 
-	// localPreferenceTmp := d.Get("localpreference").(int)
-	// if localPreferenceTmp > 0 {
-	// 	localPreference = localPreferenceTmp
-	// }
+	localPreferenceTmp := d.Get("localpreference").(int)
+	if localPreferenceTmp > 0 {
+		localPreference = localPreferenceTmp
+	}
 
-	// if d.Get("state").(string) != "" {
-	// 	state = d.Get("state").(string)
-	// }
+	if d.Get("state").(string) != "" {
+		state = d.Get("state").(string)
+	}
 
-	// terminateOnSwitchMap := d.Get("terminateonswitch").(map[string]interface{})
-	// terminateOnSwitchEnabled := terminateOnSwitchMap["enabled"].(string)
-	// terminateOnSwitchName := terminateOnSwitchMap["switchname"].(string)
+	terminateOnSwitchMap := d.Get("terminateonswitch").(map[string]interface{})
+	terminateOnSwitchEnabled := terminateOnSwitchMap["enabled"].(string)
+	terminateOnSwitchName := terminateOnSwitchMap["switchname"].(string)
 
-	// if terminateOnSwitchEnabled == "true" {
-	// 	terminateOnSwitch = "yes"
-	// } else {
-	// 	bpgOffloaders, err := clientset.BGP().GetOffloaders(siteID)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	found := false
-	// 	for _, offloader := range bpgOffloaders {
-	// 		if softgate == offloader.Name {
-	// 			nfvID = offloader.ID
-	// 			termSwitchID = nfvID
-	// 			if len(offloader.Links) > 0 {
-	// 				nfvPortID = offloader.Links[0].Local.ID
-	// 			}
-	// 			found = true
-	// 			break
-	// 		}
-	// 	}
-	// 	if !found {
-	// 		return fmt.Errorf("invalid softgate '%s'", softgate)
-	// 	}
-	// }
+	if terminateOnSwitchEnabled == "true" {
+		terminateOnSwitch = "yes"
+	} else {
+		bpgOffloaders, err := clientset.BGP().GetOffloaders(siteID)
+		if err != nil {
+			return err
+		}
+		found := false
+		for _, offloader := range bpgOffloaders {
+			if softgate == offloader.Name {
+				nfvID = offloader.ID
+				termSwitchID = nfvID
+				if len(offloader.Links) > 0 {
+					nfvPortID = offloader.Links[0].Local.ID
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("invalid softgate '%s'", softgate)
+		}
+	}
 
-	// if transportType == "" {
-	// 	transportType = "port"
-	// }
+	if transportType == "" {
+		transportType = "port"
+	}
 
-	// if transportType == "port" {
-	// 	if port, ok := findPort(clientset, siteID, transportName); ok {
-	// 		portID = port.PortID
-	// 		if terminateOnSwitchEnabled == "true" {
-	// 			termSwitchID = port.SwitchID
-	// 		}
-	// 	} else {
-	// 		return fmt.Errorf("invalid port '%s'", transportName)
-	// 	}
-	// } else {
-	// 	vlanID = 1
-	// 	if vnet, ok := findVNetByName(clientset, transportName); ok {
-	// 		vnetID = vnet.ID
-	// 		if terminateOnSwitchEnabled == "true" {
-	// 			if sw, ok := findSwitchByName(clientset, siteID, transportName); ok {
-	// 				termSwitchID = sw.SwitchID
-	// 			} else {
-	// 				return fmt.Errorf("invalid TerminateOnSwitchName '%s'", transportName)
-	// 			}
-	// 		}
-	// 	} else {
-	// 		return fmt.Errorf("invalid vnet '%s'", transportName)
-	// 	}
-	// }
+	if transportType == "port" {
+		if port, ok := findPort(clientset, siteID, transportName); ok {
+			portID = port.PortID
+			if terminateOnSwitchEnabled == "true" {
+				termSwitchID = port.SwitchID
+			}
+		} else {
+			return fmt.Errorf("invalid port '%s'", transportName)
+		}
+	} else {
+		vlanID = 1
+		if vnet, ok := findVNetByName(clientset, transportName); ok {
+			vnetID = vnet.ID
+			if terminateOnSwitchEnabled == "true" {
+				if sw, ok := findSwitchByName(clientset, siteID, transportName); ok {
+					termSwitchID = sw.SwitchID
+				} else {
+					return fmt.Errorf("invalid TerminateOnSwitchName '%s'", transportName)
+				}
+			}
+		} else {
+			return fmt.Errorf("invalid vnet '%s'", transportName)
+		}
+	}
 
-	// localIP, cidr, _ := net.ParseCIDR(d.Get("localip").(string))
-	// remoteIP, _, _ := net.ParseCIDR(d.Get("remoteip").(string))
-	// prefixLength, _ := cidr.Mask.Size()
-	// if localIP.To4() != nil {
-	// 	ipVersion = "ipv4"
-	// }
+	localIPString := d.Get("localip").(string)
 
-	// multihopMap := d.Get("multihop").(map[string]interface{})
-	// multihopNeighborAddress := multihopMap["neighboraddress"].(string)
-	// multihopUpdateSource := multihopMap["updatesource"].(string)
-	// multihopHop, _ := strconv.Atoi(multihopMap["hops"].(string))
+	localIP, cidr, _ := net.ParseCIDR(localIPString)
+	remoteIP, _, _ := net.ParseCIDR(d.Get("remoteip").(string))
+	prefixLength, _ := cidr.Mask.Size()
+	if localIP.To4() != nil {
+		ipVersion = "ipv4"
+	}
 
-	// prefixListInboundArr := []string{}
-	// for _, pr := range d.Get("prefixlistinbound").([]interface{}) {
-	// 	prefixListInboundArr = append(prefixListInboundArr, pr.(string))
-	// }
+	multihopMap := d.Get("multihop").(map[string]interface{})
+	multihopNeighborAddress := multihopMap["neighboraddress"].(string)
+	multihopUpdateSource := multihopMap["updatesource"].(string)
+	multihopHop, _ := strconv.Atoi(multihopMap["hops"].(string))
 
-	// prefixListOutbound := []string{}
-	// for _, pr := range d.Get("prefixlistoutbound").([]interface{}) {
-	// 	prefixListOutbound = append(prefixListOutbound, pr.(string))
-	// }
+	prefixListInboundArr := []string{}
+	for _, pr := range d.Get("prefixlistinbound").([]interface{}) {
+		prefixListInboundArr = append(prefixListInboundArr, pr.(string))
+	}
 
-	// communityArr := []string{}
-	// for _, pr := range d.Get("sendbgpcommunity").([]interface{}) {
-	// 	communityArr = append(communityArr, pr.(string))
-	// }
+	prefixListOutbound := []string{}
+	for _, pr := range d.Get("prefixlistoutbound").([]interface{}) {
+		prefixListOutbound = append(prefixListOutbound, pr.(string))
+	}
 
-	// bgpUpdate := &bgp.EBGPUpdate{
-	// 	ID:                 d.Get("bgpid").(int),
-	// 	Name:               d.Get("name").(string),
-	// 	SiteID:             siteID,
-	// 	Vlan:               vlanID,
-	// 	AllowasIn:          d.Get("allowasin").(int),
-	// 	BgpPassword:        d.Get("bgppassword").(string),
-	// 	Community:          strings.Join(communityArr, "\n"),
-	// 	Description:        d.Get("description").(string),
-	// 	IPVersion:          ipVersion,
-	// LocalIP: bgp.LocalIP{
-	// 	IPFamily: ipVersion,
-	// 	Prefix:   localIP.String(),
-	// },
-	// 	RemoteIP:           remoteIP.String(),
-	// 	LocalPreference:    localPreference,
-	// 	Multihop:           multihopHop,
-	// 	NeighborAddress:    &multihopNeighborAddress,
-	// 	UpdateSource:       multihopUpdateSource,
-	// 	NeighborAs:         d.Get("neighboras").(string),
-	// 	PrefixLength:       prefixLength,
-	// 	NfvID:              nfvID,
-	// 	NfvPortID:          nfvPortID,
-	// 	Originate:          originate,
-	// 	PrefixLimit:        d.Get("prefixinboundmax").(string),
-	// 	PrefixListInbound:  strings.Join(prefixListInboundArr, "\n"),
-	// 	PrefixListOutbound: strings.Join(prefixListOutbound, "\n"),
-	// 	PrependInbound:     d.Get("prependinbound").(int),
-	// 	PrependOutbound:    d.Get("prependoutbound").(int),
-	// 	RcircuitID:         vnetID,
-	// 	Status:             state,
-	// 	// SwitchID: ,
-	// 	// SwitchName: ,
-	// 	SwitchPortID:      portID,
-	// 	TermSwitchID:      termSwitchID,
-	// 	TermSwitchName:    terminateOnSwitchName,
-	// 	TerminateOnSwitch: terminateOnSwitch,
-	// 	Weight:            d.Get("weight").(int),
-	// }
+	communityArr := []string{}
+	for _, pr := range d.Get("sendbgpcommunity").([]interface{}) {
+		communityArr = append(communityArr, pr.(string))
+	}
 
-	// js, _ := json.Marshal(bgpUpdate)
-	// log.Println("[DEBUG] bgpUpdate", string(js))
+	bgpUpdate := &bgp.EBGPUpdate{
+		ID:          d.Get("bgpid").(int),
+		Name:        d.Get("name").(string),
+		SiteID:      siteID,
+		Vlan:        vlanID,
+		AllowasIn:   d.Get("allowasin").(int),
+		BgpPassword: d.Get("bgppassword").(string),
+		Community:   strings.Join(communityArr, "\n"),
+		Description: d.Get("description").(string),
+		IPVersion:   ipVersion,
+		LocalIP: bgp.LocalIP{
+			IPFamily: ipVersion,
+			Prefix:   localIPString,
+		},
+		RemoteIP:           remoteIP.String(),
+		LocalPreference:    localPreference,
+		Multihop:           multihopHop,
+		NeighborAddress:    &multihopNeighborAddress,
+		UpdateSource:       multihopUpdateSource,
+		NeighborAs:         d.Get("neighboras").(string),
+		PrefixLength:       prefixLength,
+		NfvID:              nfvID,
+		NfvPortID:          nfvPortID,
+		Originate:          originate,
+		PrefixLimit:        d.Get("prefixinboundmax").(string),
+		PrefixListInbound:  strings.Join(prefixListInboundArr, "\n"),
+		PrefixListOutbound: strings.Join(prefixListOutbound, "\n"),
+		PrependInbound:     d.Get("prependinbound").(int),
+		PrependOutbound:    d.Get("prependoutbound").(int),
+		RcircuitID:         vnetID,
+		Status:             state,
+		// SwitchID: ,
+		// SwitchName: ,
+		SwitchPortID:      portID,
+		TermSwitchID:      termSwitchID,
+		TermSwitchName:    terminateOnSwitchName,
+		TerminateOnSwitch: terminateOnSwitch,
+		Weight:            d.Get("weight").(int),
+	}
 
-	// reply, err := clientset.BGP().Update(bgpUpdate)
-	// if err != nil {
-	// 	log.Println("[DEBUG]", err)
-	// 	return err
-	// }
+	js, _ := json.Marshal(bgpUpdate)
+	log.Println("[DEBUG] bgpUpdate", string(js))
 
-	// js, _ = json.Marshal(reply)
-	// log.Println("[DEBUG]", string(js))
+	reply, err := clientset.BGP().Update(bgpUpdate)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
 
-	// log.Println("[DEBUG]", string(reply.Data))
+	js, _ = json.Marshal(reply)
+	log.Println("[DEBUG]", string(js))
 
-	// idStruct := struct {
-	// 	ID int `json:"id"`
-	// }{}
+	log.Println("[DEBUG]", string(reply.Data))
 
-	// data, err := reply.Parse()
-	// if err != nil {
-	// 	log.Println("[DEBUG]", err)
-	// 	return err
-	// }
+	idStruct := struct {
+		ID int `json:"id"`
+	}{}
 
-	// err = http.Decode(data.Data, &idStruct)
-	// if err != nil {
-	// 	log.Println("[DEBUG]", err)
-	// 	return err
-	// }
+	data, err := reply.Parse()
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
 
-	// log.Println("[DEBUG] ID:", idStruct.ID)
+	err = http.Decode(data.Data, &idStruct)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
 
-	// if reply.StatusCode != 200 {
-	// 	return fmt.Errorf(string(reply.Data))
-	// }
+	log.Println("[DEBUG] ID:", idStruct.ID)
+
+	if reply.StatusCode != 200 {
+		return fmt.Errorf(string(reply.Data))
+	}
 
 	return nil
 }

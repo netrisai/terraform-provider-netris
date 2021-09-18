@@ -7,7 +7,7 @@ resource "netris_bgp" "artash-testt" {
     type = "vnet"
     name = "my-vnet"
   }
-  localip = "109.23.0.1/24"
+  localip = "109.23.0.5/24"
   remoteip = "109.23.0.2/24"
   description = "someDesc"
   state = "enabled"
