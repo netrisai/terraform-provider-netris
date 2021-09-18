@@ -254,7 +254,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 			for _, host := range hosts {
 				if ip.String() == host.Address {
-					if len(subnet.Sites) > 1 {
+					if len(subnet.Sites) > 0 {
 						siteID = subnet.Sites[0].ID
 					}
 				}
