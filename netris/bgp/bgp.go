@@ -220,9 +220,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	transport := d.Get("transport").(map[string]interface{})
 	transportName := transport["name"].(string)
 	transportType := transport["type"].(string)
-	transportVlanID, _ := strconv.Atoi(transport["vlanid"].(string))
+	transportVlanID := 0
+	if transport["vlanid"] != nil {
+		transportVlanID, _ = strconv.Atoi(transport["vlanid"].(string))
+	}
 
-	if transportVlanID > 1 {
+	if transportVlanID > 1 && transportVlanID > 0 {
 		vlanID = transportVlanID
 	}
 
@@ -430,7 +433,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("softgate", bgp.OffloaderSwName)
+	err = d.Set("softgate", bgp.TermSwName)
 	if err != nil {
 		return err
 	}
@@ -446,11 +449,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if bgp.CircuitInternal == 0 {
 		transportType = "vnet"
 		transportName = bgp.CircuitName
+	} else {
+		transport["vlanid"] = strconv.Itoa(bgp.Vlan)
 	}
 
 	transport["type"] = transportType
 	transport["name"] = transportName
-	transport["vlanid"] = strconv.Itoa(bgp.Vlan)
+
 	err = d.Set("transport", transport)
 	if err != nil {
 		return err

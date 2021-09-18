@@ -5,11 +5,10 @@ resource "netris_bgp" "artash-testt" {
   neighboras =23456
   transport = {
     type = "vnet"
-    name = "artash-test"
-    vlanid = 4
+    name = "my-vnet"
   }
-  localip = "1.0.32.1/20"
-  remoteip = "1.0.32.2/20"
+  localip = "109.23.0.1/24"
+  remoteip = "109.23.0.2/24"
   description = "someDesc"
   state = "enabled"
   terminateonswitch = {
