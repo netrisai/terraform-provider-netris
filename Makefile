@@ -17,6 +17,7 @@ install: build
 
 uninstall:
 	rm -rf examples/.terraform*
+	rm -rf examples/*.tfstate*
 
 init: install
 	cd examples && terraform init
