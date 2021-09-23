@@ -1,0 +1,212 @@
+package tenant
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+
+	"github.com/netrisai/netriswebapi/http"
+	"github.com/netrisai/netriswebapi/v1/types/tenant"
+
+	api "github.com/netrisai/netriswebapi/v2"
+
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+)
+
+func Resource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"itemid": {
+				Type:             schema.TypeInt,
+				Optional:         true,
+				DiffSuppressFunc: DiffSuppress,
+			},
+			"name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the resource, also acts as it's unique ID",
+			},
+			"description": {
+				Optional: true,
+				Type:     schema.TypeString,
+				ForceNew: true,
+			},
+		},
+		Create: resourceCreate,
+		Read:   resourceRead,
+		Update: resourceUpdate,
+		Delete: resourceDelete,
+		Exists: resourceExists,
+		Importer: &schema.ResourceImporter{
+			State: resourceImport,
+		},
+	}
+}
+
+func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
+	return true
+}
+
+func resourceCreate(d *schema.ResourceData, m interface{}) error {
+	clientset := m.(*api.Clientset)
+
+	tenantAdd := &tenant.Tenant{
+		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
+	}
+
+	js, _ := json.Marshal(tenantAdd)
+	log.Println("[DEBUG]", string(js))
+
+	reply, err := clientset.Tenant().Add(tenantAdd)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	js, _ = json.Marshal(reply)
+	log.Println("[DEBUG]", string(js))
+
+	log.Println("[DEBUG]", string(reply.Data))
+
+	idStruct := struct {
+		ID int `json:"id"`
+	}{}
+
+	data, err := reply.Parse()
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	err = http.Decode(data.Data, &idStruct)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	log.Println("[DEBUG] ID:", idStruct.ID)
+
+	if reply.StatusCode != 200 {
+		return fmt.Errorf(string(reply.Data))
+	}
+
+	_ = d.Set("itemid", idStruct.ID)
+	d.SetId(tenantAdd.Name)
+	return nil
+}
+
+func resourceRead(d *schema.ResourceData, m interface{}) error {
+	clientset := m.(*api.Clientset)
+
+	tenants, err := clientset.Tenant().Get()
+	if err != nil {
+		return err
+	}
+
+	for _, tenant := range tenants {
+		if tenant.Name == d.Id() {
+			d.SetId(tenant.Name)
+			err = d.Set("name", tenant.Name)
+			if err != nil {
+				return err
+			}
+			err = d.Set("description", tenant.Description)
+			if err != nil {
+				return err
+			}
+			break
+		}
+	}
+	return nil
+}
+
+func resourceUpdate(d *schema.ResourceData, m interface{}) error {
+	clientset := m.(*api.Clientset)
+
+	tenantUpdate := &tenant.Tenant{
+		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
+		ID:          d.Get("itemid").(int),
+	}
+
+	js, _ := json.Marshal(tenantUpdate)
+	log.Println("[DEBUG]", string(js))
+
+	reply, err := clientset.Tenant().Update(tenantUpdate)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	js, _ = json.Marshal(reply)
+	log.Println("[DEBUG]", string(js))
+
+	log.Println("[DEBUG]", string(reply.Data))
+
+	if reply.StatusCode != 200 {
+		return fmt.Errorf(string(reply.Data))
+	}
+
+	return nil
+}
+
+func resourceDelete(d *schema.ResourceData, m interface{}) error {
+	clientset := m.(*api.Clientset)
+
+	reply, err := clientset.Tenant().Delete(d.Get("itemid").(int))
+	if err != nil {
+		return err
+	}
+
+	if reply.StatusCode != 200 {
+		return fmt.Errorf(string(reply.Data))
+	}
+
+	d.SetId("")
+	return nil
+}
+
+func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
+	clientset := m.(*api.Clientset)
+
+	tenantID := 0
+	tenants, err := clientset.Tenant().Get()
+	if err != nil {
+		return false, err
+	}
+
+	for _, tenant := range tenants {
+		if tenant.ID == d.Get("itemid").(int) {
+			tenantID = tenant.ID
+			break
+		}
+	}
+
+	if tenantID == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	clientset := m.(*api.Clientset)
+
+	tenants, err := clientset.Tenant().Get()
+	if err != nil {
+		return []*schema.ResourceData{d}, err
+	}
+
+	for _, tenant := range tenants {
+		if tenant.Name == d.Id() {
+			err := d.Set("itemid", tenant.ID)
+			if err != nil {
+				return []*schema.ResourceData{d}, err
+			}
+			return []*schema.ResourceData{d}, nil
+		}
+	}
+
+	return []*schema.ResourceData{d}, nil
+}
