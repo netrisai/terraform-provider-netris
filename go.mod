@@ -28,7 +28,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
-	github.com/netrisai/netriswebapi v0.0.0-20210917105927-22d929791177
+	github.com/netrisai/netriswebapi v0.0.0-20210923104435-7109516b6a0f
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
