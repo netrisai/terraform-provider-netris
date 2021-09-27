@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 
 	"github.com/netrisai/netriswebapi/http"
@@ -117,16 +118,21 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		linksInterfaces = append(linksInterfaces, site.(map[string]interface{}))
 	}
 
+	re := regexp.MustCompile(`\w+(?P<id>\d+)@\w+`)
+
 	linksList := []inventory.HWLink{}
 	for _, l := range linksInterfaces {
 		link := inventory.HWLink{}
 		if local, localok := l["localport"]; localok && len(local.(string)) > 0 {
-			link.Local = inventory.IDName{Name: local.(string)}
+			valueMatch := re.FindStringSubmatch(local.(string))
+			result := regParser(valueMatch, re.SubexpNames())
+			localID, _ := strconv.Atoi(result["id"])
+			link.Local = inventory.IDName{ID: localID}
 		}
 		if remote, remoteok := l["remoteport"]; remoteok && len(remote.(string)) > 0 {
 			link.Remote = inventory.IDName{Name: remote.(string)}
 		}
-		if link.Local.Name == "" || link.Remote.Name == "" {
+		if link.Local.ID == 0 || link.Remote.Name == "" {
 			return fmt.Errorf("invalid links")
 		}
 		linksList = append(linksList, link)
@@ -448,4 +454,14 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	}
 
 	return []*schema.ResourceData{d}, nil
+}
+
+func regParser(valueMatch []string, subexpNames []string) map[string]string {
+	result := make(map[string]string)
+	for i, name := range subexpNames {
+		if i != 0 && name != "" && len(valueMatch) >= len(subexpNames) {
+			result[name] = valueMatch[i]
+		}
+	}
+	return result
 }

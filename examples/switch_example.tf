@@ -11,7 +11,11 @@ resource "netris_switch" "artash-sww" {
       macaddress = ""
       portcount = 16
       links{
-            localport = "swp6@artash-sww"
-            remoteport = "swp1@testtushkanchik"
+            localport = "swp@artash-sww"
+            remoteport = "swp14@artash-spine-1"
+      }
+      links{
+            localport = "swp15@artash-sww"
+            remoteport = "swp16@artash-spine-1"
       }
 }
