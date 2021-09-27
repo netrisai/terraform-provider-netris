@@ -118,7 +118,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		linksInterfaces = append(linksInterfaces, site.(map[string]interface{}))
 	}
 
-	re := regexp.MustCompile(`\w+(?P<id>\d+)@\w+`)
+	re := regexp.MustCompile(`^[a-zA-Z]+(?P<id>\d+)@\w+`)
 
 	linksList := []inventory.HWLink{}
 	for _, l := range linksInterfaces {
