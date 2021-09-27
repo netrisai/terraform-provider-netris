@@ -267,13 +267,17 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("mainip", sw.MainAddress)
-	if err != nil {
-		return err
+	if main := d.Get("mainip"); main.(string) != "auto" {
+		err = d.Set("mainip", sw.MainAddress)
+		if err != nil {
+			return err
+		}
 	}
-	err = d.Set("mgmtip", sw.MgmtAddress)
-	if err != nil {
-		return err
+	if main := d.Get("mgmtip"); main.(string) != "auto" {
+		err = d.Set("mgmtip", sw.MainAddress)
+		if err != nil {
+			return err
+		}
 	}
 	err = d.Set("macaddress", sw.MacAddress)
 	if err != nil {

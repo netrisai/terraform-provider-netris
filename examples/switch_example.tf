@@ -6,12 +6,12 @@ resource "netris_switch" "artash-sww" {
       nos = "cumulus_linux"
       asnumber = 4280000000
       profile = "YerevanUltimate"
-      mainip = "99.0.1.5"
-      mgmtip = "99.0.2.5"
+      mainip = "auto"
+      mgmtip = "auto"
       macaddress = ""
       portcount = 16
       links{
-            localport = "swp@artash-sww"
+            localport = "swp13@artash-sww"
             remoteport = "swp14@artash-spine-1"
       }
       links{
