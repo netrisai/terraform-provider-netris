@@ -1,21 +1,15 @@
-resource "netris_vnet" "my-vnet" {
-      name = "my-vnet"
-      owner = "Admin"
-      state = "active"
+resource "netris_vnet" "artash-test" {
+      name = "artash-test"
+      owner = "Artash"
+      state = ""
       sites{
-            name = "Yerevan"
+            name = "Artash"
             gateways {
-                  prefix = "109.23.0.6/24"
+                  prefix = "99.0.3.1/24"
             }
             ports {
-                  name = "swp9@yerevan-spine1"
-                  vlanid = 1051
-            }
-      }
-      sites {
-            name = "Test"
-            gateways {
-                  prefix = "66.66.66.1/24"
+                  name = "swp10@artash-spine-1"
+                  vlanid = 3000
             }
       }
 }

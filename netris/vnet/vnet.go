@@ -35,8 +35,10 @@ func Resource() *schema.Resource {
 				ForceNew: true,
 			},
 			"state": {
-				Required: true,
-				Type:     schema.TypeString,
+				Optional:     true,
+				Default:      "active",
+				ValidateFunc: validateState,
+				Type:         schema.TypeString,
 			},
 			"sites": {
 				Required: true,
@@ -57,6 +59,7 @@ func Resource() *schema.Resource {
 										Optional: true,
 									},
 									"vlanid": {
+										Default:  "1",
 										Type:     schema.TypeString,
 										Optional: true,
 									},
@@ -69,8 +72,9 @@ func Resource() *schema.Resource {
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"prefix": {
-										Type:     schema.TypeString,
-										Required: true,
+										ValidateFunc: validateGateway,
+										Type:         schema.TypeString,
+										Required:     true,
 									},
 									"vlanid": {
 										Type:     schema.TypeString,
