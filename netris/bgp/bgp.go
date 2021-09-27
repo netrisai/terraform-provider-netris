@@ -297,8 +297,14 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	localIPString := d.Get("localip").(string)
 
-	localIP, cidr, _ := net.ParseCIDR(localIPString)
-	remoteIP, _, _ := net.ParseCIDR(d.Get("remoteip").(string))
+	localIP, cidr, err := net.ParseCIDR(localIPString)
+	if err != nil {
+		return err
+	}
+	remoteIP, _, err := net.ParseCIDR(d.Get("remoteip").(string))
+	if err != nil {
+		return err
+	}
 	prefixLength, _ := cidr.Mask.Size()
 	if localIP.To4() != nil {
 		ipVersion = "ipv4"
