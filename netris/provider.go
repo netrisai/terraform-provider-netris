@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/netrisai/terraform-provider-netris/netris/allocation"
 	"github.com/netrisai/terraform-provider-netris/netris/bgp"
+	"github.com/netrisai/terraform-provider-netris/netris/controller"
 	"github.com/netrisai/terraform-provider-netris/netris/subnet"
 	"github.com/netrisai/terraform-provider-netris/netris/sw"
 	"github.com/netrisai/terraform-provider-netris/netris/tenant"
@@ -39,6 +40,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_subnet":     subnet.Resource(),
 			"netris_tenant":     tenant.Resource(),
 			"netris_switch":     sw.Resource(),
+			"netris_controller": controller.Resource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
