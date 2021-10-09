@@ -242,7 +242,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 	if main := d.Get("mgmtip"); main.(string) != "auto" {
-		err = d.Set("mgmtip", sw.MainAddress)
+		err = d.Set("mgmtip", sw.MgmtAddress)
 		if err != nil {
 			return err
 		}
