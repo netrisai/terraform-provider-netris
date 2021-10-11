@@ -34,16 +34,17 @@ provider "netris" {
 }
 
 # Create a VNet: Adding physical switch ports to a virtual overlay network
-resource "netris_vnet" "my-vnet" {                                ## [todo] add site
+resource "netris_vnet" "my-vnet" {
   name = "my-vnet"
   owner = "Admin"
-  state = "active"
-  gateways {
-        prefix = "109.23.0.6/24"
-  }
-  ports {
-        name = "swp9@Yerevan-Spine1"
-        vlanid = 1050
+  sites{
+    name = "Santa Clara"
+    gateways {
+      prefix = "203.0.113.1/24"
+    }
+    ports {
+      name = "swp1@my-softgate"
+    }
   }
 }
 

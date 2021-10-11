@@ -1,13 +1,17 @@
-resource "netris_softgate" "artash-softgate" {
-      name = "artash-softgate"
-      tenant = "Artash"
-      site = "Artash"
-      description = "Artash Terraform Test"
-      profile = "YerevanUltimate"
-      mainip = "auto"
-      mgmtip = "auto"
-      links{
-            localport = "swp1@artash-softgate"
-            remoteport = "swp8@artash-spine-1"
-      }
+resource "netris_softgate" "my-softgate" {
+  name = "my-softgate"
+  tenant = "Admin"
+  site = "Santa Clara"
+  description = "Softgate 1"
+  # profile = ""
+  mainip = "198.51.100.11"
+  mgmtip = "192.0.2.11"
+  # links{
+  #   localport = "swp1@my-softgate"
+  #   remoteport = "swp8@my-spine-1"
+  # }
+  depends_on = [
+    netris_subnet.my-subnet-mgmt,
+    netris_subnet.my-subnet-loopback,
+  ]
 }
