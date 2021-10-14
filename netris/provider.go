@@ -1,3 +1,19 @@
+/*
+Copyright 2021. Netris, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package netris
 
 import (
@@ -5,6 +21,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/netrisai/terraform-provider-netris/netris/allocation"
+	"github.com/netrisai/terraform-provider-netris/netris/bgp"
+	"github.com/netrisai/terraform-provider-netris/netris/controller"
+	"github.com/netrisai/terraform-provider-netris/netris/softgate"
+	"github.com/netrisai/terraform-provider-netris/netris/subnet"
+	"github.com/netrisai/terraform-provider-netris/netris/sw"
+	"github.com/netrisai/terraform-provider-netris/netris/tenant"
+	"github.com/netrisai/terraform-provider-netris/netris/vnet"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -27,7 +51,14 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"netris_vnet": resourceVNet(),
+			"netris_vnet":       vnet.Resource(),
+			"netris_bgp":        bgp.Resource(),
+			"netris_allocation": allocation.Resource(),
+			"netris_subnet":     subnet.Resource(),
+			"netris_tenant":     tenant.Resource(),
+			"netris_switch":     sw.Resource(),
+			"netris_controller": controller.Resource(),
+			"netris_softgate":   softgate.Resource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

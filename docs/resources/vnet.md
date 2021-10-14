@@ -18,18 +18,29 @@ description: |-
 ### Required
 
 - **name** (String) The name of the resource, also acts as it's unique ID
-- **owner** (String) A description of an item
-- **state** (String) A description of an item
+- **owner** (String)
+- **sites** (Block List, Min: 1) (see [below for nested schema](#nestedblock--sites))
 
 ### Optional
 
-- **gateways** (Block List) Gateways (see [below for nested schema](#nestedblock--gateways))
 - **id** (String) The ID of this resource.
-- **ports** (Block List) Switch Ports (see [below for nested schema](#nestedblock--ports))
-- **vnetid** (Number) The name of the resource, also acts as it's unique ID
+- **state** (String)
+- **vnetid** (Number)
 
-<a id="nestedblock--gateways"></a>
-### Nested Schema for `gateways`
+<a id="nestedblock--sites"></a>
+### Nested Schema for `sites`
+
+Required:
+
+- **name** (String)
+
+Optional:
+
+- **gateways** (Block List) (see [below for nested schema](#nestedblock--sites--gateways))
+- **ports** (Block List) (see [below for nested schema](#nestedblock--sites--ports))
+
+<a id="nestedblock--sites--gateways"></a>
+### Nested Schema for `sites.gateways`
 
 Required:
 
@@ -40,8 +51,8 @@ Optional:
 - **vlanid** (String)
 
 
-<a id="nestedblock--ports"></a>
-### Nested Schema for `ports`
+<a id="nestedblock--sites--ports"></a>
+### Nested Schema for `sites.ports`
 
 Optional:
 
