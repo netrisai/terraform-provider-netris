@@ -18,9 +18,11 @@ package bgp
 
 import (
 	"fmt"
+	"log"
 
 	api "github.com/netrisai/netriswebapi/v2"
 	"github.com/netrisai/netriswebapi/v2/types/bgp"
+	"github.com/netrisai/netriswebapi/v2/types/vnet"
 )
 
 func findPort(clientset *api.Clientset, siteID int, portName string) (*bgp.EBGPPort, bool) {
@@ -36,12 +38,27 @@ func findPort(clientset *api.Clientset, siteID int, portName string) (*bgp.EBGPP
 	return nil, false
 }
 
-func findVNetByName(clientset *api.Clientset, name string) (*bgp.EBGPVNet, bool) {
-	vnets, err := clientset.BGP().GetVNets()
+func findPortByID(clientset *api.Clientset, siteID int, id int) (*bgp.EBGPPort, bool) {
+	ports, err := clientset.BGP().GetPorts(siteID)
+	if err != nil {
+		return nil, false
+	}
+	for _, port := range ports {
+		if port.PortID == id {
+			return port, true
+		}
+	}
+	return nil, false
+}
+
+func findVNetByName(clientset *api.Clientset, name string) (*vnet.VNet, bool) {
+	vnets, err := clientset.VNet().Get()
+	log.Println("[DEBUG] vnets", vnets)
 	if err != nil {
 		return nil, false
 	}
 	for _, vnet := range vnets {
+		log.Println("[DEBUG] ", vnet.Name)
 		if vnet.Name == name {
 			return vnet, true
 		}
