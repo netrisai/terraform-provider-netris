@@ -69,14 +69,16 @@ func Resource() *schema.Resource {
 				},
 			},
 			"localip": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				ValidateFunc: validateIPPrefix,
+				Required:     true,
+				Type:         schema.TypeString,
+				Description:  "Local IP. Example 10.0.1.1/24",
 			},
 			"remoteip": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				ValidateFunc: validateIPPrefix,
+				Required:     true,
+				Type:         schema.TypeString,
+				Description:  "Remote IP. Example 10.0.1.2/24",
 			},
 			"description": {
 				Optional:    true,
@@ -84,9 +86,11 @@ func Resource() *schema.Resource {
 				Description: "A description of an item",
 			},
 			"state": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				Optional:     true,
+				Default:      "enabled",
+				ValidateFunc: validateState,
+				Type:         schema.TypeString,
+				Description:  "A description of an item",
 			},
 			"terminateonswitch": {
 				Optional:    true,
@@ -101,7 +105,9 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeMap,
 				Description: "Multihop",
 				Elem: &schema.Schema{
-					Type: schema.TypeString,
+					Type:         schema.TypeString,
+					Optional:     true,
+					ValidateFunc: validateMultihop,
 				},
 			},
 			"bgppassword": {
@@ -347,18 +353,15 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	bgpAdd := &bgp.EBGPAdd{
-		Name:        d.Get("name").(string),
-		SiteID:      siteID,
-		Vlan:        vlanID,
-		AllowasIn:   d.Get("allowasin").(int),
-		BgpPassword: d.Get("bgppassword").(string),
-		Community:   strings.Join(communityArr, "\n"),
-		Description: d.Get("description").(string),
-		IPVersion:   ipVersion,
-		LocalIP: bgp.LocalIP{
-			IPFamily: ipVersion,
-			Prefix:   localIPString,
-		},
+		Name:               d.Get("name").(string),
+		SiteID:             siteID,
+		Vlan:               vlanID,
+		AllowasIn:          d.Get("allowasin").(int),
+		BgpPassword:        d.Get("bgppassword").(string),
+		Community:          strings.Join(communityArr, "\n"),
+		Description:        d.Get("description").(string),
+		IPVersion:          ipVersion,
+		LocalIP:            localIP.String(),
 		RemoteIP:           remoteIP.String(),
 		LocalPreference:    localPreference,
 		Multihop:           multihopHop,
@@ -386,7 +389,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	js, _ := json.Marshal(bgpAdd)
-	log.Println("[DEBUG] vnetAdd", string(js))
+	log.Println("[DEBUG] bgpAdd", string(js))
 
 	reply, err := clientset.BGP().Add(bgpAdd)
 	if err != nil {
@@ -467,12 +470,23 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	transport := make(map[string]interface{})
 	transportType := "port"
 	transportName := bgp.PortName
+	if port, ok := findPortByID(clientset, bgp.SiteID, bgp.SwitchPortID); ok {
+		transportName = fmt.Sprintf("%s@%s", port.PortName, port.SwitchName)
+	}
 
 	if bgp.CircuitInternal == 0 {
 		transportType = "vnet"
 		transportName = bgp.CircuitName
 	} else {
-		transport["vlanid"] = strconv.Itoa(bgp.Vlan)
+		tr := d.Get("transport").(map[string]interface{})
+		if tr["vlanid"] != nil {
+			transportVlanID, _ := strconv.Atoi(transport["vlanid"].(string))
+			if !(transportVlanID >= 1 && bgp.Vlan == 1) {
+				transport["vlanid"] = strconv.Itoa(bgp.Vlan)
+			}
+		} else if bgp.Vlan > 1 {
+			transport["vlanid"] = strconv.Itoa(bgp.Vlan)
+		}
 	}
 
 	transport["type"] = transportType
@@ -730,19 +744,16 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	bgpUpdate := &bgp.EBGPUpdate{
-		ID:          d.Get("bgpid").(int),
-		Name:        d.Get("name").(string),
-		SiteID:      siteID,
-		Vlan:        vlanID,
-		AllowasIn:   d.Get("allowasin").(int),
-		BgpPassword: d.Get("bgppassword").(string),
-		Community:   strings.Join(communityArr, "\n"),
-		Description: d.Get("description").(string),
-		IPVersion:   ipVersion,
-		LocalIP: bgp.LocalIP{
-			IPFamily: ipVersion,
-			Prefix:   localIPString,
-		},
+		ID:                 d.Get("bgpid").(int),
+		Name:               d.Get("name").(string),
+		SiteID:             siteID,
+		Vlan:               vlanID,
+		AllowasIn:          d.Get("allowasin").(int),
+		BgpPassword:        d.Get("bgppassword").(string),
+		Community:          strings.Join(communityArr, "\n"),
+		Description:        d.Get("description").(string),
+		IPVersion:          ipVersion,
+		LocalIP:            localIP.String(),
 		RemoteIP:           remoteIP.String(),
 		LocalPreference:    localPreference,
 		Multihop:           multihopHop,

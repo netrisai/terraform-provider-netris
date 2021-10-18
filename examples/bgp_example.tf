@@ -1,15 +1,15 @@
-resource "netris_bgp" "artash-testt" {
-  name = "artash-testt"
-  site = "Yerevan"
-  softgate = "sg01"
-  neighboras =23456
+resource "netris_bgp" "terraform-bgp" {
+  name = "terraform-bgp"
+  site = "Artash"
+  softgate = "terraform-sg"
+  neighboras =23456234
   transport = {
     type = "vnet"
-    name = "my-vnet"
+    name = "terraform-vnet"
   }
-  localip = "109.23.0.5/24"
-  remoteip = "109.23.0.2/24"
-  description = "someDesc"
+  localip = "99.0.3.4/24"
+  remoteip = "99.0.3.5/24"
+  description = "Terraform Test"
   state = "enabled"
   terminateonswitch = {
     enabled = "false"

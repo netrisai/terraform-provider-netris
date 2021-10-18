@@ -56,7 +56,7 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeString,
 			},
 			"defaultgateway": {
-				Required: true,
+				Optional: true,
 				Type:     schema.TypeString,
 			},
 			"sites": {
