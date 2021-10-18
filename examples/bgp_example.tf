@@ -1,7 +1,7 @@
 resource "netris_bgp" "terraform-bgp" {
   name = "terraform-bgp"
   site = "Artash"
-  softgate = "terraform-sg"
+  hardware = "terraform-sg"
   neighboras =23456234
   transport = {
     type = "vnet"
@@ -11,10 +11,6 @@ resource "netris_bgp" "terraform-bgp" {
   remoteip = "99.0.3.5/24"
   description = "Terraform Test"
   state = "enabled"
-  terminateonswitch = {
-    enabled = "false"
-    switchname = "spine1"
-  }
   multihop = {
     neighboraddress = "8.8.8.9"
     updatesource = "1.0.32.22"
