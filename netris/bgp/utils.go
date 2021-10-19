@@ -17,26 +17,12 @@ limitations under the License.
 package bgp
 
 import (
-	"fmt"
 	"log"
 
 	api "github.com/netrisai/netriswebapi/v2"
 	"github.com/netrisai/netriswebapi/v2/types/bgp"
 	"github.com/netrisai/netriswebapi/v2/types/vnet"
 )
-
-func findPort(clientset *api.Clientset, siteID int, portName string) (*bgp.EBGPPort, bool) {
-	ports, err := clientset.BGP().GetPorts(siteID)
-	if err != nil {
-		return nil, false
-	}
-	for _, port := range ports {
-		if fmt.Sprintf("%s@%s", port.Port, port.SwitchName) == portName {
-			return port, true
-		}
-	}
-	return nil, false
-}
 
 func findPortByID(clientset *api.Clientset, siteID int, id int) (*bgp.EBGPPort, bool) {
 	ports, err := clientset.BGP().GetPorts(siteID)
