@@ -298,6 +298,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		communityArr = append(communityArr, pr.(string))
 	}
 
+	var vnetIDNone interface{} = vnetID
+	if vnetID == 0 {
+		vnetIDNone = "none"
+	}
+
 	bgpAdd := &bgp.EBGPAdd{
 		Name:               d.Get("name").(string),
 		Site:               bgp.IDName{Name: siteName},
@@ -322,7 +327,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		PrependInbound:     d.Get("prependinbound").(int),
 		PrependOutbound:    d.Get("prependoutbound").(int),
 		Hardware:           bgp.IDNone{ID: hwID},
-		Vnet:               bgp.IDNone{ID: vnetID},
+		Vnet:               bgp.IDNone{ID: vnetIDNone},
 		Port:               bgp.IDName{Name: port},
 		State:              state,
 		Weight:             d.Get("weight").(int),
