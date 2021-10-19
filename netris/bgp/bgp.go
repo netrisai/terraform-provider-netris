@@ -303,6 +303,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		vnetIDNone = "none"
 	}
 
+	var hwIDNone interface{} = hwID
+	if hwID == 0 {
+		hwIDNone = "auto"
+	}
+
 	bgpAdd := &bgp.EBGPAdd{
 		Name:               d.Get("name").(string),
 		Site:               bgp.IDName{Name: siteName},
@@ -326,7 +331,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		PrefixListOutbound: strings.Join(prefixListOutbound, "\n"),
 		PrependInbound:     d.Get("prependinbound").(int),
 		PrependOutbound:    d.Get("prependoutbound").(int),
-		Hardware:           bgp.IDNone{ID: hwID},
+		Hardware:           bgp.IDNone{ID: hwIDNone},
 		Vnet:               bgp.IDNone{ID: vnetIDNone},
 		Port:               bgp.IDName{Name: port},
 		State:              state,
