@@ -196,7 +196,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	var (
-		vlanID    = 1
+		vlanID    = 0
 		state     = "enabled"
 		ipVersion = "ipv6"
 		hwID      = 0
@@ -234,10 +234,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		transportVlanID, _ = strconv.Atoi(transport["vlanid"].(string))
 	}
 
-	if transportVlanID > 1 && transportVlanID > 0 {
-		vlanID = transportVlanID
-	}
-
 	localPreferenceTmp := d.Get("localpreference").(int)
 	if localPreferenceTmp > 0 {
 		localPreference = localPreferenceTmp
@@ -253,6 +249,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	if transportType == "port" {
 		port = transportName
+		vlanID = 1
 	} else {
 		vlanID = 1
 		if vnet, ok := findVNetByName(clientset, transportName); ok {
@@ -260,6 +257,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		} else {
 			return fmt.Errorf("invalid vnet '%s'", transportName)
 		}
+	}
+
+	if transportVlanID > 1 && transportVlanID > 0 {
+		vlanID = transportVlanID
 	}
 
 	localIPString := d.Get("localip").(string)
