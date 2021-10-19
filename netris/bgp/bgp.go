@@ -412,7 +412,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("neighboras", strconv.Itoa(bgp.NeighborAs))
+	err = d.Set("neighboras", bgp.NeighborAs)
 	if err != nil {
 		return err
 	}
@@ -459,20 +459,6 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("state", bgp.Status)
-	if err != nil {
-		return err
-	}
-
-	terminateOnSwitchMap := d.Get("terminateonswitch").(map[string]interface{})
-	terminateOnSwitchEnabled := "false"
-	terminateOnSwitchName := terminateOnSwitchMap["switchname"].(string)
-	if bgp.TerminateOnSwitch == "yes" {
-		terminateOnSwitchEnabled = "false"
-		terminateOnSwitchName = bgp.TermSwName
-	}
-	terminateOnSwitchMap["enabled"] = terminateOnSwitchEnabled
-	terminateOnSwitchMap["switchname"] = terminateOnSwitchName
-	err = d.Set("terminateonswitch", terminateOnSwitchMap)
 	if err != nil {
 		return err
 	}
