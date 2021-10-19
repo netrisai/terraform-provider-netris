@@ -213,7 +213,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		originate = "enabled"
 	}
 
-	hardware := d.Get("softgate").(string)
+	hardware := d.Get("hardware").(string)
 
 	inventory, err := clientset.Inventory().Get()
 	if err != nil {
