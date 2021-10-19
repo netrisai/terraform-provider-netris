@@ -710,18 +710,21 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
-	// clientset := m.(*api.Clientset)
+	clientset := m.(*api.Clientset)
+	bgpID := d.Get("bgpid").(int)
 
-	// vnet, _ := clientset.VNet().GetByID(d.Get("vnetid").(int))
+	bgps, err := clientset.BGP().Get()
+	if err != nil {
+		return false, err
+	}
 
-	// if vnet == nil {
-	// 	return false, nil
-	// }
-	// if vnet.ID > 0 {
-	// 	return true, nil
-	// }
+	for _, bgp := range bgps {
+		if bgpID == bgp.ID {
+			return true, nil
+		}
+	}
 
-	return true, nil
+	return false, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
