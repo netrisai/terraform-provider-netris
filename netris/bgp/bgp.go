@@ -408,7 +408,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("softgate", bgp.TermSwName)
+	err = d.Set("hardware", bgp.TermSwName)
 	if err != nil {
 		return err
 	}
@@ -568,7 +568,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		originate = "enabled"
 	}
 
-	hardware := d.Get("softgate").(string)
+	hardware := d.Get("hardware").(string)
 
 	inventory, err := clientset.Inventory().Get()
 	if err != nil {
