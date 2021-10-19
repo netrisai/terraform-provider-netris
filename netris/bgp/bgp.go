@@ -196,7 +196,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	var (
-		vlanID    = 0
+		vlanID    int
 		state     = "enabled"
 		ipVersion = "ipv6"
 		hwID      = 0
