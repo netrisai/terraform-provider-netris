@@ -51,17 +51,3 @@ func findVNetByName(clientset *api.Clientset, name string) (*vnet.VNet, bool) {
 	}
 	return nil, false
 }
-
-func findSwitchByName(clientset *api.Clientset, siteID int, name string) (*bgp.EBGPSwitch, bool) {
-	switches, err := clientset.BGP().GetSwitches(siteID)
-	if err != nil {
-		return nil, false
-	}
-	for _, item := range switches {
-		if item.Location == name {
-			return item, true
-		}
-	}
-
-	return nil, false
-}
