@@ -17,7 +17,6 @@ description: |-
 
 ### Required
 
-- **defaultgateway** (String)
 - **name** (String) The name of the resource, also acts as it's unique ID
 - **prefix** (String)
 - **purpose** (String)
@@ -25,6 +24,7 @@ description: |-
 
 ### Optional
 
+- **defaultgateway** (String)
 - **id** (String) The ID of this resource.
 - **sites** (List of String) Sites
 - **subnetid** (Number)

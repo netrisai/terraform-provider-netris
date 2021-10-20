@@ -17,7 +17,9 @@ description: |-
 
 ### Required
 
+- **localip** (String) Local IP. Example 10.0.1.1/24
 - **name** (String) The name of the resource, also acts as it's unique ID
+- **remoteip** (String) Remote IP. Example 10.0.1.2/24
 - **site** (String) A description of an item
 
 ### Optional
@@ -27,23 +29,20 @@ description: |-
 - **bgppassword** (String) A description of an item
 - **defaultoriginate** (Boolean) A description of an item
 - **description** (String) A description of an item
+- **hardware** (String) A description of an item
 - **id** (String) The ID of this resource.
 - **inboundroutemap** (String) A description of an item
-- **localip** (String) A description of an item
 - **localpreference** (Number) A description of an item
 - **multihop** (Map of String) Multihop
-- **neighboras** (String) A description of an item
+- **neighboras** (Number) A description of an item
 - **outboundroutemap** (String) A description of an item
 - **prefixinboundmax** (String) A description of an item
 - **prefixlistinbound** (List of String) Switch Ports
 - **prefixlistoutbound** (List of String) Switch Ports
 - **prependinbound** (Number) A description of an item
 - **prependoutbound** (Number) A description of an item
-- **remoteip** (String) A description of an item
 - **sendbgpcommunity** (List of String) Switch Ports
-- **softgate** (String) A description of an item
 - **state** (String) A description of an item
-- **terminateonswitch** (Map of String) Switch Ports
 - **transport** (Map of String) Switch Ports
 - **weight** (Number) A description of an item
 
