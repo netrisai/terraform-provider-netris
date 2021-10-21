@@ -24,6 +24,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/allocation"
 	"github.com/netrisai/terraform-provider-netris/netris/bgp"
 	"github.com/netrisai/terraform-provider-netris/netris/controller"
+	"github.com/netrisai/terraform-provider-netris/netris/l4lb"
 	"github.com/netrisai/terraform-provider-netris/netris/softgate"
 	"github.com/netrisai/terraform-provider-netris/netris/subnet"
 	"github.com/netrisai/terraform-provider-netris/netris/sw"
@@ -53,6 +54,7 @@ func Provider() terraform.ResourceProvider {
 		ResourcesMap: map[string]*schema.Resource{
 			"netris_vnet":       vnet.Resource(),
 			"netris_bgp":        bgp.Resource(),
+			"netris_l4lb":       l4lb.Resource(),
 			"netris_allocation": allocation.Resource(),
 			"netris_subnet":     subnet.Resource(),
 			"netris_tenant":     tenant.Resource(),
