@@ -187,7 +187,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	checkTimeout, _ := strconv.Atoi(check["timeout"].(string))
 	checkRequestPath, _ := check["requestPath"].(string)
 
-	healthCheck := ""
+	healthCheck := "None"
 
 	if proto == "TCP" {
 		if checkTimeout == 0 {
@@ -195,8 +195,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		} else {
 			timeout = strconv.Itoa(checkTimeout)
 		}
-
-		healthCheck = "None"
 
 		if checkType == "tcp" || checkType == "" {
 			healthCheck = "HTTP"
@@ -292,60 +290,24 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	bReg := regexp.MustCompile(`^(?P<ip>(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])):(?P<port>([1-9]|[1-9][0-9]{1,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-4]))$`)
 
-	tenantID := 0
-	siteID := 0
-	var state string
-	var timeout string
-	proto := "tcp"
+	var (
+		state   string
+		timeout string
+		proto   string = "tcp"
+	)
 
 	lbBackends := []l4lb.LBBackend{}
 
 	l4lbMetaBackends := d.Get("backend").([]interface{})
-	ipForTenant := ""
 
 	for _, b := range l4lbMetaBackends {
 		backend := b.(string)
 		valueMatch := bReg.FindStringSubmatch(string(backend))
 		result := regParser(valueMatch, bReg.SubexpNames())
-		ipForTenant = result["ip"]
 		lbBackends = append(lbBackends, l4lb.LBBackend{
 			IP:   result["ip"],
 			Port: result["port"],
 		})
-	}
-
-	tenantName := d.Get("owner").(string)
-	if tenantName == "" {
-		tenantid, err := findTenantByIP(clientset, ipForTenant)
-		if err != nil {
-			return err
-		}
-		tenantID = tenantid
-	}
-
-	if tenantID == 0 {
-		tenant, ok := findTenantByName(clientset, tenantName)
-		if !ok {
-			return fmt.Errorf("Tenant '%s' not found", tenantName)
-		}
-		tenantID = tenant.ID
-	}
-
-	siteName := d.Get("site").(string)
-	if siteName == "" {
-		siteid, err := findSiteByIP(clientset, siteName)
-		if err != nil {
-			return err
-		}
-		siteID = siteid
-	}
-
-	if siteID == 0 {
-		if site, ok := findSiteByName(clientset, siteName); ok {
-			siteID = site.ID
-		} else {
-			return fmt.Errorf("'%s' site not found", siteName)
-		}
 	}
 
 	status := d.Get("state").(string)
@@ -365,7 +327,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	checkTimeout := check["timeout"].(int)
 	checkRequestPath, _ := check["requestPath"].(string)
 
-	healthCheck := ""
+	healthCheck := "None"
 
 	if proto == "tcp" {
 		if checkTimeout == 0 {
@@ -373,8 +335,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		} else {
 			timeout = strconv.Itoa(checkTimeout)
 		}
-
-		healthCheck = "None"
 
 		if checkType == "tcp" || checkType == "" {
 			healthCheck = "HTTP"
@@ -393,7 +353,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	l4lbUpdate := &l4lb.LoadBalancerUpdate{
 		ID:          d.Get("itemid").(int),
 		Name:        d.Get("name").(string),
-		SiteID:      siteID,
 		Automatic:   automatic,
 		Protocol:    proto,
 		IP:          frontendIP,

@@ -34,16 +34,6 @@ func validateState(val interface{}, key string) (warns []string, errs []error) {
 	return warns, errs
 }
 
-func regParser(valueMatch []string, subexpNames []string) map[string]string {
-	result := make(map[string]string)
-	for i, name := range subexpNames {
-		if i != 0 && name != "" {
-			result[name] = valueMatch[i]
-		}
-	}
-	return result
-}
-
 func findTenantByIP(c *api.Clientset, ip string) (int, error) {
 	tenantID := 0
 	subnets, err := c.IPAM().Get()
