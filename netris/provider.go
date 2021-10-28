@@ -29,6 +29,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/subnet"
 	"github.com/netrisai/terraform-provider-netris/netris/sw"
 	"github.com/netrisai/terraform-provider-netris/netris/tenant"
+	"github.com/netrisai/terraform-provider-netris/netris/userrole"
 	"github.com/netrisai/terraform-provider-netris/netris/vnet"
 )
 
@@ -61,6 +62,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_switch":     sw.Resource(),
 			"netris_controller": controller.Resource(),
 			"netris_softgate":   softgate.Resource(),
+			"netris_user_role":  userrole.Resource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
