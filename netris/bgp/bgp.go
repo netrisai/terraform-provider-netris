@@ -50,14 +50,14 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "A description of an item",
 			},
-			"softgate": {
+			"hardware": {
 				Optional:    true,
 				Type:        schema.TypeString,
 				Description: "A description of an item",
 			},
 			"neighboras": {
 				Optional:    true,
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Description: "A description of an item",
 			},
 			"transport": {
@@ -69,14 +69,16 @@ func Resource() *schema.Resource {
 				},
 			},
 			"localip": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				ValidateFunc: validateIPPrefix,
+				Required:     true,
+				Type:         schema.TypeString,
+				Description:  "Local IP. Example 10.0.1.1/24",
 			},
 			"remoteip": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				ValidateFunc: validateIPPrefix,
+				Required:     true,
+				Type:         schema.TypeString,
+				Description:  "Remote IP. Example 10.0.1.2/24",
 			},
 			"description": {
 				Optional:    true,
@@ -84,24 +86,20 @@ func Resource() *schema.Resource {
 				Description: "A description of an item",
 			},
 			"state": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
-			},
-			"terminateonswitch": {
-				Optional:    true,
-				Type:        schema.TypeMap,
-				Description: "Switch Ports",
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
+				Optional:     true,
+				Default:      "enabled",
+				ValidateFunc: validateState,
+				Type:         schema.TypeString,
+				Description:  "A description of an item",
 			},
 			"multihop": {
 				Optional:    true,
 				Type:        schema.TypeMap,
 				Description: "Multihop",
 				Elem: &schema.Schema{
-					Type: schema.TypeString,
+					Type:         schema.TypeString,
+					Optional:     true,
+					ValidateFunc: validateMultihop,
 				},
 			},
 			"bgppassword": {
@@ -197,41 +195,36 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	sites, err := clientset.Site().Get()
-	if err != nil {
-		return err
-	}
 	var (
-		vlanID            = 1
-		siteID            int
-		nfvID             int
-		nfvPortID         int
-		state             = "enabled"
-		terminateOnSwitch = "no"
-		termSwitchID      int
-		portID            int
-		vnetID            int
-		ipVersion         = "ipv6"
+		vlanID    int
+		state     = "enabled"
+		ipVersion = "ipv6"
+		hwID      = 0
+		port      = ""
+		vnetID    = 0
 	)
 
 	originate := "disabled"
 	localPreference := 100
 
 	siteName := d.Get("site").(string)
-	for _, site := range sites {
-		if siteName == site.Name {
-			siteID = site.ID
-		}
-	}
-	if siteID == 0 {
-		return fmt.Errorf("site '%s' not found", siteName)
-	}
 
 	if d.Get("defaultoriginate").(bool) {
 		originate = "enabled"
 	}
 
-	softgate := d.Get("softgate").(string)
+	hardware := d.Get("hardware").(string)
+
+	inventory, err := clientset.Inventory().Get()
+	if err != nil {
+		return err
+	}
+
+	for _, hw := range inventory {
+		if hw.Name == hardware && hardware != "auto" {
+			hwID = hw.ID
+		}
+	}
 
 	transport := d.Get("transport").(map[string]interface{})
 	transportName := transport["name"].(string)
@@ -239,10 +232,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	transportVlanID := 0
 	if transport["vlanid"] != nil {
 		transportVlanID, _ = strconv.Atoi(transport["vlanid"].(string))
-	}
-
-	if transportVlanID > 1 && transportVlanID > 0 {
-		vlanID = transportVlanID
 	}
 
 	localPreferenceTmp := d.Get("localpreference").(int)
@@ -254,61 +243,24 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		state = d.Get("state").(string)
 	}
 
-	terminateOnSwitchMap := d.Get("terminateonswitch").(map[string]interface{})
-	terminateOnSwitchEnabled := terminateOnSwitchMap["enabled"].(string)
-	terminateOnSwitchName := terminateOnSwitchMap["switchname"].(string)
-
-	if terminateOnSwitchEnabled == "true" {
-		terminateOnSwitch = "yes"
-	} else {
-		bpgOffloaders, err := clientset.BGP().GetOffloaders(siteID)
-		if err != nil {
-			return err
-		}
-		found := false
-		for _, offloader := range bpgOffloaders {
-			if softgate == offloader.Name {
-				nfvID = offloader.ID
-				termSwitchID = nfvID
-				if len(offloader.Links) > 0 {
-					nfvPortID = offloader.Links[0].Local.ID
-				}
-				found = true
-				break
-			}
-		}
-		if !found {
-			return fmt.Errorf("invalid softgate '%s'", softgate)
-		}
-	}
-
 	if transportType == "" {
 		transportType = "port"
 	}
 
 	if transportType == "port" {
-		if port, ok := findPort(clientset, siteID, transportName); ok {
-			portID = port.PortID
-			if terminateOnSwitchEnabled == "true" {
-				termSwitchID = port.SwitchID
-			}
-		} else {
-			return fmt.Errorf("invalid port '%s'", transportName)
-		}
+		port = transportName
+		vlanID = 1
 	} else {
 		vlanID = 1
 		if vnet, ok := findVNetByName(clientset, transportName); ok {
 			vnetID = vnet.ID
-			if terminateOnSwitchEnabled == "true" {
-				if sw, ok := findSwitchByName(clientset, siteID, transportName); ok {
-					termSwitchID = sw.SwitchID
-				} else {
-					return fmt.Errorf("invalid TerminateOnSwitchName '%s'", transportName)
-				}
-			}
 		} else {
 			return fmt.Errorf("invalid vnet '%s'", transportName)
 		}
+	}
+
+	if transportVlanID > 1 && transportVlanID > 0 {
+		vlanID = transportVlanID
 	}
 
 	localIPString := d.Get("localip").(string)
@@ -346,47 +298,48 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		communityArr = append(communityArr, pr.(string))
 	}
 
+	var vnetIDNone interface{} = vnetID
+	if vnetID == 0 {
+		vnetIDNone = "none"
+	}
+
+	var hwIDNone interface{} = hwID
+	if hwID == 0 {
+		hwIDNone = "auto"
+	}
+
 	bgpAdd := &bgp.EBGPAdd{
-		Name:        d.Get("name").(string),
-		SiteID:      siteID,
-		Vlan:        vlanID,
-		AllowasIn:   d.Get("allowasin").(int),
-		BgpPassword: d.Get("bgppassword").(string),
-		Community:   strings.Join(communityArr, "\n"),
-		Description: d.Get("description").(string),
-		IPVersion:   ipVersion,
-		LocalIP: bgp.LocalIP{
-			IPFamily: ipVersion,
-			Prefix:   localIPString,
-		},
+		Name:               d.Get("name").(string),
+		Site:               bgp.IDName{Name: siteName},
+		Vlan:               vlanID,
+		AllowAsIn:          d.Get("allowasin").(int),
+		BgpPassword:        d.Get("bgppassword").(string),
+		BgpCommunity:       strings.Join(communityArr, "\n"),
+		Description:        d.Get("description").(string),
+		IPFamily:           ipVersion,
+		LocalIP:            localIP.String(),
 		RemoteIP:           remoteIP.String(),
 		LocalPreference:    localPreference,
 		Multihop:           multihopHop,
 		NeighborAddress:    &multihopNeighborAddress,
 		UpdateSource:       multihopUpdateSource,
-		NeighborAs:         d.Get("neighboras").(string),
+		NeighborAS:         d.Get("neighboras").(int),
 		PrefixLength:       prefixLength,
-		NfvID:              nfvID,
-		NfvPortID:          nfvPortID,
-		Originate:          originate,
-		PrefixLimit:        d.Get("prefixinboundmax").(string),
+		DefaultOriginate:   originate,
+		PrefixInboundMax:   d.Get("prefixinboundmax").(string),
 		PrefixListInbound:  strings.Join(prefixListInboundArr, "\n"),
 		PrefixListOutbound: strings.Join(prefixListOutbound, "\n"),
 		PrependInbound:     d.Get("prependinbound").(int),
 		PrependOutbound:    d.Get("prependoutbound").(int),
-		RcircuitID:         vnetID,
-		Status:             state,
-		// SwitchID: ,
-		// SwitchName: ,
-		SwitchPortID:      portID,
-		TermSwitchID:      termSwitchID,
-		TermSwitchName:    terminateOnSwitchName,
-		TerminateOnSwitch: terminateOnSwitch,
-		Weight:            d.Get("weight").(int),
+		Hardware:           bgp.IDNone{ID: hwIDNone},
+		Vnet:               bgp.IDNone{ID: vnetIDNone},
+		Port:               bgp.IDName{Name: port},
+		State:              state,
+		Weight:             d.Get("weight").(int),
 	}
 
 	js, _ := json.Marshal(bgpAdd)
-	log.Println("[DEBUG] vnetAdd", string(js))
+	log.Println("[DEBUG] bgpAdd", string(js))
 
 	reply, err := clientset.BGP().Add(bgpAdd)
 	if err != nil {
@@ -455,11 +408,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("softgate", bgp.TermSwName)
+	err = d.Set("hardware", bgp.TermSwName)
 	if err != nil {
 		return err
 	}
-	err = d.Set("neighboras", strconv.Itoa(bgp.NeighborAs))
+	err = d.Set("neighboras", bgp.NeighborAs)
 	if err != nil {
 		return err
 	}
@@ -467,12 +420,23 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	transport := make(map[string]interface{})
 	transportType := "port"
 	transportName := bgp.PortName
+	if port, ok := findPortByID(clientset, bgp.SiteID, bgp.SwitchPortID); ok {
+		transportName = fmt.Sprintf("%s@%s", port.PortName, port.SwitchName)
+	}
 
 	if bgp.CircuitInternal == 0 {
 		transportType = "vnet"
 		transportName = bgp.CircuitName
 	} else {
-		transport["vlanid"] = strconv.Itoa(bgp.Vlan)
+		tr := d.Get("transport").(map[string]interface{})
+		if tr["vlanid"] != nil {
+			transportVlanID, _ := strconv.Atoi(transport["vlanid"].(string))
+			if !(transportVlanID >= 1 && bgp.Vlan == 1) {
+				transport["vlanid"] = strconv.Itoa(bgp.Vlan)
+			}
+		} else if bgp.Vlan > 1 {
+			transport["vlanid"] = strconv.Itoa(bgp.Vlan)
+		}
 	}
 
 	transport["type"] = transportType
@@ -495,20 +459,6 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("state", bgp.Status)
-	if err != nil {
-		return err
-	}
-
-	terminateOnSwitchMap := d.Get("terminateonswitch").(map[string]interface{})
-	terminateOnSwitchEnabled := "false"
-	terminateOnSwitchName := terminateOnSwitchMap["switchname"].(string)
-	if bgp.TerminateOnSwitch == "yes" {
-		terminateOnSwitchEnabled = "false"
-		terminateOnSwitchName = bgp.TermSwName
-	}
-	terminateOnSwitchMap["enabled"] = terminateOnSwitchEnabled
-	terminateOnSwitchMap["switchname"] = terminateOnSwitchName
-	err = d.Set("terminateonswitch", terminateOnSwitchMap)
 	if err != nil {
 		return err
 	}
@@ -586,41 +536,36 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	sites, err := clientset.Site().Get()
-	if err != nil {
-		return err
-	}
 	var (
-		vlanID            = 1
-		siteID            int
-		nfvID             int
-		nfvPortID         int
-		state             = "enabled"
-		terminateOnSwitch = "no"
-		termSwitchID      int
-		portID            int
-		vnetID            int
-		ipVersion         = "ipv6"
+		vlanID    = 1
+		state     = "enabled"
+		ipVersion = "ipv6"
+		hwID      = 0
+		port      = ""
+		vnetID    = 0
 	)
 
 	originate := "disabled"
 	localPreference := 100
 
 	siteName := d.Get("site").(string)
-	for _, site := range sites {
-		if siteName == site.Name {
-			siteID = site.ID
-		}
-	}
-	if siteID == 0 {
-		return fmt.Errorf("site '%s' not found", siteName)
-	}
 
 	if d.Get("defaultoriginate").(bool) {
 		originate = "enabled"
 	}
 
-	softgate := d.Get("softgate").(string)
+	hardware := d.Get("hardware").(string)
+
+	inventory, err := clientset.Inventory().Get()
+	if err != nil {
+		return err
+	}
+
+	for _, hw := range inventory {
+		if hw.Name == hardware && hardware != "auto" {
+			hwID = hw.ID
+		}
+	}
 
 	transport := d.Get("transport").(map[string]interface{})
 	transportName := transport["name"].(string)
@@ -630,7 +575,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		transportVlanID, _ = strconv.Atoi(transport["vlanid"].(string))
 	}
 
-	if transportVlanID > 1 {
+	if transportVlanID > 1 && transportVlanID > 0 {
 		vlanID = transportVlanID
 	}
 
@@ -643,58 +588,16 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		state = d.Get("state").(string)
 	}
 
-	terminateOnSwitchMap := d.Get("terminateonswitch").(map[string]interface{})
-	terminateOnSwitchEnabled := terminateOnSwitchMap["enabled"].(string)
-	terminateOnSwitchName := terminateOnSwitchMap["switchname"].(string)
-
-	if terminateOnSwitchEnabled == "true" {
-		terminateOnSwitch = "yes"
-	} else {
-		bpgOffloaders, err := clientset.BGP().GetOffloaders(siteID)
-		if err != nil {
-			return err
-		}
-		found := false
-		for _, offloader := range bpgOffloaders {
-			if softgate == offloader.Name {
-				nfvID = offloader.ID
-				termSwitchID = nfvID
-				if len(offloader.Links) > 0 {
-					nfvPortID = offloader.Links[0].Local.ID
-				}
-				found = true
-				break
-			}
-		}
-		if !found {
-			return fmt.Errorf("invalid softgate '%s'", softgate)
-		}
-	}
-
 	if transportType == "" {
 		transportType = "port"
 	}
 
 	if transportType == "port" {
-		if port, ok := findPort(clientset, siteID, transportName); ok {
-			portID = port.PortID
-			if terminateOnSwitchEnabled == "true" {
-				termSwitchID = port.SwitchID
-			}
-		} else {
-			return fmt.Errorf("invalid port '%s'", transportName)
-		}
+		port = transportName
 	} else {
 		vlanID = 1
 		if vnet, ok := findVNetByName(clientset, transportName); ok {
 			vnetID = vnet.ID
-			if terminateOnSwitchEnabled == "true" {
-				if sw, ok := findSwitchByName(clientset, siteID, transportName); ok {
-					termSwitchID = sw.SwitchID
-				} else {
-					return fmt.Errorf("invalid TerminateOnSwitchName '%s'", transportName)
-				}
-			}
 		} else {
 			return fmt.Errorf("invalid vnet '%s'", transportName)
 		}
@@ -702,8 +605,14 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	localIPString := d.Get("localip").(string)
 
-	localIP, cidr, _ := net.ParseCIDR(localIPString)
-	remoteIP, _, _ := net.ParseCIDR(d.Get("remoteip").(string))
+	localIP, cidr, err := net.ParseCIDR(localIPString)
+	if err != nil {
+		return err
+	}
+	remoteIP, _, err := net.ParseCIDR(d.Get("remoteip").(string))
+	if err != nil {
+		return err
+	}
 	prefixLength, _ := cidr.Mask.Size()
 	if localIP.To4() != nil {
 		ipVersion = "ipv4"
@@ -729,50 +638,42 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		communityArr = append(communityArr, pr.(string))
 	}
 
+	bgpID := d.Get("bgpid").(int)
+
 	bgpUpdate := &bgp.EBGPUpdate{
-		ID:          d.Get("bgpid").(int),
-		Name:        d.Get("name").(string),
-		SiteID:      siteID,
-		Vlan:        vlanID,
-		AllowasIn:   d.Get("allowasin").(int),
-		BgpPassword: d.Get("bgppassword").(string),
-		Community:   strings.Join(communityArr, "\n"),
-		Description: d.Get("description").(string),
-		IPVersion:   ipVersion,
-		LocalIP: bgp.LocalIP{
-			IPFamily: ipVersion,
-			Prefix:   localIPString,
-		},
+		Name:               d.Get("name").(string),
+		Site:               bgp.IDName{Name: siteName},
+		Vlan:               vlanID,
+		AllowAsIn:          d.Get("allowasin").(int),
+		BgpPassword:        d.Get("bgppassword").(string),
+		BgpCommunity:       strings.Join(communityArr, "\n"),
+		Description:        d.Get("description").(string),
+		IPFamily:           ipVersion,
+		LocalIP:            localIP.String(),
 		RemoteIP:           remoteIP.String(),
 		LocalPreference:    localPreference,
 		Multihop:           multihopHop,
 		NeighborAddress:    &multihopNeighborAddress,
 		UpdateSource:       multihopUpdateSource,
-		NeighborAs:         d.Get("neighboras").(string),
+		NeighborAS:         d.Get("neighboras").(int),
 		PrefixLength:       prefixLength,
-		NfvID:              nfvID,
-		NfvPortID:          nfvPortID,
-		Originate:          originate,
-		PrefixLimit:        d.Get("prefixinboundmax").(string),
+		DefaultOriginate:   originate,
+		PrefixInboundMax:   d.Get("prefixinboundmax").(string),
 		PrefixListInbound:  strings.Join(prefixListInboundArr, "\n"),
 		PrefixListOutbound: strings.Join(prefixListOutbound, "\n"),
 		PrependInbound:     d.Get("prependinbound").(int),
 		PrependOutbound:    d.Get("prependoutbound").(int),
-		RcircuitID:         vnetID,
-		Status:             state,
-		// SwitchID: ,
-		// SwitchName: ,
-		SwitchPortID:      portID,
-		TermSwitchID:      termSwitchID,
-		TermSwitchName:    terminateOnSwitchName,
-		TerminateOnSwitch: terminateOnSwitch,
-		Weight:            d.Get("weight").(int),
+		Hardware:           bgp.IDNone{ID: hwID},
+		Vnet:               bgp.IDNone{ID: vnetID},
+		Port:               bgp.IDName{Name: port},
+		State:              state,
+		Weight:             d.Get("weight").(int),
 	}
 
 	js, _ := json.Marshal(bgpUpdate)
 	log.Println("[DEBUG] bgpUpdate", string(js))
 
-	reply, err := clientset.BGP().Update(bgpUpdate)
+	reply, err := clientset.BGP().Update(bgpID, bgpUpdate)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -809,18 +710,21 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
-	// clientset := m.(*api.Clientset)
+	clientset := m.(*api.Clientset)
+	bgpID := d.Get("bgpid").(int)
 
-	// vnet, _ := clientset.VNet().GetByID(d.Get("vnetid").(int))
+	bgps, err := clientset.BGP().Get()
+	if err != nil {
+		return false, err
+	}
 
-	// if vnet == nil {
-	// 	return false, nil
-	// }
-	// if vnet.ID > 0 {
-	// 	return true, nil
-	// }
+	for _, bgp := range bgps {
+		if bgpID == bgp.ID {
+			return true, nil
+		}
+	}
 
-	return true, nil
+	return false, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package subnet
+package userrole
 
 import (
 	"encoding/json"
@@ -22,7 +22,7 @@ import (
 	"log"
 
 	"github.com/netrisai/netriswebapi/http"
-	"github.com/netrisai/netriswebapi/v2/types/ipam"
+	"github.com/netrisai/netriswebapi/v1/types/userrole"
 
 	api "github.com/netrisai/netriswebapi/v2"
 
@@ -32,7 +32,7 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"subnetid": {
+			"itemid": {
 				Type:             schema.TypeInt,
 				Optional:         true,
 				DiffSuppressFunc: DiffSuppress,
@@ -42,27 +42,13 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
-			"prefix": {
-				ForceNew: true,
+			"pgroup": {
 				Required: true,
 				Type:     schema.TypeString,
 			},
-			"tenant": {
-				Required: true,
-				Type:     schema.TypeString,
-			},
-			"purpose": {
-				Required: true,
-				Type:     schema.TypeString,
-			},
-			"defaultgateway": {
+			"tenants": {
 				Optional: true,
-				Type:     schema.TypeString,
-			},
-			"sites": {
-				Optional:    true,
-				Type:        schema.TypeList,
-				Description: "Sites",
+				Type:     schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -87,33 +73,45 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	name := d.Get("name").(string)
-	prefix := d.Get("prefix").(string)
-	tenant := d.Get("tenant").(string)
-	purpose := d.Get("purpose").(string)
-	defaultgw := ""
-	sitesList := d.Get("sites").([]interface{})
-	sites := []ipam.IDName{}
-	for _, s := range sitesList {
-		sites = append(sites, ipam.IDName{Name: s.(string)})
+	pgroupName := d.Get("pgroup").(string)
+
+	pgrp, ok := findPgroupByName(pgroupName, clientset)
+	if !ok {
+		return fmt.Errorf("couldn't find permission group '%s'", pgroupName)
 	}
 
-	if purpose == "management" {
-		defaultgw = d.Get("defaultgateway").(string)
+	tenantNames := []string{}
+	tenants := d.Get("tenants").([]interface{})
+	for _, name := range tenants {
+		tenantNames = append(tenantNames, name.(string))
 	}
 
-	subnetAdd := &ipam.Subnet{
-		Name:           name,
-		Prefix:         prefix,
-		Tenant:         ipam.IDName{Name: tenant},
-		Purpose:        purpose,
-		Sites:          sites,
-		DefaultGateway: defaultgw,
+	netrisTenants, err := findTenatsByNames(tenantNames, clientset)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
 	}
 
-	js, _ := json.Marshal(subnetAdd)
+	roleTenants := []userrole.Tenant{}
+	for _, tenant := range netrisTenants {
+		roleTenants = append(roleTenants, userrole.Tenant{
+			ID:          tenant.ID,
+			TenantName:  tenant.Name,
+			TenantRead:  true,
+			TenantWrite: true,
+		})
+	}
+
+	urAdd := &userrole.UserRoleAdd{
+		Name:            name,
+		PermissionGroup: *pgrp,
+		Tenants:         roleTenants,
+	}
+
+	js, _ := json.Marshal(urAdd)
 	log.Println("[DEBUG]", string(js))
 
-	reply, err := clientset.IPAM().AddSubnet(subnetAdd)
+	reply, err := clientset.UserRole().Add(urAdd)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -146,8 +144,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("subnetid", idStruct.ID)
-	d.SetId(subnetAdd.Name)
+	_ = d.Set("itemid", idStruct.ID)
+	d.SetId(urAdd.Name)
 
 	return nil
 }
@@ -155,45 +153,43 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	ipams, err := clientset.IPAM().GetSubnets()
+	id := d.Get("itemid").(int)
+	var ur *userrole.UserRole = nil
+
+	uroles, err := clientset.UserRole().Get()
 	if err != nil {
 		return err
-	}
-	id := d.Get("subnetid").(int)
-	ipam := GetByID(ipams, id)
-	if ipam == nil {
-		return nil
 	}
 
-	d.SetId(ipam.Name)
-	err = d.Set("name", ipam.Name)
+	for _, urole := range uroles {
+		if urole.ID == id {
+			ur = urole
+			break
+		}
+	}
+
+	if ur == nil {
+		return fmt.Errorf("couldn't find user role '%s'", d.Get("name").(string))
+	}
+
+	err = d.Set("name", ur.Name)
 	if err != nil {
 		return err
 	}
-	err = d.Set("prefix", ipam.Prefix)
+	err = d.Set("pgroup", ur.PermName)
 	if err != nil {
 		return err
 	}
-	err = d.Set("tenant", ipam.Tenant.Name)
+
+	var tenantsList []interface{}
+	for _, tenant := range ur.Tenants {
+		tenantsList = append(tenantsList, tenant.TenantName)
+	}
+	err = d.Set("tenants", tenantsList)
 	if err != nil {
 		return err
 	}
-	err = d.Set("purpose", ipam.Purpose)
-	if err != nil {
-		return err
-	}
-	err = d.Set("defaultgateway", ipam.DefaultGateway)
-	if err != nil {
-		return err
-	}
-	sites := []string{}
-	for _, s := range ipam.Sites {
-		sites = append(sites, s.Name)
-	}
-	err = d.Set("sites", sites)
-	if err != nil {
-		return err
-	}
+
 	return nil
 }
 
@@ -201,33 +197,46 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	name := d.Get("name").(string)
-	prefix := d.Get("prefix").(string)
-	tenant := d.Get("tenant").(string)
-	purpose := d.Get("purpose").(string)
-	defaultgw := ""
-	sitesList := d.Get("sites").([]interface{})
-	sites := []ipam.IDName{}
-	for _, s := range sitesList {
-		sites = append(sites, ipam.IDName{Name: s.(string)})
+	pgroupName := d.Get("pgroup").(string)
+
+	pgrp, ok := findPgroupByName(pgroupName, clientset)
+	if !ok {
+		return fmt.Errorf("couldn't find permission group '%s'", pgroupName)
 	}
 
-	if purpose == "management" {
-		defaultgw = d.Get("defaultgateway").(string)
+	tenantNames := []string{}
+	tenants := d.Get("tenants").([]interface{})
+	for _, name := range tenants {
+		tenantNames = append(tenantNames, name.(string))
 	}
 
-	subnetUpdate := &ipam.Subnet{
-		Name:           name,
-		Prefix:         prefix,
-		Tenant:         ipam.IDName{Name: tenant},
-		Purpose:        purpose,
-		Sites:          sites,
-		DefaultGateway: defaultgw,
+	netrisTenants, err := findTenatsByNames(tenantNames, clientset)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
 	}
 
-	js, _ := json.Marshal(subnetUpdate)
+	roleTenants := []userrole.Tenant{}
+	for _, tenant := range netrisTenants {
+		roleTenants = append(roleTenants, userrole.Tenant{
+			ID:          tenant.ID,
+			TenantName:  tenant.Name,
+			TenantRead:  true,
+			TenantWrite: true,
+		})
+	}
+
+	urAdd := &userrole.UserRoleAdd{
+		ID:              d.Get("itemid").(int),
+		Name:            name,
+		PermissionGroup: *pgrp,
+		Tenants:         roleTenants,
+	}
+
+	js, _ := json.Marshal(urAdd)
 	log.Println("[DEBUG]", string(js))
 
-	reply, err := clientset.IPAM().UpdateSubnet(d.Get("subnetid").(int), subnetUpdate)
+	reply, err := clientset.UserRole().Update(urAdd)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -238,17 +247,13 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	log.Println("[DEBUG]", string(reply.Data))
 
-	if reply.StatusCode != 200 {
-		return fmt.Errorf(string(reply.Data))
-	}
-
 	return nil
 }
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	reply, err := clientset.IPAM().Delete("subnet", d.Get("subnetid").(int))
+	reply, err := clientset.UserRole().Delete(d.Get("itemid").(int))
 	if err != nil {
 		return err
 	}
@@ -264,13 +269,23 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
-	ipams, err := clientset.IPAM().GetSubnets()
+	id := d.Get("itemid").(int)
+	var ur *userrole.UserRole = nil
+
+	uroles, err := clientset.UserRole().Get()
 	if err != nil {
 		return false, err
 	}
-	id := d.Get("subnetid").(int)
-	if ipam := GetByID(ipams, id); ipam == nil {
-		return false, nil
+
+	for _, urole := range uroles {
+		if urole.ID == id {
+			ur = urole
+			break
+		}
+	}
+
+	if ur == nil {
+		return false, fmt.Errorf("couldn't find user role '%s'", d.Get("name").(string))
 	}
 
 	return true, nil
@@ -279,46 +294,28 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 	clientset := m.(*api.Clientset)
 
-	ipams, err := clientset.IPAM().GetSubnets()
+	name := d.Id()
+	var ur *userrole.UserRole = nil
+
+	uroles, err := clientset.UserRole().Get()
 	if err != nil {
 		return []*schema.ResourceData{d}, err
-	}
-	prefix := d.Id()
-	ipam := GetByPrefix(ipams, prefix)
-	if ipam == nil {
-		return []*schema.ResourceData{d}, fmt.Errorf("Allocation '%s' not found", prefix)
 	}
 
-	err = d.Set("subnetid", ipam.ID)
-	if err != nil {
-		return []*schema.ResourceData{d}, err
+	for _, urole := range uroles {
+		if urole.Name == name {
+			ur = urole
+			err := d.Set("itemid", ur.ID)
+			if err != nil {
+				return []*schema.ResourceData{d}, err
+			}
+			return []*schema.ResourceData{d}, nil
+		}
+	}
+
+	if ur == nil {
+		return []*schema.ResourceData{d}, fmt.Errorf("couldn't find user role '%s'", name)
 	}
 
 	return []*schema.ResourceData{d}, nil
-}
-
-func GetByPrefix(list []*ipam.IPAM, prefix string) *ipam.IPAM {
-	for _, s := range list {
-		if s.Prefix == prefix {
-			return s
-		} else if len(s.Children) > 0 {
-			if p := GetByPrefix(s.Children, prefix); p != nil {
-				return p
-			}
-		}
-	}
-	return nil
-}
-
-func GetByID(list []*ipam.IPAM, id int) *ipam.IPAM {
-	for _, s := range list {
-		if s.ID == id {
-			return s
-		} else if len(s.Children) > 0 {
-			if p := GetByID(s.Children, id); p != nil {
-				return p
-			}
-		}
-	}
-	return nil
 }
