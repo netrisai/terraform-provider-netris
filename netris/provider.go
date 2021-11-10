@@ -21,6 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/netrisai/terraform-provider-netris/netris/acl"
 	"github.com/netrisai/terraform-provider-netris/netris/allocation"
 	"github.com/netrisai/terraform-provider-netris/netris/bgp"
 	"github.com/netrisai/terraform-provider-netris/netris/controller"
@@ -67,6 +68,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_user_role":        userrole.Resource(),
 			"netris_user":             user.Resource(),
 			"netris_permission_group": pgroup.Resource(),
+			"netris_acl":              acl.Resource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
