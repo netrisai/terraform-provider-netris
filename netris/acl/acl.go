@@ -491,5 +491,19 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	clientset := m.(*api.Clientset)
+
+	acls, _ := clientset.ACL().Get()
+	name := d.Id()
+	for _, acl := range acls {
+		if acl.Name == name {
+			err := d.Set("itemid", acl.ID)
+			if err != nil {
+				return []*schema.ResourceData{d}, err
+			}
+			return []*schema.ResourceData{d}, nil
+		}
+	}
+
 	return []*schema.ResourceData{d}, nil
 }
