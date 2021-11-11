@@ -7,10 +7,9 @@ resource "netris_acl" "acl-terraform-test" {
     proto = "tcp"
     reverse = true
     srcprefix = "99.0.1.0/24"
-    srcportfrom = 1
-    srcportto = 100
+    srcportgroup = "anahittest"
     dstprefix = "0.0.0.0/0"
     dstportfrom = 1
     dstportto = 100
-    validuntil = "2006-01-02T15:04:05Z"
+    validuntil = "2006-01-02T23:15:05Z"
 }

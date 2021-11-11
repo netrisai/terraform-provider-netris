@@ -18,11 +18,16 @@ package acl
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"strconv"
+	"time"
 
+	"github.com/netrisai/netriswebapi/http"
 	"github.com/netrisai/netriswebapi/v1/types/acl"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	api "github.com/netrisai/netriswebapi/v2"
 )
 
 func Resource() *schema.Resource {
@@ -129,7 +134,7 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 }
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
-	// clientset := m.(*api.Clientset)
+	clientset := m.(*api.Clientset)
 
 	name := d.Get("name").(string)
 	action := d.Get("action").(string)
@@ -146,16 +151,30 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	srcprefix := d.Get("srcprefix").(string)
-	// srcportfrom := d.Get("srcportfrom").(int)
-	// srcportto := d.Get("srcportto").(int)
-	// srcportgroup := d.Get("srcportgroup").(string)
+	srcportfrom := d.Get("srcportfrom").(int)
+	srcportto := d.Get("srcportto").(int)
+
+	srcPgID := 0
+	if s := d.Get("srcportgroup").(string); s != "" {
+		if pg, ok := getPortGroupByName(s, clientset); ok {
+			srcPgID = pg.ID
+		} else {
+			return fmt.Errorf("couldn't find port group %s", s)
+		}
+	}
 
 	dstprefix := d.Get("dstprefix").(string)
-	// dstportfrom := d.Get("dstportfrom").(string)
-	// dstportto := d.Get("dstportto").(string)
-	// dstportgroup := d.Get("dstportgroup").(int)
+	dstportfrom := d.Get("dstportfrom").(int)
+	dstportto := d.Get("dstportto").(int)
 
-	// validuntil := d.Get("validuntil").(string)
+	dstPgID := 0
+	if s := d.Get("dstportgroup").(string); s != "" {
+		if pg, ok := getPortGroupByName(s, clientset); ok {
+			dstPgID = pg.ID
+		} else {
+			return fmt.Errorf("couldn't find port group %s", s)
+		}
+	}
 
 	aclW := &acl.ACLw{
 		Name:        name,
@@ -169,62 +188,306 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		DstPrefix:   dstprefix,
 	}
 
+	if srcPgID > 0 {
+		aclW.SrcPortGroup = srcPgID
+	} else {
+		aclW.SrcPortFrom = srcportfrom
+		aclW.SrcPortTo = srcportto
+	}
+
+	if dstPgID > 0 {
+		aclW.DstPortGroup = dstPgID
+	} else {
+		aclW.DstPortFrom = dstportfrom
+		aclW.DstPortTo = dstportto
+	}
+
+	if v := d.Get("validuntil").(string); v != "" {
+		aclW.ValidUntil = v
+	}
+
 	js, _ := json.Marshal(aclW)
 	log.Println("[DEBUG]", string(js))
 
-	// reply, err := clientset.ACL().Add(aclW)
-	// if err != nil {
-	// 	log.Println("[DEBUG]", err)
-	// 	return err
-	// }
+	reply, err := clientset.ACL().Add(aclW)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
 
-	// js, _ = json.Marshal(reply)
-	// log.Println("[DEBUG]", string(js))
+	js, _ = json.Marshal(reply)
+	log.Println("[DEBUG]", string(js))
 
-	// log.Println("[DEBUG]", string(reply.Data))
+	log.Println("[DEBUG]", string(reply.Data))
 
-	// idStruct := struct {
-	// 	ID int `json:"id"`
-	// }{}
+	idStruct := struct {
+		ID int `json:"id"`
+	}{}
 
-	// data, err := reply.Parse()
-	// if err != nil {
-	// 	log.Println("[DEBUG]", err)
-	// 	return err
-	// }
+	data, err := reply.Parse()
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
 
-	// err = http.Decode(data.Data, &idStruct)
-	// if err != nil {
-	// 	log.Println("[DEBUG]", err)
-	// 	return err
-	// }
+	err = http.Decode(data.Data, &idStruct)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
 
-	// log.Println("[DEBUG] ID:", idStruct.ID)
+	log.Println("[DEBUG] ID:", idStruct.ID)
 
-	// if reply.StatusCode != 200 {
-	// 	return fmt.Errorf(string(reply.Data))
-	// }
+	if reply.StatusCode != 200 {
+		return fmt.Errorf(string(reply.Data))
+	}
 
-	// _ = d.Set("itemid", idStruct.ID)
-	// d.SetId(aclW.Name)
+	_ = d.Set("itemid", idStruct.ID)
+	d.SetId(aclW.Name)
 
 	return nil
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
+	clientset := m.(*api.Clientset)
+	var acl *acl.ACL
+	acls, err := clientset.ACL().Get()
+	if err != nil {
+		return err
+	}
+
+	for _, a := range acls {
+		if a.ID == d.Get("itemid").(int) {
+			acl = a
+			break
+		}
+	}
+
+	if acl == nil {
+		return nil
+	}
+
+	d.SetId(acl.Name)
+	err = d.Set("name", acl.Name)
+	if err != nil {
+		return err
+	}
+	err = d.Set("action", acl.Action)
+	if err != nil {
+		return err
+	}
+	err = d.Set("comment", acl.Comment)
+	if err != nil {
+		return err
+	}
+	err = d.Set("established", acl.Established)
+	if err != nil {
+		return err
+	}
+	err = d.Set("proto", acl.Protocol)
+	if err != nil {
+		return err
+	}
+	var reverse bool
+	if acl.Reverse == "yes" {
+		reverse = true
+	}
+	err = d.Set("reverse", reverse)
+	if err != nil {
+		return err
+	}
+	err = d.Set("srcprefix", fmt.Sprintf("%s/%d", acl.SrcPrefix, acl.SrcLength))
+	if err != nil {
+		return err
+	}
+	pgName := ""
+	if pg, ok := getPortGroupByID(acl.SrcPortGroup, clientset); ok {
+		pgName = pg.Name
+	}
+	err = d.Set("srcportgroup", pgName)
+	if err != nil {
+		return err
+	}
+
+	err = d.Set("srcportfrom", acl.SrcPortFrom)
+	if err != nil {
+		return err
+	}
+	err = d.Set("srcportto", acl.SrcPortTo)
+	if err != nil {
+		return err
+	}
+	err = d.Set("dstprefix", fmt.Sprintf("%s/%d", acl.DstPrefix, acl.DstLength))
+	if err != nil {
+		return err
+	}
+	pgName = ""
+	if pg, ok := getPortGroupByID(acl.DstPortGroup, clientset); ok {
+		pgName = pg.Name
+	}
+	err = d.Set("dstportgroup", pgName)
+	if err != nil {
+		return err
+	}
+	err = d.Set("dstportfrom", acl.DstPortFrom)
+	if err != nil {
+		return err
+	}
+	err = d.Set("dstportto", acl.DstPortTo)
+	if err != nil {
+		return err
+	}
+
+	if acl.ValidUntil != "" {
+		if v := d.Get("validuntil").(string); v != "" {
+			valMili, err := strconv.Atoi(acl.ValidUntil)
+			if err != nil {
+				return err
+			}
+			aclTime := time.UnixMilli(int64(valMili))
+			aclStamp := aclTime.UnixMilli()
+			terrStamp, err := time.Parse(time.RFC3339, v)
+			if err != nil {
+				return err
+			}
+			if aclStamp != terrStamp.UnixMilli() {
+				err = d.Set("validuntil", aclTime.Format(time.RFC3339))
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
+	clientset := m.(*api.Clientset)
+
+	name := d.Get("name").(string)
+	action := d.Get("action").(string)
+	comment := d.Get("comment").(string)
+
+	established := d.Get("established").(int)
+
+	icmptype := d.Get("icmptype").(int)
+	proto := d.Get("proto").(string)
+
+	reverse := "yes"
+	if r := d.Get("reverse").(bool); !r {
+		reverse = "no"
+	}
+
+	srcprefix := d.Get("srcprefix").(string)
+	srcportfrom := d.Get("srcportfrom").(int)
+	srcportto := d.Get("srcportto").(int)
+
+	srcPgID := 0
+	if s := d.Get("srcportgroup").(string); s != "" {
+		if pg, ok := getPortGroupByName(s, clientset); ok {
+			srcPgID = pg.ID
+		} else {
+			return fmt.Errorf("couldn't find port group %s", s)
+		}
+	}
+
+	dstprefix := d.Get("dstprefix").(string)
+	dstportfrom := d.Get("dstportfrom").(int)
+	dstportto := d.Get("dstportto").(int)
+
+	dstPgID := 0
+	if s := d.Get("dstportgroup").(string); s != "" {
+		if pg, ok := getPortGroupByName(s, clientset); ok {
+			dstPgID = pg.ID
+		} else {
+			return fmt.Errorf("couldn't find port group %s", s)
+		}
+	}
+
+	aclW := &acl.ACLw{
+		ID:          d.Get("itemid").(int),
+		Name:        name,
+		Action:      action,
+		Comment:     comment,
+		Established: established,
+		ICMPType:    icmptype,
+		Proto:       proto,
+		Reverse:     reverse,
+		SrcPrefix:   srcprefix,
+		DstPrefix:   dstprefix,
+	}
+
+	if srcPgID > 0 {
+		aclW.SrcPortGroup = srcPgID
+	} else {
+		aclW.SrcPortFrom = srcportfrom
+		aclW.SrcPortTo = srcportto
+	}
+
+	if dstPgID > 0 {
+		aclW.DstPortGroup = dstPgID
+	} else {
+		aclW.DstPortFrom = dstportfrom
+		aclW.DstPortTo = dstportto
+	}
+
+	if v := d.Get("validuntil").(string); v != "" {
+		aclW.ValidUntil = v
+	}
+	js, _ := json.Marshal(aclW)
+	log.Println("[DEBUG] bgpUpdate", string(js))
+
+	reply, err := clientset.ACL().Update(aclW)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	js, _ = json.Marshal(reply)
+	log.Println("[DEBUG]", string(js))
+
+	log.Println("[DEBUG]", string(reply.Data))
+
+	if reply.StatusCode != 200 {
+		return fmt.Errorf(string(reply.Data))
+	}
+
 	return nil
 }
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
+	clientset := m.(*api.Clientset)
+
+	reply, err := clientset.ACL().Delete(d.Get("itemid").(int))
+	if err != nil {
+		return err
+	}
+
+	if reply.StatusCode != 200 {
+		return fmt.Errorf(string(reply.Data))
+	}
+
+	d.SetId("")
 	return nil
 }
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
-	return true, nil
+	clientset := m.(*api.Clientset)
+	aclID := d.Get("itemid").(int)
+
+	acls, err := clientset.ACL().Get()
+	if err != nil {
+		return false, err
+	}
+
+	for _, acl := range acls {
+		if aclID == acl.ID {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {

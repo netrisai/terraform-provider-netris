@@ -391,6 +391,12 @@ github.com/netrisai/netriswebapi v0.0.0-20211110180646-b3e87245427b h1:HYs3XHyKk
 github.com/netrisai/netriswebapi v0.0.0-20211110180646-b3e87245427b/go.mod h1:GLLz33Jc07/hIPwEYZDWEtNtHjX/QZjVzf9xLnfSiqs=
 github.com/netrisai/netriswebapi v0.0.0-20211110185841-8b2a13af934c h1:vLjDJYNrSu1zLK4zMuOmW8ZCoV0QCUM7IQveUKulbLA=
 github.com/netrisai/netriswebapi v0.0.0-20211110185841-8b2a13af934c/go.mod h1:GLLz33Jc07/hIPwEYZDWEtNtHjX/QZjVzf9xLnfSiqs=
+github.com/netrisai/netriswebapi v0.0.0-20211110220625-3ef5aba87187 h1:vJM+TwLEXRPI5CCNzRekyEdeSSeeoOx5FJOVEmHmc7Q=
+github.com/netrisai/netriswebapi v0.0.0-20211110220625-3ef5aba87187/go.mod h1:GLLz33Jc07/hIPwEYZDWEtNtHjX/QZjVzf9xLnfSiqs=
+github.com/netrisai/netriswebapi v0.0.0-20211110222354-95599206c6ca h1:y/SVLy66bxvjJjWTKRTk6PNheVU+qU6q0OtQXaHv1kI=
+github.com/netrisai/netriswebapi v0.0.0-20211110222354-95599206c6ca/go.mod h1:GLLz33Jc07/hIPwEYZDWEtNtHjX/QZjVzf9xLnfSiqs=
+github.com/netrisai/netriswebapi v0.0.0-20211111083123-1390151851bf h1:5e3ukY3kmUam5OqtC/BXQ4rdL+FqXR1b6nnLnqEwl0c=
+github.com/netrisai/netriswebapi v0.0.0-20211111083123-1390151851bf/go.mod h1:GLLz33Jc07/hIPwEYZDWEtNtHjX/QZjVzf9xLnfSiqs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
