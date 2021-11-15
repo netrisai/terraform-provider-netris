@@ -1,6 +1,6 @@
 module github.com/netrisai/terraform-provider-netris
 
-go 1.16
+go 1.17
 
 require (
 	cloud.google.com/go v0.91.1 // indirect
