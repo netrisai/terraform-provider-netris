@@ -27,6 +27,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/controller"
 	"github.com/netrisai/terraform-provider-netris/netris/l4lb"
 	"github.com/netrisai/terraform-provider-netris/netris/pgroup"
+	"github.com/netrisai/terraform-provider-netris/netris/roh"
 	"github.com/netrisai/terraform-provider-netris/netris/softgate"
 	"github.com/netrisai/terraform-provider-netris/netris/subnet"
 	"github.com/netrisai/terraform-provider-netris/netris/sw"
@@ -69,6 +70,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_user":             user.Resource(),
 			"netris_permission_group": pgroup.Resource(),
 			"netris_acl":              acl.Resource(),
+			"netris_roh":              roh.Resource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
