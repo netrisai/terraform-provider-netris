@@ -25,6 +25,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/allocation"
 	"github.com/netrisai/terraform-provider-netris/netris/bgp"
 	"github.com/netrisai/terraform-provider-netris/netris/controller"
+	"github.com/netrisai/terraform-provider-netris/netris/inventoryprofile"
 	"github.com/netrisai/terraform-provider-netris/netris/l4lb"
 	"github.com/netrisai/terraform-provider-netris/netris/pgroup"
 	"github.com/netrisai/terraform-provider-netris/netris/portgroup"
@@ -58,21 +59,22 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"netris_vnet":             vnet.Resource(),
-			"netris_bgp":              bgp.Resource(),
-			"netris_l4lb":             l4lb.Resource(),
-			"netris_allocation":       allocation.Resource(),
-			"netris_subnet":           subnet.Resource(),
-			"netris_tenant":           tenant.Resource(),
-			"netris_switch":           sw.Resource(),
-			"netris_controller":       controller.Resource(),
-			"netris_softgate":         softgate.Resource(),
-			"netris_user_role":        userrole.Resource(),
-			"netris_user":             user.Resource(),
-			"netris_permission_group": pgroup.Resource(),
-			"netris_acl":              acl.Resource(),
-			"netris_roh":              roh.Resource(),
-			"netris_portgroup":        portgroup.Resource(),
+			"netris_vnet":              vnet.Resource(),
+			"netris_bgp":               bgp.Resource(),
+			"netris_l4lb":              l4lb.Resource(),
+			"netris_allocation":        allocation.Resource(),
+			"netris_subnet":            subnet.Resource(),
+			"netris_tenant":            tenant.Resource(),
+			"netris_switch":            sw.Resource(),
+			"netris_controller":        controller.Resource(),
+			"netris_softgate":          softgate.Resource(),
+			"netris_user_role":         userrole.Resource(),
+			"netris_user":              user.Resource(),
+			"netris_permission_group":  pgroup.Resource(),
+			"netris_acl":               acl.Resource(),
+			"netris_roh":               roh.Resource(),
+			"netris_portgroup":         portgroup.Resource(),
+			"netris_inventory_profile": inventoryprofile.Resource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
