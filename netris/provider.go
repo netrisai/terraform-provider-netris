@@ -24,6 +24,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/acl"
 	"github.com/netrisai/terraform-provider-netris/netris/allocation"
 	"github.com/netrisai/terraform-provider-netris/netris/bgp"
+	"github.com/netrisai/terraform-provider-netris/netris/bgpobject"
 	"github.com/netrisai/terraform-provider-netris/netris/controller"
 	"github.com/netrisai/terraform-provider-netris/netris/inventoryprofile"
 	"github.com/netrisai/terraform-provider-netris/netris/l4lb"
@@ -75,6 +76,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_roh":               roh.Resource(),
 			"netris_portgroup":         portgroup.Resource(),
 			"netris_inventory_profile": inventoryprofile.Resource(),
+			"netris_bgp_object":        bgpobject.Resource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
