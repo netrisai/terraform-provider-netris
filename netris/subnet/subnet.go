@@ -299,7 +299,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 
 func GetByPrefix(list []*ipam.IPAM, prefix string) *ipam.IPAM {
 	for _, s := range list {
-		if s.Prefix == prefix {
+		if s.Prefix == prefix && s.Type == "subnet" {
 			return s
 		} else if len(s.Children) > 0 {
 			if p := GetByPrefix(s.Children, prefix); p != nil {
@@ -312,7 +312,7 @@ func GetByPrefix(list []*ipam.IPAM, prefix string) *ipam.IPAM {
 
 func GetByID(list []*ipam.IPAM, id int) *ipam.IPAM {
 	for _, s := range list {
-		if s.ID == id {
+		if s.ID == id && s.Type == "subnet" {
 			return s
 		} else if len(s.Children) > 0 {
 			if p := GetByID(s.Children, id); p != nil {
