@@ -38,6 +38,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/user"
 	"github.com/netrisai/terraform-provider-netris/netris/userrole"
 	"github.com/netrisai/terraform-provider-netris/netris/vnet"
+	"github.com/netrisai/terraform-provider-netris/netris/site"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -77,6 +78,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_portgroup":         portgroup.Resource(),
 			"netris_inventory_profile": inventoryprofile.Resource(),
 			"netris_bgp_object":        bgpobject.Resource(),
+			"netris_site":        site.Resource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
