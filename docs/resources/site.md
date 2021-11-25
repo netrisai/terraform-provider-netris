@@ -21,7 +21,7 @@ description: |-
 - **name** (String) The name of the resource, also acts as it's unique ID
 - **publicasn** (Number)
 - **rohasn** (Number)
-- **routingprofile** (String) Routing profile available values are (default, default_agg, full_table)
+- **rohroutingprofile** (String) Routing profile available values are (default, default_agg, full_table)
 - **sitemesh** (String) Site mesh available values are (disabled, hub, spoke, dspoke)
 - **vmasn** (Number)
 
