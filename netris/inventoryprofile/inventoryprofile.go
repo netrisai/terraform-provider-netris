@@ -188,7 +188,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Description: description,
 		Ipv4List:    strings.Join(ipv4List, ","),
 		Ipv6List:    strings.Join(ipv6List, ","),
-		Timezone:    inventoryprofile.Timezone{Label: timezone},
+		Timezone:    inventoryprofile.Timezone{Label: timezone, TzCode: timezone},
 		NTPServers:  strings.Join(ntpList, ","),
 		DNSServers:  strings.Join(dnsList, ","),
 		CustomRules: customRules,
@@ -261,7 +261,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("timezone", unmarshalTimezone(profile.Timezone).Label)
+	err = d.Set("timezone", unmarshalTimezone(profile.Timezone).TzCode)
 	if err != nil {
 		return err
 	}
@@ -346,7 +346,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Description: description,
 		Ipv4List:    strings.Join(ipv4List, ","),
 		Ipv6List:    strings.Join(ipv6List, ","),
-		Timezone:    inventoryprofile.Timezone{Label: timezone},
+		Timezone:    inventoryprofile.Timezone{Label: timezone, TzCode: timezone},
 		NTPServers:  strings.Join(ntpList, ","),
 		DNSServers:  strings.Join(dnsList, ","),
 		CustomRules: customRules,
