@@ -1,9 +1,9 @@
-resource "netris_site" "site-terraform-test" {
-    name = "site-terraform-test"
-    publicasn = 1234
-    rohasn = 12345
-    vmasn = 12346
-    rohroutingprofile = "full_table"
-    sitemesh = "disabled"
-    acldefaultpolicy = "deny"
+resource "netris_site" "santa-clara" {
+    name = "Santa Clara"
+    publicasn = 4294967294
+    rohasn = 4294967294
+    vmasn = 4294967293
+    rohroutingprofile = "default"
+    sitemesh = "hub"
+    acldefaultpolicy = "permit"
 }
