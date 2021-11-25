@@ -31,6 +31,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/pgroup"
 	"github.com/netrisai/terraform-provider-netris/netris/portgroup"
 	"github.com/netrisai/terraform-provider-netris/netris/roh"
+	"github.com/netrisai/terraform-provider-netris/netris/site"
 	"github.com/netrisai/terraform-provider-netris/netris/softgate"
 	"github.com/netrisai/terraform-provider-netris/netris/subnet"
 	"github.com/netrisai/terraform-provider-netris/netris/sw"
@@ -38,7 +39,6 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/user"
 	"github.com/netrisai/terraform-provider-netris/netris/userrole"
 	"github.com/netrisai/terraform-provider-netris/netris/vnet"
-	"github.com/netrisai/terraform-provider-netris/netris/site"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -78,7 +78,10 @@ func Provider() terraform.ResourceProvider {
 			"netris_portgroup":         portgroup.Resource(),
 			"netris_inventory_profile": inventoryprofile.Resource(),
 			"netris_bgp_object":        bgpobject.Resource(),
-			"netris_site":        site.Resource(),
+			"netris_site":              site.Resource(),
+		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"netris_site": site.DataResource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
