@@ -77,7 +77,7 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "NTP servers",
 				Elem: &schema.Schema{
-					ValidateFunc: validateIP,
+					ValidateFunc: validateNTP,
 					Type:         schema.TypeString,
 				},
 			},
