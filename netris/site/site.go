@@ -53,7 +53,7 @@ func Resource() *schema.Resource {
 				Required: true,
 				Type:     schema.TypeInt,
 			},
-			"routingprofile": {
+			"rohroutingprofile": {
 				ValidateFunc: validateRoutingProfile,
 				Required:     true,
 				Type:         schema.TypeString,
@@ -100,7 +100,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		PublicASN:           publicasn,
 		PhysicalInstanceASN: rohasn,
 		VirtualInstanceASN:  vmasn,
-		RoutingProfileID:    routingProfiles[d.Get("routingprofile").(string)],
+		RoutingProfileID:    routingProfiles[d.Get("rohroutingprofile").(string)],
 		VPN:                 d.Get("sitemesh").(string),
 		ACLPolicy:           d.Get("acldefaultpolicy").(string),
 	}
@@ -181,7 +181,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("routingprofile", site.RoutingProfilTag)
+	err = d.Set("rohroutingprofile", site.RoutingProfilTag)
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		PublicASN:           publicasn,
 		PhysicalInstanceASN: rohasn,
 		VirtualInstanceASN:  vmasn,
-		RoutingProfileID:    routingProfiles[d.Get("routingprofile").(string)],
+		RoutingProfileID:    routingProfiles[d.Get("rohroutingprofile").(string)],
 		VPN:                 d.Get("sitemesh").(string),
 		ACLPolicy:           d.Get("acldefaultpolicy").(string),
 	}
