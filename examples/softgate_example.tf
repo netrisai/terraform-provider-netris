@@ -1,7 +1,11 @@
+data "netris_site" "santa_clara"{
+  name = "Santa Clara"
+}
+
 resource "netris_softgate" "my-softgate" {
   name = "my-softgate"
   tenant = "Admin"
-  site = "Santa Clara"
+  siteid = data.netris_site.santa_clara.itemid
   description = "Softgate 1"
   # profile = ""
   mainip = "198.51.100.11"
