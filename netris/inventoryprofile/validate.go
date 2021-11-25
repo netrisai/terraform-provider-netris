@@ -21,7 +21,6 @@ import (
 	"log"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 func validateIPPrefix(val interface{}, key string) (warns []string, errs []error) {
@@ -51,7 +50,7 @@ func validateTimeZone(val interface{}, key string) (warns []string, errs []error
 }
 
 func validatePort(val interface{}, key string) (warns []string, errs []error) {
-	if _, err := valPort(val.(string)); err != nil {
+	if _, err := valPort(val.(string)); err != nil && val.(string) != "" {
 		errs = append(errs, fmt.Errorf(`Invalid value "%s". %s`, val.(string), err))
 	}
 	return warns, errs
@@ -61,23 +60,10 @@ func valPort(port string) (int, error) {
 	log.Println("[DEBUG] port", port)
 	v, err := strconv.Atoi(port)
 	if err != nil {
-		rg := strings.Split(port, "-")
-		if len(rg) == 2 {
-			_, err1 := valPort(rg[0])
-			if err1 != nil {
-				return 0, err1
-			}
-			_, err2 := valPort(rg[1])
-			if err2 != nil {
-				return 0, err2
-			}
-		} else {
-			return 0, fmt.Errorf(`Port should be a number or range. Example: "80", "20-22"`)
-		}
+		return 0, fmt.Errorf(`Port should be a number`)
 	} else if !(v >= 1 && v <= 65535) {
 		return 0, fmt.Errorf("Port should be in range 1-65535")
 	}
-
 	return v, nil
 }
 
