@@ -34,6 +34,7 @@ func Resource() *schema.Resource {
 			"itemid": {
 				Type:             schema.TypeInt,
 				Optional:         true,
+				Computed: true,
 				DiffSuppressFunc: DiffSuppress,
 			},
 			"name": {
