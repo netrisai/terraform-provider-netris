@@ -236,10 +236,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("profile", sw.Profile.Name)
-	if err != nil {
-		return err
+	if sw.Profile.Name != "None" {
+		err = d.Set("profile", sw.Profile.Name)
+		if err != nil {
+			return err
+		}
 	}
+
 	if main := d.Get("mainip"); main.(string) != "auto" {
 		err = d.Set("mainip", sw.MainAddress)
 		if err != nil {
