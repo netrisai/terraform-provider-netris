@@ -233,10 +233,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("asnumber", strconv.Itoa(sw.Asn))
-	if err != nil {
-		return err
+	if asnumber := d.Get("asnumber"); asnumber.(string) != "auto" {
+		err = d.Set("asnumber", strconv.Itoa(sw.Asn))
+		if err != nil {
+			return err
+		}
 	}
+
 	if sw.Profile.Name != "None" {
 		err = d.Set("profile", sw.Profile.Name)
 		if err != nil {
