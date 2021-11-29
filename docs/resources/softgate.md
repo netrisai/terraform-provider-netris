@@ -28,15 +28,6 @@ description: |-
 - **description** (String) The name of the resource, also acts as it's unique ID
 - **id** (String) The ID of this resource.
 - **itemid** (Number)
-- **links** (Block List) (see [below for nested schema](#nestedblock--links))
 - **profile** (String) The name of the resource, also acts as it's unique ID
-
-<a id="nestedblock--links"></a>
-### Nested Schema for `links`
-
-Optional:
-
-- **localport** (String)
-- **remoteport** (String)
 
 

@@ -23,7 +23,7 @@ description: |-
 - **name** (String) The name of the resource, also acts as it's unique ID
 - **nos** (String) The name of the resource, also acts as it's unique ID
 - **portcount** (Number) The name of the resource, also acts as it's unique ID
-- **site** (String) The name of the resource, also acts as it's unique ID
+- **siteid** (Number) The name of the resource, also acts as it's unique ID
 - **tenant** (String) The name of the resource, also acts as it's unique ID
 
 ### Optional
@@ -31,16 +31,7 @@ description: |-
 - **description** (String) The name of the resource, also acts as it's unique ID
 - **id** (String) The ID of this resource.
 - **itemid** (Number)
-- **links** (Block List) (see [below for nested schema](#nestedblock--links))
 - **macaddress** (String) The name of the resource, also acts as it's unique ID
 - **profile** (String) The name of the resource, also acts as it's unique ID
-
-<a id="nestedblock--links"></a>
-### Nested Schema for `links`
-
-Optional:
-
-- **localport** (String)
-- **remoteport** (String)
 
 
