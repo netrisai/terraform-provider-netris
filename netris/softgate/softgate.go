@@ -20,8 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"regexp"
-	"strconv"
 
 	"github.com/netrisai/netriswebapi/http"
 	api "github.com/netrisai/netriswebapi/v2"
@@ -74,22 +72,6 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
-			"links": {
-				Optional: true,
-				Type:     schema.TypeList,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"localport": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						"remoteport": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -108,32 +90,6 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-
-	links := d.Get("links").([]interface{})
-	var linksInterfaces []map[string]interface{}
-	for _, site := range links {
-		linksInterfaces = append(linksInterfaces, site.(map[string]interface{}))
-	}
-
-	re := regexp.MustCompile(`^[a-zA-Z]+(?P<id>\d+)@\w+`)
-
-	linksList := []inventory.HWLink{}
-	for _, l := range linksInterfaces {
-		link := inventory.HWLink{}
-		if local, localok := l["localport"]; localok && len(local.(string)) > 0 {
-			valueMatch := re.FindStringSubmatch(local.(string))
-			result := regParser(valueMatch, re.SubexpNames())
-			localID, _ := strconv.Atoi(result["id"])
-			link.Local = inventory.IDName{ID: localID}
-		}
-		if remote, remoteok := l["remoteport"]; remoteok && len(remote.(string)) > 0 {
-			link.Remote = inventory.IDName{Name: remote.(string)}
-		}
-		if link.Local.ID == 0 || link.Remote.Name == "" {
-			return fmt.Errorf("invalid links")
-		}
-		linksList = append(linksList, link)
-	}
 
 	profileID := 0
 	profiles, err := clientset.Inventory().GetProfiles()
@@ -155,7 +111,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Profile:     inventory.IDName{ID: profileID},
 		MainAddress: d.Get("mainip").(string),
 		MgmtAddress: d.Get("mgmtip").(string),
-		Links:       linksList,
 	}
 
 	js, _ := json.Marshal(softgateAdd)
@@ -237,52 +192,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	var links []map[string]interface{}
-	for _, link := range sw.Links {
-		l := make(map[string]interface{})
-		localPort, err := clientset.Port().GetByID(link.Local.ID)
-		if err != nil {
-			return err
-		}
-		remotePort, err := clientset.Port().GetByID(link.Remote.ID)
-		if err != nil {
-			return err
-		}
-		l["localport"] = localPort.ShortName
-		l["remoteport"] = remotePort.ShortName
-		links = append(links, l)
-	}
-	err = d.Set("links", links)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-
-	links := d.Get("links").([]interface{})
-	var linksInterfaces []map[string]interface{}
-	for _, site := range links {
-		linksInterfaces = append(linksInterfaces, site.(map[string]interface{}))
-	}
-
-	linksList := []inventory.HWLink{}
-	for _, l := range linksInterfaces {
-		link := inventory.HWLink{}
-		if local, localok := l["localport"]; localok && len(local.(string)) > 0 {
-			link.Local = inventory.IDName{Name: local.(string)}
-		}
-		if remote, remoteok := l["remoteport"]; remoteok && len(remote.(string)) > 0 {
-			link.Remote = inventory.IDName{Name: remote.(string)}
-		}
-		if link.Local.Name == "" || link.Remote.Name == "" {
-			return fmt.Errorf("invalid links")
-		}
-		linksList = append(linksList, link)
-	}
 
 	profileID := 0
 	profiles, err := clientset.Inventory().GetProfiles()
@@ -304,7 +218,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Profile:     inventory.IDName{ID: profileID},
 		MainAddress: d.Get("mainip").(string),
 		MgmtAddress: d.Get("mgmtip").(string),
-		Links:       linksList,
 	}
 
 	js, _ := json.Marshal(softgateUpdate)
@@ -378,14 +291,4 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	}
 
 	return []*schema.ResourceData{d}, nil
-}
-
-func regParser(valueMatch []string, subexpNames []string) map[string]string {
-	result := make(map[string]string)
-	for i, name := range subexpNames {
-		if i != 0 && name != "" && len(valueMatch) >= len(subexpNames) {
-			result[name] = valueMatch[i]
-		}
-	}
-	return result
 }
