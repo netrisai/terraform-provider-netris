@@ -160,6 +160,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		MgmtAddress: d.Get("mgmtip").(string),
 		MacAddress:  d.Get("macaddress").(string),
 		PortCount:   d.Get("portcount").(int),
+		Links:       []inventory.HWLink{},
 	}
 
 	js, _ := json.Marshal(swAdd)
@@ -319,6 +320,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		MacAddress:  d.Get("macaddress").(string),
 		PortCount:   d.Get("portcount").(int),
 		Type:        "switch",
+		Links:       []inventory.HWLink{},
 	}
 
 	js, _ := json.Marshal(swUpdate)
