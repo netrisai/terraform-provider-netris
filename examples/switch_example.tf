@@ -10,12 +10,4 @@
 #   mgmtip = "auto"
 #   macaddress = ""
 #   portcount = 16
-#   links{
-#         localport = "swp13@my-switch"
-#         remoteport = "swp1@my-softgate"
-#   }
-# #   links{
-# #         localport = "swp15@my-switch"
-# #         remoteport = "swp2@my-softgate"
-# #   }
 # }
