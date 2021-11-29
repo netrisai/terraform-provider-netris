@@ -48,8 +48,8 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
-			"site": {
-				Type:        schema.TypeString,
+			"siteid": {
+				Type:        schema.TypeInt,
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
@@ -124,18 +124,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	nos := nosMap[d.Get("nos").(string)]
 
-	siteID := 0
-	sites, err := clientset.Site().Get()
-	if err != nil {
-		return err
-	}
-	for _, site := range sites {
-		if site.Name == d.Get("site").(string) {
-			siteID = site.ID
-			break
-		}
-	}
-
 	profileID := 0
 	profiles, err := clientset.Inventory().GetProfiles()
 	if err != nil {
@@ -151,7 +139,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	swAdd := &inventory.HWSwitchAdd{
 		Name:        d.Get("name").(string),
 		Tenant:      inventory.IDName{Name: d.Get("tenant").(string)},
-		Site:        inventory.IDName{ID: siteID},
+		Site:        inventory.IDName{ID: d.Get("siteid").(int)},
 		Description: d.Get("description").(string),
 		Nos:         nos,
 		Asn:         d.Get("asnumber").(string),
@@ -298,23 +286,11 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	siteID := 0
-	sites, err := clientset.Site().Get()
-	if err != nil {
-		return err
-	}
-	for _, site := range sites {
-		if site.Name == d.Get("site").(string) {
-			siteID = site.ID
-			break
-		}
-	}
-
 	swUpdate := &inventory.HWSwitchUpdate{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
 		Tenant:      inventory.IDName{Name: d.Get("tenant").(string)},
-		Site:        inventory.IDName{ID: siteID},
+		Site:        inventory.IDName{ID: d.Get("siteid").(int)},
 		Nos:         nos,
 		Asn:         d.Get("asnumber").(string),
 		Profile:     inventory.IDName{ID: profileID},
