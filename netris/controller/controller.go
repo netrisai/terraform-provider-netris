@@ -47,8 +47,8 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
-			"site": {
-				Type:        schema.TypeString,
+			"siteid": {
+				Type:        schema.TypeInt,
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
@@ -81,22 +81,10 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	siteID := 0
-	sites, err := clientset.Site().Get()
-	if err != nil {
-		return err
-	}
-	for _, site := range sites {
-		if site.Name == d.Get("site").(string) {
-			siteID = site.ID
-			break
-		}
-	}
-
 	controllerAdd := &inventory.HWController{
 		Name:        d.Get("name").(string),
 		Tenant:      inventory.IDName{Name: d.Get("tenant").(string)},
-		Site:        inventory.IDName{ID: siteID},
+		Site:        inventory.IDName{ID: d.Get("siteid").(int)},
 		Description: d.Get("description").(string),
 		MainAddress: d.Get("mainip").(string),
 	}
