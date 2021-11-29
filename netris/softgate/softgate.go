@@ -111,6 +111,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Profile:     inventory.IDName{ID: profileID},
 		MainAddress: d.Get("mainip").(string),
 		MgmtAddress: d.Get("mgmtip").(string),
+		Links:       []inventory.HWLink{},
 	}
 
 	js, _ := json.Marshal(softgateAdd)
@@ -218,6 +219,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Profile:     inventory.IDName{ID: profileID},
 		MainAddress: d.Get("mainip").(string),
 		MgmtAddress: d.Get("mgmtip").(string),
+		Links:       []inventory.HWLink{},
 	}
 
 	js, _ := json.Marshal(softgateUpdate)
