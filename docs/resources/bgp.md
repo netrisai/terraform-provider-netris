@@ -25,7 +25,6 @@ description: |-
 ### Optional
 
 - **allowasin** (Number) A description of an item
-- **bgpid** (Number) The name of the resource, also acts as it's unique ID
 - **bgppassword** (String) A description of an item
 - **defaultoriginate** (Boolean) A description of an item
 - **description** (String) A description of an item
