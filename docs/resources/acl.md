@@ -32,7 +32,6 @@ description: |-
 - **established** (Number)
 - **icmptype** (Number)
 - **id** (String) The ID of this resource.
-- **itemid** (Number)
 - **reverse** (Boolean)
 - **srcportfrom** (Number)
 - **srcportgroup** (String)
