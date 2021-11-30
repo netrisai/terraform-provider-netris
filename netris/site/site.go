@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/netrisai/netriswebapi/http"
 	"github.com/netrisai/netriswebapi/v1/types/site"
@@ -31,12 +32,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Computed: true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -139,9 +134,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	if reply.StatusCode != 200 {
 		return fmt.Errorf(string(reply.Data))
 	}
-
-	_ = d.Set("itemid", id)
-	d.SetId(siteW.Name)
+	d.SetId(strconv.Itoa(id))
 
 	return nil
 }
@@ -153,9 +146,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	id, _ := strconv.Atoi(d.Id())
 
 	for _, s := range sites {
-		if s.ID == d.Get("itemid").(int) {
+		if s.ID == id {
 			site = s
 			break
 		}
@@ -165,7 +159,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
-	d.SetId(site.Name)
+	d.SetId(strconv.Itoa(site.ID))
 	err = d.Set("name", site.Name)
 	if err != nil {
 		return err
@@ -205,9 +199,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	publicasn := d.Get("publicasn").(int)
 	rohasn := d.Get("rohasn").(int)
 	vmasn := d.Get("vmasn").(int)
-
+	id, _ := strconv.Atoi(d.Id())
 	siteW := &site.SiteAdd{
-		ID:                  d.Get("itemid").(int),
+		ID:                  id,
 		Name:                name,
 		PublicASN:           publicasn,
 		PhysicalInstanceASN: rohasn,
@@ -240,8 +234,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-
-	reply, err := clientset.Site().Delete(d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.Site().Delete(id)
 	if err != nil {
 		return err
 	}
@@ -256,7 +250,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-	siteID := d.Get("itemid").(int)
+	siteID, _ := strconv.Atoi(d.Id())
 
 	sites, err := clientset.Site().Get()
 	if err != nil {
@@ -279,10 +273,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	name := d.Id()
 	for _, site := range sites {
 		if site.Name == name {
-			err := d.Set("itemid", site.ID)
-			if err != nil {
-				return []*schema.ResourceData{d}, err
-			}
+			d.SetId(strconv.Itoa(site.ID))
 			return []*schema.ResourceData{d}, nil
 		}
 	}
