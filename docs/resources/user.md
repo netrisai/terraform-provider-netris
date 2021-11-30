@@ -28,7 +28,6 @@ description: |-
 - **emailcc** (String)
 - **fullname** (String) Full Name
 - **id** (String) The ID of this resource.
-- **itemid** (Number)
 - **phone** (String)
 - **position** (String)
 - **tenants** (List of String)
