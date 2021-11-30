@@ -33,12 +33,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -243,9 +237,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("itemid", idStruct.ID)
-	d.SetId(aclW.Name)
-
+	d.SetId(strconv.Itoa(idStruct.ID))
 	return nil
 }
 
@@ -256,9 +248,9 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-
+	id, _ := strconv.Atoi(d.Id())
 	for _, a := range acls {
-		if a.ID == d.Get("itemid").(int) {
+		if a.ID == id {
 			acl = a
 			break
 		}
@@ -268,7 +260,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
-	d.SetId(acl.Name)
+	d.SetId(strconv.Itoa(acl.ID))
 	err = d.Set("name", acl.Name)
 	if err != nil {
 		return err
@@ -405,9 +397,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			return fmt.Errorf("couldn't find port group %s", s)
 		}
 	}
-
+	id, _ := strconv.Atoi(d.Id())
 	aclW := &acl.ACLw{
-		ID:          d.Get("itemid").(int),
+		ID:          id,
 		Name:        name,
 		Action:      action,
 		Comment:     comment,
@@ -459,8 +451,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-
-	reply, err := clientset.ACL().Delete(d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.ACL().Delete(id)
 	if err != nil {
 		return err
 	}
@@ -475,7 +467,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-	aclID := d.Get("itemid").(int)
+	aclID, _ := strconv.Atoi(d.Id())
 
 	acls, err := clientset.ACL().Get()
 	if err != nil {
@@ -498,10 +490,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	name := d.Id()
 	for _, acl := range acls {
 		if acl.Name == name {
-			err := d.Set("itemid", acl.ID)
-			if err != nil {
-				return []*schema.ResourceData{d}, err
-			}
+			d.SetId(strconv.Itoa(acl.ID))
 			return []*schema.ResourceData{d}, nil
 		}
 	}
