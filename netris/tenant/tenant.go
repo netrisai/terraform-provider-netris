@@ -115,8 +115,9 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	id, _ := strconv.Atoi(d.Id())
 	for _, tenant := range tenants {
-		if tenant.Name == d.Id() {
+		if tenant.ID == id {
 			d.SetId(strconv.Itoa(tenant.ID))
 			err = d.Set("name", tenant.Name)
 			if err != nil {
