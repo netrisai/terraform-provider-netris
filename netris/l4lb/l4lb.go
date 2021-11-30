@@ -42,12 +42,12 @@ func Resource() *schema.Resource {
 			},
 			"tenantid": {
 				Optional: true,
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				ForceNew: true,
 			},
 			"siteid": {
 				Required: true,
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				ForceNew: true,
 			},
 			"state": {
@@ -106,7 +106,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	bReg := regexp.MustCompile(`^(?P<ip>(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])):(?P<port>([1-9]|[1-9][0-9]{1,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-4]))$`)
 
 	tenantID := d.Get("tenantid").(int)
-	siteID := d.Get("site").(int)
+	siteID := d.Get("siteid").(int)
 
 	var state string
 	var timeout string
