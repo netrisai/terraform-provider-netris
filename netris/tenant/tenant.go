@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/netrisai/netriswebapi/http"
 	"github.com/netrisai/netriswebapi/v1/types/tenant"
@@ -32,12 +33,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -108,8 +103,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("itemid", idStruct.ID)
-	d.SetId(tenantAdd.Name)
+	d.SetId(strconv.Itoa(idStruct.ID))
 	return nil
 }
 
@@ -123,7 +117,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	for _, tenant := range tenants {
 		if tenant.Name == d.Id() {
-			d.SetId(tenant.Name)
+			d.SetId(strconv.Itoa(tenant.ID))
 			err = d.Set("name", tenant.Name)
 			if err != nil {
 				return err
@@ -141,10 +135,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
+	id, _ := strconv.Atoi(d.Id())
 	tenantUpdate := &tenant.Tenant{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
-		ID:          d.Get("itemid").(int),
+		ID:          id,
 	}
 
 	js, _ := json.Marshal(tenantUpdate)
@@ -171,7 +166,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	reply, err := clientset.Tenant().Delete(d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.Tenant().Delete(id)
 	if err != nil {
 		return err
 	}
@@ -193,8 +189,9 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 		return false, err
 	}
 
+	id, _ := strconv.Atoi(d.Id())
 	for _, tenant := range tenants {
-		if tenant.ID == d.Get("itemid").(int) {
+		if tenant.ID == id {
 			tenantID = tenant.ID
 			break
 		}
@@ -217,10 +214,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 
 	for _, tenant := range tenants {
 		if tenant.Name == d.Id() {
-			err := d.Set("itemid", tenant.ID)
-			if err != nil {
-				return []*schema.ResourceData{d}, err
-			}
+			d.SetId(strconv.Itoa(tenant.ID))
 			return []*schema.ResourceData{d}, nil
 		}
 	}
