@@ -17,6 +17,8 @@ limitations under the License.
 package site
 
 import (
+	"strconv"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/netrisai/netriswebapi/v1/types/site"
 	api "github.com/netrisai/netriswebapi/v2"
@@ -25,12 +27,6 @@ import (
 func DataResource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -64,12 +60,8 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
-	d.SetId(site.Name)
+	d.SetId(strconv.Itoa(site.ID))
 	err = d.Set("name", site.Name)
-	if err != nil {
-		return err
-	}
-	err = d.Set("itemid", site.ID)
 	if err != nil {
 		return err
 	}
