@@ -18,6 +18,7 @@ package bgpobject
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/netrisai/netriswebapi/v1/types/bgpobject"
 
@@ -29,12 +30,6 @@ import (
 func DataResource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -65,12 +60,8 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Coudn't find bgp object '%s'", d.Get("name").(string))
 	}
 
-	d.SetId(obj.Name)
-	err := d.Set("itemid", obj.ID)
-	if err != nil {
-		return err
-	}
-	err = d.Set("name", obj.Name)
+	d.SetId(strconv.Itoa(obj.ID))
+	err := d.Set("name", obj.Name)
 	if err != nil {
 		return err
 	}
@@ -105,10 +96,7 @@ func dataResourceImport(d *schema.ResourceData, m interface{}) ([]*schema.Resour
 	if !ok {
 		return []*schema.ResourceData{d}, fmt.Errorf("Coudn't find bgp object '%s'", d.Get("name").(string))
 	}
-	err := d.Set("itemid", obj.ID)
-	if err != nil {
-		return []*schema.ResourceData{d}, err
-	}
+	d.SetId(strconv.Itoa(obj.ID))
 
 	return []*schema.ResourceData{d}, nil
 }
