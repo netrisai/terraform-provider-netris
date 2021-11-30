@@ -29,7 +29,6 @@ description: |-
 
 - **id** (String) The ID of this resource.
 - **inboundprefixlist** (List of String) Inbound prefix list
-- **itemid** (Number)
 - **routingprofile** (String)
 
 
