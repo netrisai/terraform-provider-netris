@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -31,12 +32,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -154,8 +149,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("itemid", idStruct.ID)
-	d.SetId(pAdd.Name)
+	d.SetId(strconv.Itoa(idStruct.ID))
 
 	return nil
 }
@@ -163,7 +157,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	id := d.Get("itemid").(int)
+	id, _ := strconv.Atoi(d.Id())
 	var gr *permission.PermissionGroup = nil
 
 	groups, err := clientset.Permission().Get()
@@ -229,8 +223,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	id, _ := strconv.Atoi(d.Id())
 	pAdd := &permission.PermissionGroupAdd{
-		ID:          d.Get("itemid").(int),
+		ID:          id,
 		Name:        d.Get("name").(string),
 		ExternalACL: externalACl,
 		Hidden:      hiddenList,
@@ -257,7 +252,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	reply, err := clientset.Permission().Delete(d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.Permission().Delete(id)
 	if err != nil {
 		return err
 	}
@@ -273,7 +269,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
-	id := d.Get("itemid").(int)
+	id, _ := strconv.Atoi(d.Id())
 	var gr *permission.PermissionGroup = nil
 
 	groups, err := clientset.Permission().Get()
@@ -309,10 +305,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	for _, group := range groups {
 		if group.Name == name {
 			gr = group
-			err := d.Set("itemid", gr.ID)
-			if err != nil {
-				return []*schema.ResourceData{d}, err
-			}
+			d.SetId(strconv.Itoa(gr.ID))
 			return []*schema.ResourceData{d}, nil
 		}
 	}
