@@ -35,12 +35,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -275,8 +269,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("itemid", id)
-	d.SetId(l4lbAdd.Name)
+	d.SetId(strconv.Itoa(id))
 	return nil
 }
 
@@ -351,8 +344,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		frontendIP = ""
 	}
 
+	id, _ := strconv.Atoi(d.Id())
 	l4lbUpdate := &l4lb.LoadBalancerUpdate{
-		ID:          d.Get("itemid").(int),
+		ID:          id,
 		Name:        d.Get("name").(string),
 		Automatic:   automatic,
 		Protocol:    proto,
@@ -387,7 +381,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	reply, err := clientset.L4LB().Delete(d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.L4LB().Delete(id)
 	if err != nil {
 		return err
 	}
@@ -403,7 +398,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
-	id := d.Get("itemid").(int)
+	id, _ := strconv.Atoi(d.Id())
 	l4lbs, err := clientset.L4LB().Get()
 	if err != nil {
 		return false, err
@@ -424,10 +419,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	name := d.Id()
 	for _, vnet := range vnets {
 		if vnet.Name == name {
-			err := d.Set("itemid", vnet.ID)
-			if err != nil {
-				return []*schema.ResourceData{d}, err
-			}
+			d.SetId(strconv.Itoa(vnet.ID))
 			return []*schema.ResourceData{d}, nil
 		}
 	}
