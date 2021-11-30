@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/netrisai/netriswebapi/http"
 	api "github.com/netrisai/netriswebapi/v2"
@@ -31,12 +32,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -150,20 +145,20 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("itemid", idStruct.ID)
-	d.SetId(softgateAdd.Name)
+	d.SetId(strconv.Itoa(idStruct.ID))
 	return nil
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	sw, err := clientset.Inventory().GetByID(d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	sw, err := clientset.Inventory().GetByID(id)
 	if err != nil {
 		return err
 	}
 
-	d.SetId(sw.Name)
+	d.SetId(strconv.Itoa(sw.ID))
 	err = d.Set("name", sw.Name)
 	if err != nil {
 		return err
@@ -225,7 +220,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	js, _ := json.Marshal(softgateUpdate)
 	log.Println("[DEBUG]", string(js))
 
-	reply, err := clientset.Inventory().UpdateSoftgate(d.Get("itemid").(int), softgateUpdate)
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.Inventory().UpdateSoftgate(id, softgateUpdate)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -246,7 +242,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	reply, err := clientset.Inventory().Delete("softgate", d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.Inventory().Delete("softgate", id)
 	if err != nil {
 		return err
 	}
@@ -262,7 +259,8 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
-	sw, err := clientset.Inventory().GetByID(d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	sw, err := clientset.Inventory().GetByID(id)
 	if err != nil {
 		return false, err
 	}
@@ -284,10 +282,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	name := d.Id()
 	for _, sw := range sws {
 		if sw.Name == name {
-			err := d.Set("itemid", sw.ID)
-			if err != nil {
-				return []*schema.ResourceData{d}, err
-			}
+			d.SetId(strconv.Itoa(sw.ID))
 			return []*schema.ResourceData{d}, nil
 		}
 	}
