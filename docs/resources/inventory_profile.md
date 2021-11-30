@@ -28,7 +28,6 @@ description: |-
 - **id** (String) The ID of this resource.
 - **ipv4ssh** (List of String) Allow SSH from IPV4
 - **ipv6ssh** (List of String) Allow SSH from IPV6
-- **itemid** (Number) The name of the resource, also acts as it's unique ID
 - **ntpservers** (List of String) NTP servers
 
 <a id="nestedblock--customrule"></a>
