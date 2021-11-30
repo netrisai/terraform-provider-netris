@@ -46,7 +46,7 @@ func Resource() *schema.Resource {
 				ForceNew: true,
 			},
 			"siteid": {
-				Required: true,
+				Optional: true,
 				Type:     schema.TypeInt,
 				ForceNew: true,
 			},
@@ -138,6 +138,14 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			return err
 		}
 		tenantID = tenantid
+	}
+
+	if siteID == 0 {
+		siteid, err := findSiteByIP(clientset, ipForTenant)
+		if err != nil {
+			return err
+		}
+		siteID = siteid
 	}
 
 	status := d.Get("state").(string)
