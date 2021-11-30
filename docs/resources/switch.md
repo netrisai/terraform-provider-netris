@@ -30,7 +30,6 @@ description: |-
 
 - **description** (String) The name of the resource, also acts as it's unique ID
 - **id** (String) The ID of this resource.
-- **itemid** (Number)
 - **macaddress** (String) The name of the resource, also acts as it's unique ID
 - **profile** (String) The name of the resource, also acts as it's unique ID
 
