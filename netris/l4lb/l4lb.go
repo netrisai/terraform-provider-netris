@@ -40,12 +40,12 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
-			"owner": {
-				Required: true,
+			"tenantid": {
+				Optional: true,
 				Type:     schema.TypeString,
 				ForceNew: true,
 			},
-			"site": {
+			"siteid": {
 				Required: true,
 				Type:     schema.TypeString,
 				ForceNew: true,
@@ -105,8 +105,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	bReg := regexp.MustCompile(`^(?P<ip>(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])):(?P<port>([1-9]|[1-9][0-9]{1,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-4]))$`)
 
-	tenantID := 0
-	siteID := 0
+	tenantID := d.Get("tenantid").(int)
+	siteID := d.Get("site").(int)
+
 	var state string
 	var timeout string
 	proto := "TCP"
@@ -131,38 +132,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		})
 	}
 
-	tenantName := d.Get("owner").(string)
-	if tenantName == "" {
+	if tenantID == 0 {
 		tenantid, err := findTenantByIP(clientset, ipForTenant)
 		if err != nil {
 			return err
 		}
 		tenantID = tenantid
-	}
-
-	if tenantID == 0 {
-		tenant, ok := findTenantByName(clientset, tenantName)
-		if !ok {
-			return fmt.Errorf("Tenant '%s' not found", tenantName)
-		}
-		tenantID = tenant.ID
-	}
-
-	siteName := d.Get("site").(string)
-	if siteName == "" {
-		siteid, err := findSiteByIP(clientset, siteName)
-		if err != nil {
-			return err
-		}
-		siteID = siteid
-	}
-
-	if siteID == 0 {
-		if site, ok := findSiteByName(clientset, siteName); ok {
-			siteID = site.ID
-		} else {
-			return fmt.Errorf("'%s' site not found", siteName)
-		}
 	}
 
 	status := d.Get("state").(string)
