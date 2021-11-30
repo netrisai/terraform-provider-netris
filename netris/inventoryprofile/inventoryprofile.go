@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -32,12 +33,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Description:      "The name of the resource, also acts as it's unique ID",
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -230,8 +225,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("itemid", idStruct.ID)
-	d.SetId(d.Get("name").(string))
+	d.SetId(strconv.Itoa(idStruct.ID))
 	return nil
 }
 
@@ -239,12 +233,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 	var profile *inventoryprofile.Profile
 	var ok bool
-	profile, ok = findByID(d.Get("itemid").(int), clientset)
+	id, _ := strconv.Atoi(d.Id())
+	profile, ok = findByID(id, clientset)
 	if !ok {
 		return fmt.Errorf("Coudn't find inventory profile '%s'", d.Get("name").(string))
 	}
 
-	d.SetId(profile.Name)
+	d.SetId(strconv.Itoa(profile.ID))
 	err := d.Set("name", profile.Name)
 	if err != nil {
 		return err
@@ -339,9 +334,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			Protocol:  customRule["protocol"].(string),
 		})
 	}
-
+	id, _ := strconv.Atoi(d.Id())
 	profileUpdate := &inventoryprofile.ProfileW{
-		ID:          d.Get("itemid").(int),
+		ID:          id,
 		Name:        name,
 		Description: description,
 		Ipv4List:    strings.Join(ipv4List, ","),
@@ -376,7 +371,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 	var ok bool
-	_, ok = findByID(d.Get("itemid").(int), clientset)
+	id, _ := strconv.Atoi(d.Id())
+	_, ok = findByID(id, clientset)
 	if !ok {
 		return false, fmt.Errorf("Coudn't find inventory profile '%s'", d.Get("name").(string))
 	}
@@ -393,10 +389,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	if !ok {
 		return []*schema.ResourceData{d}, fmt.Errorf("Coudn't find inventory profile '%s'", d.Get("name").(string))
 	}
-	err := d.Set("itemid", profile.ID)
-	if err != nil {
-		return []*schema.ResourceData{d}, err
-	}
+	d.SetId(strconv.Itoa(profile.ID))
 
 	return []*schema.ResourceData{d}, nil
 }
@@ -404,7 +397,8 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	reply, err := clientset.InventoryProfile().Delete(d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.InventoryProfile().Delete(id)
 	if err != nil {
 		return err
 	}
