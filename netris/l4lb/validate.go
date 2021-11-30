@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/netrisai/netriswebapi/v1/types/site"
-	"github.com/netrisai/netriswebapi/v1/types/tenant"
 	api "github.com/netrisai/netriswebapi/v2"
 	"github.com/netrisai/netriswebapi/v2/types/ipam"
 )
@@ -86,30 +84,4 @@ func findSiteByIP(c *api.Clientset, ip string) (int, error) {
 	}
 
 	return siteID, fmt.Errorf("There are no sites  for specified IP address %s", ip)
-}
-
-func findTenantByName(c *api.Clientset, name string) (*tenant.Tenant, bool) {
-	items, err := c.Tenant().Get()
-	if err != nil {
-		return nil, false
-	}
-	for _, item := range items {
-		if item.Name == name {
-			return item, true
-		}
-	}
-	return nil, false
-}
-
-func findSiteByName(c *api.Clientset, name string) (*site.Site, bool) {
-	items, err := c.Site().Get()
-	if err != nil {
-		return nil, false
-	}
-	for _, item := range items {
-		if item.Name == name {
-			return item, true
-		}
-	}
-	return nil, false
 }
