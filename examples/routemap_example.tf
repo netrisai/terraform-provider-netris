@@ -14,11 +14,11 @@ resource "netris_routemap" "routemap-terraform-test" {
         policy = "permit"
         match{
             type = "ipv4_prefix_list"
-            objectid = data.netris_bgp_object.ipv4.itemid
+            objectid = data.netris_bgp_object.ipv4.id
         }
         match{
             type = "ipv4_next_hop"
-            objectid = data.netris_bgp_object.ipv4.itemid
+            objectid = data.netris_bgp_object.ipv4.id
         }
     }
     sequence{
@@ -26,11 +26,11 @@ resource "netris_routemap" "routemap-terraform-test" {
         policy = "permit"
         match{
             type = "ipv6_prefix_list"
-            objectid = data.netris_bgp_object.ipv6.itemid
+            objectid = data.netris_bgp_object.ipv6.id
         }
         match{
             type = "large_community"
-            objectid = data.netris_bgp_object.lgc.itemid
+            objectid = data.netris_bgp_object.lgc.id
         }
         match{
             type = "med"
