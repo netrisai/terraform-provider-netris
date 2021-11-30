@@ -32,12 +32,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"ports": {
 				ForceNew: true,
 				Required: true,
@@ -101,14 +95,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("itemid", fmt.Sprintf("%d-%d", origin, dest))
 	d.SetId(fmt.Sprintf("%d-%d", origin, dest))
 	return nil
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-	itemid := strings.Split(d.Get("itemid").(string), "-")
+	itemid := strings.Split(d.Id(), "-")
 	if len(itemid) != 2 {
 		return fmt.Errorf("invalid link")
 	}
@@ -134,7 +127,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("invalid link")
 	}
 
-	d.SetId(d.Get("itemid").(string))
+	d.SetId(d.Id())
 	err = d.Set("ports", portList)
 	if err != nil {
 		return err
@@ -145,7 +138,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-	itemid := strings.Split(d.Get("itemid").(string), "-")
+	itemid := strings.Split(d.Id(), "-")
 	if len(itemid) != 2 {
 		return fmt.Errorf("invalid link")
 	}
@@ -173,7 +166,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
-	itemid := strings.Split(d.Get("itemid").(string), "-")
+	itemid := strings.Split(d.Id(), "-")
 	if len(itemid) != 2 {
 		return false, nil
 	}
