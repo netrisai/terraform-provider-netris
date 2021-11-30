@@ -209,7 +209,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("site", sw.Site.Name)
+	err = d.Set("siteid", sw.Site.ID)
 	if err != nil {
 		return err
 	}
