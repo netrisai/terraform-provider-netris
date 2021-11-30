@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/netrisai/netriswebapi/http"
 	"github.com/netrisai/netriswebapi/v2/types/ipam"
@@ -32,11 +33,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"ipamid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -116,8 +112,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("ipamid", idStruct.ID)
-	d.SetId(allAdd.Name)
+	d.SetId(strconv.Itoa(idStruct.ID))
 
 	return nil
 }
@@ -129,13 +124,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	id := d.Get("ipamid").(int)
+	id, _ := strconv.Atoi(d.Id())
 	ipam := getByID(ipams, id)
 	if ipam == nil {
 		return nil
 	}
 
-	d.SetId(ipam.Name)
+	d.SetId(strconv.Itoa(ipam.ID))
 	err = d.Set("name", ipam.Name)
 	if err != nil {
 		return err
@@ -166,8 +161,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	js, _ := json.Marshal(allUpdate)
 	log.Println("[DEBUG]", string(js))
-
-	reply, err := clientset.IPAM().UpdateAllocation(d.Get("ipamid").(int), allUpdate)
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.IPAM().UpdateAllocation(id, allUpdate)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -187,8 +182,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-
-	reply, err := clientset.IPAM().Delete("allocation", d.Get("ipamid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.IPAM().Delete("allocation", id)
 	if err != nil {
 		return err
 	}
@@ -208,7 +203,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	id := d.Get("ipamid").(int)
+	id, _ := strconv.Atoi(d.Id())
 	if ipam := getByID(ipams, id); ipam == nil {
 		return false, nil
 	}
@@ -229,10 +224,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 		return []*schema.ResourceData{d}, fmt.Errorf("Allocation '%s' not found", prefix)
 	}
 
-	err = d.Set("ipamid", ipam.ID)
-	if err != nil {
-		return []*schema.ResourceData{d}, err
-	}
+	d.SetId(strconv.Itoa(ipam.ID))
 
 	return []*schema.ResourceData{d}, nil
 }
