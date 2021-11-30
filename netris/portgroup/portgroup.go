@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/netrisai/netriswebapi/http"
 	"github.com/netrisai/netriswebapi/v1/types/portgroup"
@@ -32,12 +33,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -119,8 +114,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("itemid", idStruct.ID)
-	d.SetId(pAdd.Name)
+	d.SetId(strconv.Itoa(idStruct.ID))
 
 	return nil
 }
@@ -129,14 +123,14 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	name := d.Get("name").(string)
-	id := d.Get("itemid").(int)
+	id, _ := strconv.Atoi(d.Id())
 	var pGroup *portgroup.PortGroup
 	var ok bool
 	if pGroup, ok = findPortGroupByID(id, clientset); !ok {
 		return fmt.Errorf("coudn't find portgroup '%s'", name)
 	}
 
-	d.SetId(pGroup.Name)
+	d.SetId(strconv.Itoa(pGroup.ID))
 	err := d.Set("name", pGroup.Name)
 	if err != nil {
 		return err
@@ -153,7 +147,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Get("name").(string)
 	portList := d.Get("ports").([]interface{})
-	id := d.Get("itemid").(int)
+	id, _ := strconv.Atoi(d.Id())
 	ports := []string{}
 	for _, port := range portList {
 		ports = append(ports, port.(string))
@@ -199,7 +193,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	reply, err := clientset.PortGroup().Delete(d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.PortGroup().Delete(id)
 	if err != nil {
 		return err
 	}
@@ -216,7 +211,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
 	name := d.Get("name").(string)
-	id := d.Get("itemid").(int)
+	id, _ := strconv.Atoi(d.Id())
 	var ok bool
 	if _, ok = findPortGroupByID(id, clientset); !ok {
 		return false, fmt.Errorf("coudn't find portgroup '%s'", name)
@@ -235,10 +230,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 		return []*schema.ResourceData{d}, fmt.Errorf("coudn't find portgroup '%s'", name)
 	}
 
-	err := d.Set("itemid", pGroup.ID)
-	if err != nil {
-		return []*schema.ResourceData{d}, err
-	}
+	d.SetId(strconv.Itoa(pGroup.ID))
 
 	return []*schema.ResourceData{d}, nil
 }
