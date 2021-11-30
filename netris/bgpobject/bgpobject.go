@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/netrisai/netriswebapi/http"
 	"github.com/netrisai/netriswebapi/v1/types/bgpobject"
@@ -32,12 +33,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -115,21 +110,20 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("itemid", id)
-	d.SetId(objectAdd.Name)
+	d.SetId(strconv.Itoa(id))
 
 	return nil
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-
-	obj, ok := findByID(d.Get("itemid").(int), clientset)
+	id, _ := strconv.Atoi(d.Id())
+	obj, ok := findByID(id, clientset)
 	if !ok {
 		return fmt.Errorf("Coudn't find bgp object '%s'", d.Get("name").(string))
 	}
 
-	d.SetId(obj.Name)
+	d.SetId(strconv.Itoa(obj.ID))
 	err := d.Set("name", obj.Name)
 	if err != nil {
 		return err
@@ -151,9 +145,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	name := d.Get("name").(string)
 	typo := d.Get("type").(string)
 	value := d.Get("value").(string)
-
+	id, _ := strconv.Atoi(d.Id())
 	objectUpdate := &bgpobject.BGPObjectW{
-		ID:        d.Get("itemid").(int),
+		ID:        id,
 		Name:      name,
 		Type:      typo,
 		TypeValue: value,
@@ -182,8 +176,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-
-	reply, err := clientset.BGPObject().Delete(d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.BGPObject().Delete(id)
 	if err != nil {
 		return err
 	}
@@ -199,7 +193,8 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 	var ok bool
-	_, ok = findByID(d.Get("itemid").(int), clientset)
+	id, _ := strconv.Atoi(d.Id())
+	_, ok = findByID(id, clientset)
 	if !ok {
 		return false, fmt.Errorf("Coudn't find bgp object '%s'", d.Get("name").(string))
 	}
@@ -216,10 +211,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	if !ok {
 		return []*schema.ResourceData{d}, fmt.Errorf("Coudn't find bgp object '%s'", d.Get("name").(string))
 	}
-	err := d.Set("itemid", obj.ID)
-	if err != nil {
-		return []*schema.ResourceData{d}, err
-	}
+	d.SetId(strconv.Itoa(obj.ID))
 
 	return []*schema.ResourceData{d}, nil
 }
