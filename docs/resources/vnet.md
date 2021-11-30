@@ -25,7 +25,6 @@ description: |-
 
 - **id** (String) The ID of this resource.
 - **state** (String)
-- **vnetid** (Number)
 
 <a id="nestedblock--sites"></a>
 ### Nested Schema for `sites`
