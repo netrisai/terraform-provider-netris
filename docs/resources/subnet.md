@@ -27,6 +27,5 @@ description: |-
 - **defaultgateway** (String)
 - **id** (String) The ID of this resource.
 - **sites** (List of String) Sites
-- **subnetid** (Number)
 
 
