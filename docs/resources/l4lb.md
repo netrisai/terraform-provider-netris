@@ -18,7 +18,6 @@ description: |-
 ### Required
 
 - **name** (String) The name of the resource, also acts as it's unique ID
-- **siteid** (String)
 
 ### Optional
 
@@ -28,7 +27,8 @@ description: |-
 - **id** (String) The ID of this resource.
 - **port** (Number)
 - **protocol** (String)
+- **siteid** (Number)
 - **state** (String)
-- **tenantid** (String)
+- **tenantid** (Number)
 
 
