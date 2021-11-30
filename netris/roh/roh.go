@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/netrisai/netriswebapi/http"
@@ -31,12 +32,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"itemid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -196,22 +191,21 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("itemid", idStruct.ID)
-	d.SetId(rohAdd.Name)
+	d.SetId(strconv.Itoa(idStruct.ID))
 
 	return nil
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-	id := d.Get("itemid").(int)
+	id, _ := strconv.Atoi(d.Id())
 
 	roh, err := clientset.ROH().GetByID(id)
 	if err != nil {
 		return err
 	}
 
-	d.SetId(roh.Name)
+	d.SetId(strconv.Itoa(roh.ID))
 	err = d.Set("name", roh.Name)
 	if err != nil {
 		return err
@@ -354,7 +348,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	js, _ := json.Marshal(rohAdd)
 	log.Println("[DEBUG]", string(js))
 
-	reply, err := clientset.ROH().Update(d.Get("itemid").(int), rohAdd)
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.ROH().Update(id, rohAdd)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -393,7 +388,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	reply, err := clientset.ROH().Delete(d.Get("itemid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.ROH().Delete(id)
 	if err != nil {
 		return err
 	}
@@ -408,7 +404,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-	id := d.Get("itemid").(int)
+	id, _ := strconv.Atoi(d.Id())
 
 	_, err := clientset.ROH().GetByID(id)
 	if err != nil {
@@ -424,10 +420,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	name := d.Id()
 	for _, roh := range rohs {
 		if roh.Name == name {
-			err := d.Set("itemid", roh.ID)
-			if err != nil {
-				return []*schema.ResourceData{d}, err
-			}
+			d.SetId(strconv.Itoa(roh.ID))
 			return []*schema.ResourceData{d}, nil
 		}
 	}
