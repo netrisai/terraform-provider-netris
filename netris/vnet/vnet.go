@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 
 	"github.com/netrisai/netriswebapi/http"
 	"github.com/netrisai/netriswebapi/v2/types/ipam"
@@ -35,11 +36,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"vnetid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -207,20 +203,20 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("vnetid", idStruct.ID)
-	d.SetId(vnetAdd.Name)
+	d.SetId(strconv.Itoa(idStruct.ID))
 	return nil
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	vnet, err := clientset.VNet().GetByID(d.Get("vnetid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	vnet, err := clientset.VNet().GetByID(id)
 	if err != nil {
 		return err
 	}
 
-	d.SetId(vnet.Name)
+	d.SetId(strconv.Itoa(vnet.ID))
 	err = d.Set("name", vnet.Name)
 	if err != nil {
 		return err
@@ -354,7 +350,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	js, _ := json.Marshal(vnetUpdate)
 	log.Println("[DEBUG]", string(js))
 
-	reply, err := clientset.VNet().Update(d.Get("vnetid").(int), vnetUpdate)
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.VNet().Update(id, vnetUpdate)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -370,7 +367,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	reply, err := clientset.VNet().Delete(d.Get("vnetid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.VNet().Delete(id)
 	if err != nil {
 		return err
 	}
@@ -386,7 +384,8 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
-	vnet, _ := clientset.VNet().GetByID(d.Get("vnetid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	vnet, _ := clientset.VNet().GetByID(id)
 
 	if vnet == nil {
 		return false, nil
@@ -405,10 +404,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	name := d.Id()
 	for _, vnet := range vnets {
 		if vnet.Name == name {
-			err := d.Set("vnetid", vnet.ID)
-			if err != nil {
-				return []*schema.ResourceData{d}, err
-			}
+			d.SetId(strconv.Itoa(vnet.ID))
 			return []*schema.ResourceData{d}, nil
 		}
 	}
