@@ -23,6 +23,5 @@ description: |-
 
 - **description** (String)
 - **id** (String) The ID of this resource.
-- **itemid** (Number)
 
 
