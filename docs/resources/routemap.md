@@ -22,7 +22,6 @@ description: |-
 ### Optional
 
 - **id** (String) The ID of this resource.
-- **itemid** (Number)
 - **sequence** (Block List) (see [below for nested schema](#nestedblock--sequence))
 
 <a id="nestedblock--sequence"></a>
