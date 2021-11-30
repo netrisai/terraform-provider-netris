@@ -27,7 +27,6 @@ description: |-
 - **check** (Map of String) Check Options
 - **frontend** (String)
 - **id** (String) The ID of this resource.
-- **itemid** (Number)
 - **port** (Number)
 - **protocol** (String)
 - **state** (String)
