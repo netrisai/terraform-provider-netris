@@ -34,12 +34,6 @@ import (
 func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"bgpid": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Description:      "The name of the resource, also acts as it's unique ID",
-				DiffSuppressFunc: DiffSuppress,
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -374,9 +368,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	_ = d.Set("bgpid", idStruct.ID)
-	// d.SetId(vnetAdd.Name)
-	d.SetId(d.Get("name").(string))
+	d.SetId(strconv.Itoa(idStruct.ID))
 	return nil
 }
 
@@ -387,9 +379,9 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-
+	id, _ := strconv.Atoi(d.Id())
 	for _, b := range bgps {
-		if b.ID == d.Get("bgpid").(int) {
+		if b.ID == id {
 			bgp = b
 			break
 		}
@@ -399,7 +391,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
-	d.SetId(bgp.Name)
+	d.SetId(strconv.Itoa(bgp.ID))
 	err = d.Set("name", bgp.Name)
 	if err != nil {
 		return err
@@ -638,7 +630,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		communityArr = append(communityArr, pr.(string))
 	}
 
-	bgpID := d.Get("bgpid").(int)
+	bgpID, _ := strconv.Atoi(d.Id())
 
 	bgpUpdate := &bgp.EBGPUpdate{
 		Name:               d.Get("name").(string),
@@ -711,7 +703,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-	bgpID := d.Get("bgpid").(int)
+	bgpID, _ := strconv.Atoi(d.Id())
 
 	bgps, err := clientset.BGP().Get()
 	if err != nil {
@@ -734,10 +726,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	name := d.Id()
 	for _, bgp := range bgps {
 		if bgp.Name == name {
-			err := d.Set("bgpid", bgp.ID)
-			if err != nil {
-				return []*schema.ResourceData{d}, err
-			}
+			d.SetId(strconv.Itoa(bgp.ID))
 			return []*schema.ResourceData{d}, nil
 		}
 	}
@@ -747,8 +736,8 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-
-	reply, err := clientset.BGP().Delete(d.Get("bgpid").(int))
+	id, _ := strconv.Atoi(d.Id())
+	reply, err := clientset.BGP().Delete(id)
 	if err != nil {
 		return err
 	}
