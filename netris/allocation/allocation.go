@@ -42,10 +42,10 @@ func Resource() *schema.Resource {
 				Required: true,
 				Type:     schema.TypeString,
 			},
-			"tenant": {
+			"tenantid": {
 				ForceNew: true,
 				Required: true,
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 			},
 		},
 		Create: resourceCreate,
@@ -68,12 +68,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Get("name").(string)
 	prefix := d.Get("prefix").(string)
-	tenant := d.Get("tenant").(string)
+	tenant := d.Get("tenantid").(int)
 
 	allAdd := &ipam.Allocation{
 		Name:   name,
 		Prefix: prefix,
-		Tenant: ipam.IDName{Name: tenant},
+		Tenant: ipam.IDName{ID: tenant},
 	}
 
 	js, _ := json.Marshal(allAdd)
@@ -139,7 +139,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("tenant", ipam.Tenant.Name)
+	err = d.Set("tenantid", ipam.Tenant.ID)
 	if err != nil {
 		return err
 	}
@@ -151,12 +151,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Get("name").(string)
 	prefix := d.Get("prefix").(string)
-	tenant := d.Get("tenant").(string)
+	tenant := d.Get("tenantid").(int)
 
 	allUpdate := &ipam.Allocation{
 		Name:   name,
 		Prefix: prefix,
-		Tenant: ipam.IDName{Name: tenant},
+		Tenant: ipam.IDName{ID: tenant},
 	}
 
 	js, _ := json.Marshal(allUpdate)
