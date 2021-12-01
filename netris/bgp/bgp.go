@@ -39,20 +39,17 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
-			"site": {
-				Required:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+			"siteid": {
+				Required: true,
+				Type:     schema.TypeInt,
 			},
 			"hardware": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeString,
 			},
 			"neighboras": {
-				Optional:    true,
-				Type:        schema.TypeInt,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeInt,
 			},
 			"transport": {
 				Optional:    true,
@@ -75,16 +72,14 @@ func Resource() *schema.Resource {
 				Description:  "Remote IP. Example 10.0.1.2/24",
 			},
 			"description": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeString,
 			},
 			"state": {
 				Optional:     true,
 				Default:      "enabled",
 				ValidateFunc: validateState,
 				Type:         schema.TypeString,
-				Description:  "A description of an item",
 			},
 			"multihop": {
 				Optional:    true,
@@ -97,54 +92,44 @@ func Resource() *schema.Resource {
 				},
 			},
 			"bgppassword": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeString,
 			},
 			"allowasin": {
-				Optional:    true,
-				Type:        schema.TypeInt,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeInt,
 			},
 			"defaultoriginate": {
-				Optional:    true,
-				Type:        schema.TypeBool,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeBool,
 			},
 			"prefixinboundmax": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeString,
 			},
 			"inboundroutemap": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeString,
 			},
 			"outboundroutemap": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeString,
 			},
 			"localpreference": {
-				Optional:    true,
-				Type:        schema.TypeInt,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeInt,
 			},
 			"weight": {
-				Optional:    true,
-				Type:        schema.TypeInt,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeInt,
 			},
 			"prependinbound": {
-				Optional:    true,
-				Type:        schema.TypeInt,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeInt,
 			},
 			"prependoutbound": {
-				Optional:    true,
-				Type:        schema.TypeInt,
-				Description: "A description of an item",
+				Optional: true,
+				Type:     schema.TypeInt,
 			},
 			"prefixlistinbound": {
 				Optional:    true,
@@ -201,7 +186,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	originate := "disabled"
 	localPreference := 100
 
-	siteName := d.Get("site").(string)
+	siteID := d.Get("siteid").(int)
 
 	if d.Get("defaultoriginate").(bool) {
 		originate = "enabled"
@@ -304,7 +289,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	bgpAdd := &bgp.EBGPAdd{
 		Name:               d.Get("name").(string),
-		Site:               bgp.IDName{Name: siteName},
+		Site:               bgp.IDName{ID: siteID},
 		Vlan:               vlanID,
 		AllowAsIn:          d.Get("allowasin").(int),
 		BgpPassword:        d.Get("bgppassword").(string),
@@ -396,7 +381,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("site", bgp.SiteName)
+	err = d.Set("siteid", bgp.SiteID)
 	if err != nil {
 		return err
 	}
@@ -540,7 +525,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	originate := "disabled"
 	localPreference := 100
 
-	siteName := d.Get("site").(string)
+	siteID := d.Get("siteid").(int)
 
 	if d.Get("defaultoriginate").(bool) {
 		originate = "enabled"
@@ -634,7 +619,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	bgpUpdate := &bgp.EBGPUpdate{
 		Name:               d.Get("name").(string),
-		Site:               bgp.IDName{Name: siteName},
+		Site:               bgp.IDName{ID: siteID},
 		Vlan:               vlanID,
 		AllowAsIn:          d.Get("allowasin").(int),
 		BgpPassword:        d.Get("bgppassword").(string),
