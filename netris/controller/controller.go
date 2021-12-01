@@ -37,8 +37,8 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
-			"tenant": {
-				Type:        schema.TypeString,
+			"tenantid": {
+				Type:        schema.TypeInt,
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
@@ -78,7 +78,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	controllerAdd := &inventory.HWController{
 		Name:        d.Get("name").(string),
-		Tenant:      inventory.IDName{Name: d.Get("tenant").(string)},
+		Tenant:      inventory.IDName{ID: d.Get("tenantid").(int)},
 		Site:        inventory.IDName{ID: d.Get("siteid").(int)},
 		Description: d.Get("description").(string),
 		MainAddress: d.Get("mainip").(string),
@@ -137,7 +137,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("tenant", sw.Tenant.Name)
+	err = d.Set("tenantid", sw.Tenant.ID)
 	if err != nil {
 		return err
 	}
