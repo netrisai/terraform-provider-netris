@@ -34,19 +34,18 @@ func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Type:     schema.TypeString,
+				Required: true,
 			},
 			"pgroup": {
 				Required: true,
 				Type:     schema.TypeString,
 			},
-			"tenants": {
+			"tenantids": {
 				Optional: true,
 				Type:     schema.TypeList,
 				Elem: &schema.Schema{
-					Type: schema.TypeString,
+					Type: schema.TypeInt,
 				},
 			},
 		},
@@ -76,23 +75,16 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("couldn't find permission group '%s'", pgroupName)
 	}
 
-	tenantNames := []string{}
-	tenants := d.Get("tenants").([]interface{})
+	tenantIds := []int{}
+	tenants := d.Get("tenantids").([]interface{})
 	for _, name := range tenants {
-		tenantNames = append(tenantNames, name.(string))
-	}
-
-	netrisTenants, err := findTenatsByNames(tenantNames, clientset)
-	if err != nil {
-		log.Println("[DEBUG]", err)
-		return err
+		tenantIds = append(tenantIds, name.(int))
 	}
 
 	roleTenants := []userrole.Tenant{}
-	for _, tenant := range netrisTenants {
+	for _, id := range tenantIds {
 		roleTenants = append(roleTenants, userrole.Tenant{
-			ID:          tenant.ID,
-			TenantName:  tenant.Name,
+			ID:          id,
 			TenantRead:  true,
 			TenantWrite: true,
 		})
@@ -177,11 +169,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	var tenantsList []interface{}
+	tenantsList := []int{}
 	for _, tenant := range ur.Tenants {
-		tenantsList = append(tenantsList, tenant.TenantName)
+		tenantsList = append(tenantsList, tenant.TenantID)
 	}
-	err = d.Set("tenants", tenantsList)
+	err = d.Set("tenantids", tenantsList)
 	if err != nil {
 		return err
 	}
@@ -200,23 +192,16 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("couldn't find permission group '%s'", pgroupName)
 	}
 
-	tenantNames := []string{}
-	tenants := d.Get("tenants").([]interface{})
+	tenantIds := []int{}
+	tenants := d.Get("tenantids").([]interface{})
 	for _, name := range tenants {
-		tenantNames = append(tenantNames, name.(string))
-	}
-
-	netrisTenants, err := findTenatsByNames(tenantNames, clientset)
-	if err != nil {
-		log.Println("[DEBUG]", err)
-		return err
+		tenantIds = append(tenantIds, name.(int))
 	}
 
 	roleTenants := []userrole.Tenant{}
-	for _, tenant := range netrisTenants {
+	for _, id := range tenantIds {
 		roleTenants = append(roleTenants, userrole.Tenant{
-			ID:          tenant.ID,
-			TenantName:  tenant.Name,
+			ID:          id,
 			TenantRead:  true,
 			TenantWrite: true,
 		})
