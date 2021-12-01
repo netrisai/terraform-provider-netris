@@ -1,11 +1,7 @@
-# data "netris_site" "santa_clara"{
-#   name = "Santa Clara"
-# }
-
 # resource "netris_softgate" "my-softgate" {
 #   name = "my-softgate"
-#   tenant = "Admin"
-#   siteid = data.netris_site.santa_clara.id
+#   tenantid = netris_tenant.admin.id
+#   siteid = netris_site.santa_clara.id
 #   description = "Softgate 1"
 #   profile = ""
 #   mainip = "198.51.100.11"
