@@ -43,9 +43,9 @@ func Resource() *schema.Resource {
 				Required: true,
 				Type:     schema.TypeString,
 			},
-			"tenant": {
+			"tenantid": {
 				Required: true,
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 			},
 			"purpose": {
 				Required: true,
@@ -55,12 +55,12 @@ func Resource() *schema.Resource {
 				Optional: true,
 				Type:     schema.TypeString,
 			},
-			"sites": {
+			"siteids": {
 				Optional:    true,
 				Type:        schema.TypeList,
 				Description: "Sites",
 				Elem: &schema.Schema{
-					Type: schema.TypeString,
+					Type: schema.TypeInt,
 				},
 			},
 		},
@@ -84,13 +84,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Get("name").(string)
 	prefix := d.Get("prefix").(string)
-	tenant := d.Get("tenant").(string)
 	purpose := d.Get("purpose").(string)
 	defaultgw := ""
-	sitesList := d.Get("sites").([]interface{})
+	sitesList := d.Get("siteids").([]interface{})
 	sites := []ipam.IDName{}
 	for _, s := range sitesList {
-		sites = append(sites, ipam.IDName{Name: s.(string)})
+		sites = append(sites, ipam.IDName{ID: s.(int)})
 	}
 
 	if purpose == "management" {
@@ -100,7 +99,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	subnetAdd := &ipam.Subnet{
 		Name:           name,
 		Prefix:         prefix,
-		Tenant:         ipam.IDName{Name: tenant},
+		Tenant:         ipam.IDName{ID: d.Get("tenantid").(int)},
 		Purpose:        purpose,
 		Sites:          sites,
 		DefaultGateway: defaultgw,
@@ -169,7 +168,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("tenant", ipam.Tenant.Name)
+	err = d.Set("tenantid", ipam.Tenant.ID)
 	if err != nil {
 		return err
 	}
@@ -181,11 +180,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	sites := []string{}
+	sites := []int{}
 	for _, s := range ipam.Sites {
-		sites = append(sites, s.Name)
+		sites = append(sites, s.ID)
 	}
-	err = d.Set("sites", sites)
+	err = d.Set("siteids", sites)
 	if err != nil {
 		return err
 	}
@@ -197,13 +196,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Get("name").(string)
 	prefix := d.Get("prefix").(string)
-	tenant := d.Get("tenant").(string)
 	purpose := d.Get("purpose").(string)
 	defaultgw := ""
-	sitesList := d.Get("sites").([]interface{})
+	sitesList := d.Get("siteids").([]interface{})
 	sites := []ipam.IDName{}
 	for _, s := range sitesList {
-		sites = append(sites, ipam.IDName{Name: s.(string)})
+		sites = append(sites, ipam.IDName{ID: s.(int)})
 	}
 
 	if purpose == "management" {
@@ -213,7 +211,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	subnetUpdate := &ipam.Subnet{
 		Name:           name,
 		Prefix:         prefix,
-		Tenant:         ipam.IDName{Name: tenant},
+		Tenant:         ipam.IDName{ID: d.Get("tenantid").(int)},
 		Purpose:        purpose,
 		Sites:          sites,
 		DefaultGateway: defaultgw,
