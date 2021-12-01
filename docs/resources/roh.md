@@ -20,8 +20,8 @@ description: |-
 - **anycastips** (List of String) Anycast IP addresses
 - **name** (String) The name of the resource, also acts as it's unique ID
 - **ports** (List of String) Ports
-- **site** (String)
-- **tenant** (String)
+- **siteid** (Number)
+- **tenantid** (Number)
 - **type** (String)
 - **unicastips** (List of String) Unicast IP addresses
 
