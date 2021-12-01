@@ -17,12 +17,12 @@ description: |-
 
 ### Required
 
-- **name** (String) The name of the resource, also acts as it's unique ID
+- **name** (String)
 - **pgroup** (String)
 
 ### Optional
 
 - **id** (String) The ID of this resource.
-- **tenants** (List of String)
+- **tenantids** (List of Number)
 
 
