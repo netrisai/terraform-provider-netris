@@ -1,7 +1,7 @@
 # resource "netris_roh" "roh-terraform-test-1" {
 #     name = "roh-terraform-test-1"
-#     tenant = "Admin"
-#     site = "Santa Clara"
+#     tenantid = netris_tenant.admin.id
+#     siteid = netris_site.santa-clara.id
 #     type = "physical"
 #     routingprofile = "default"
 #     unicastips = ["7.0.0.34/9"]

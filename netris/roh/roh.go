@@ -37,14 +37,14 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
-			"tenant": {
+			"tenantid": {
 				Required: true,
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				ForceNew: true,
 			},
-			"site": {
+			"siteid": {
 				Required: true,
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 			},
 			"type": {
 				Required:     true,
@@ -124,8 +124,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	rohAdd := &roh.ROHw{
 		Name:            d.Get("name").(string),
-		Tenant:          roh.IDName{Name: d.Get("tenant").(string)},
-		Site:            roh.IDName{Name: d.Get("site").(string)},
+		Tenant:          roh.IDName{ID: d.Get("tenantid").(int)},
+		Site:            roh.IDName{ID: d.Get("siteid").(int)},
 		Type:            d.Get("type").(string),
 		Ports:           ports,
 		InboundPrefixes: inboundList,
@@ -210,11 +210,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("tenant", roh.Tenant.Name)
+	err = d.Set("tenantid", roh.Tenant.ID)
 	if err != nil {
 		return err
 	}
-	err = d.Set("site", roh.Site.Name)
+	err = d.Set("siteid", roh.Site.ID)
 	if err != nil {
 		return err
 	}
@@ -314,8 +314,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	rohAdd := &roh.ROHw{
 		Name:            d.Get("name").(string),
-		Tenant:          roh.IDName{Name: d.Get("tenant").(string)},
-		Site:            roh.IDName{Name: d.Get("site").(string)},
+		Tenant:          roh.IDName{ID: d.Get("tenantid").(int)},
+		Site:            roh.IDName{ID: d.Get("siteid").(int)},
 		Type:            d.Get("type").(string),
 		Ports:           ports,
 		InboundPrefixes: inboundList,
