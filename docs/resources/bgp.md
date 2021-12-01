@@ -20,29 +20,29 @@ description: |-
 - **localip** (String) Local IP. Example 10.0.1.1/24
 - **name** (String) The name of the resource, also acts as it's unique ID
 - **remoteip** (String) Remote IP. Example 10.0.1.2/24
-- **site** (String) A description of an item
+- **siteid** (Number)
 
 ### Optional
 
-- **allowasin** (Number) A description of an item
-- **bgppassword** (String) A description of an item
-- **defaultoriginate** (Boolean) A description of an item
-- **description** (String) A description of an item
-- **hardware** (String) A description of an item
+- **allowasin** (Number)
+- **bgppassword** (String)
+- **defaultoriginate** (Boolean)
+- **description** (String)
+- **hardware** (String)
 - **id** (String) The ID of this resource.
-- **inboundroutemap** (String) A description of an item
-- **localpreference** (Number) A description of an item
+- **inboundroutemap** (String)
+- **localpreference** (Number)
 - **multihop** (Map of String) Multihop
-- **neighboras** (Number) A description of an item
-- **outboundroutemap** (String) A description of an item
-- **prefixinboundmax** (String) A description of an item
+- **neighboras** (Number)
+- **outboundroutemap** (String)
+- **prefixinboundmax** (String)
 - **prefixlistinbound** (List of String) Switch Ports
 - **prefixlistoutbound** (List of String) Switch Ports
-- **prependinbound** (Number) A description of an item
-- **prependoutbound** (Number) A description of an item
+- **prependinbound** (Number)
+- **prependoutbound** (Number)
 - **sendbgpcommunity** (List of String) Switch Ports
-- **state** (String) A description of an item
+- **state** (String)
 - **transport** (Map of String) Switch Ports
-- **weight** (Number) A description of an item
+- **weight** (Number)
 
 
