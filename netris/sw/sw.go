@@ -33,59 +33,48 @@ func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Type:     schema.TypeString,
+				Required: true,
 			},
-			"tenant": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+			"tenantid": {
+				Type:     schema.TypeInt,
+				Required: true,
 			},
 			"siteid": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Type:     schema.TypeInt,
+				Required: true,
 			},
 			"description": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"nos": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Type:     schema.TypeString,
+				Required: true,
 			},
 			"asnumber": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Type:     schema.TypeString,
+				Required: true,
 			},
 			"profile": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"mainip": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Type:     schema.TypeString,
+				Required: true,
 			},
 			"mgmtip": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Type:     schema.TypeString,
+				Required: true,
 			},
 			"macaddress": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"portcount": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Type:     schema.TypeInt,
+				Required: true,
 			},
 		},
 		Create: resourceCreate,
@@ -132,7 +121,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	swAdd := &inventory.HWSwitchAdd{
 		Name:        d.Get("name").(string),
-		Tenant:      inventory.IDName{Name: d.Get("tenant").(string)},
+		Tenant:      inventory.IDName{ID: d.Get("tenantid").(int)},
 		Site:        inventory.IDName{ID: d.Get("siteid").(int)},
 		Description: d.Get("description").(string),
 		Nos:         nos,
@@ -199,7 +188,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("tenant", sw.Tenant.Name)
+	err = d.Set("tenantid", sw.Tenant.ID)
 	if err != nil {
 		return err
 	}
@@ -283,7 +272,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	swUpdate := &inventory.HWSwitchUpdate{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
-		Tenant:      inventory.IDName{Name: d.Get("tenant").(string)},
+		Tenant:      inventory.IDName{ID: d.Get("tenantid").(int)},
 		Site:        inventory.IDName{ID: d.Get("siteid").(int)},
 		Nos:         nos,
 		Asn:         d.Get("asnumber").(string),
