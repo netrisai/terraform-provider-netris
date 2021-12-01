@@ -11,8 +11,8 @@
 
 # resource "netris_roh" "roh-terraform-test-2" {
 #     name = "roh-terraform-test-2"
-#     tenant = "Admin"
-#     site = "Santa Clara"
+#     tenantid = netris_tenant.admin.id
+#     siteid = netris_site.santa-clara.id
 #     type = "hypervisor"
 #     unicastips = ["7.0.0.46/9"]
 #     anycastips = ["7.0.0.7/9", "7.0.0.8/9"]
