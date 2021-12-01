@@ -20,12 +20,12 @@ description: |-
 - **name** (String) The name of the resource, also acts as it's unique ID
 - **prefix** (String)
 - **purpose** (String)
-- **tenant** (String)
+- **tenantid** (Number)
 
 ### Optional
 
 - **defaultgateway** (String)
 - **id** (String) The ID of this resource.
-- **sites** (List of String) Sites
+- **siteids** (List of Number) Sites
 
 
