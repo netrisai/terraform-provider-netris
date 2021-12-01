@@ -19,7 +19,7 @@ description: |-
 
 - **name** (String) The name of the resource, also acts as it's unique ID
 - **prefix** (String)
-- **tenant** (String)
+- **tenantid** (Number)
 
 ### Optional
 
