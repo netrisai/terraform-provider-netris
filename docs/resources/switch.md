@@ -17,20 +17,20 @@ description: |-
 
 ### Required
 
-- **asnumber** (String) The name of the resource, also acts as it's unique ID
-- **mainip** (String) The name of the resource, also acts as it's unique ID
-- **mgmtip** (String) The name of the resource, also acts as it's unique ID
-- **name** (String) The name of the resource, also acts as it's unique ID
-- **nos** (String) The name of the resource, also acts as it's unique ID
-- **portcount** (Number) The name of the resource, also acts as it's unique ID
-- **siteid** (Number) The name of the resource, also acts as it's unique ID
-- **tenant** (String) The name of the resource, also acts as it's unique ID
+- **asnumber** (String)
+- **mainip** (String)
+- **mgmtip** (String)
+- **name** (String)
+- **nos** (String)
+- **portcount** (Number)
+- **siteid** (Number)
+- **tenantid** (Number)
 
 ### Optional
 
-- **description** (String) The name of the resource, also acts as it's unique ID
+- **description** (String)
 - **id** (String) The ID of this resource.
-- **macaddress** (String) The name of the resource, also acts as it's unique ID
-- **profile** (String) The name of the resource, also acts as it's unique ID
+- **macaddress** (String)
+- **profile** (String)
 
 
