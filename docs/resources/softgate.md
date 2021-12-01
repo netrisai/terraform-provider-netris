@@ -21,7 +21,7 @@ description: |-
 - **mgmtip** (String) The name of the resource, also acts as it's unique ID
 - **name** (String) The name of the resource, also acts as it's unique ID
 - **siteid** (Number) The name of the resource, also acts as it's unique ID
-- **tenant** (String) The name of the resource, also acts as it's unique ID
+- **tenantid** (Number) The name of the resource, also acts as it's unique ID
 
 ### Optional
 
