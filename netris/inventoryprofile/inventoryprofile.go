@@ -248,14 +248,19 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("ipv4ssh", strings.Split(profile.Ipv4SSH, ","))
-	if err != nil {
-		return err
+	if (d.Get("ipv4ssh") != nil && len(d.Get("ipv4ssh").([]interface{})) > 0) || profile.Ipv4SSH != "" {
+		err = d.Set("ipv4ssh", strings.Split(profile.Ipv4SSH, ","))
+		if err != nil {
+			return err
+		}
 	}
-	err = d.Set("ipv6ssh", strings.Split(profile.Ipv6SSH, ","))
-	if err != nil {
-		return err
+	if (d.Get("ipv6ssh") != nil && len(d.Get("ipv6ssh").([]interface{})) > 0) || profile.Ipv6SSH != "" {
+		err = d.Set("ipv6ssh", strings.Split(profile.Ipv6SSH, ","))
+		if err != nil {
+			return err
+		}
 	}
+
 	err = d.Set("timezone", unmarshalTimezone(profile.Timezone).TzCode)
 	if err != nil {
 		return err
