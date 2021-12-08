@@ -3,7 +3,7 @@
 #   owner = "Admin"
 #   state = "active"
 #   sites{
-#     name = "Santa Clara"
+#     id = netris_site.santa-clara.id
 #     gateways {
 #       prefix = "203.0.113.1/24"
 #     }

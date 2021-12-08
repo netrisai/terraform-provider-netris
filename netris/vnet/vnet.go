@@ -57,8 +57,8 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeList,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"name": {
-							Type:     schema.TypeString,
+						"id": {
+							Type:     schema.TypeInt,
 							Required: true,
 						},
 						"ports": {
@@ -123,13 +123,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		sitesList = append(sitesList, site.(map[string]interface{}))
 	}
 
-	siteNames := []vnet.VNetAddSite{}
+	siteIDs := []vnet.VNetAddSite{}
 	members := []vnet.VNetAddPort{}
 	gatewayList := []vnet.VNetAddGateway{}
 
 	for _, site := range sitesList {
-		if siteName, ok := site["name"]; ok {
-			siteNames = append(siteNames, vnet.VNetAddSite{Name: siteName.(string)})
+		if siteID, ok := site["id"]; ok {
+			siteIDs = append(siteIDs, vnet.VNetAddSite{ID: siteID.(int)})
 		}
 		if gws, ok := site["gateways"]; ok {
 			gateways := gws.([]interface{})
@@ -161,7 +161,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Name:         d.Get("name").(string),
 		Tenant:       vnet.VNetAddTenant{Name: d.Get("owner").(string)},
 		GuestTenants: []vnet.VNetAddTenant{},
-		Sites:        siteNames,
+		Sites:        siteIDs,
 		State:        d.Get("state").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
@@ -282,7 +282,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				gatewayList = append(gatewayList, m)
 			}
 		}
-		s["name"] = site.Name
+		s["id"] = site.ID
 		s["ports"] = portList
 		s["gateways"] = gatewayList
 		sites = append(sites, s)
@@ -304,13 +304,13 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		sitesList = append(sitesList, site.(map[string]interface{}))
 	}
 
-	siteNames := []vnet.VNetUpdateSite{}
+	siteIDs := []vnet.VNetUpdateSite{}
 	members := []vnet.VNetUpdatePort{}
 	gatewayList := []vnet.VNetUpdateGateway{}
 
 	for _, site := range sitesList {
-		if siteName, ok := site["name"]; ok {
-			siteNames = append(siteNames, vnet.VNetUpdateSite{Name: siteName.(string)})
+		if siteID, ok := site["id"]; ok {
+			siteIDs = append(siteIDs, vnet.VNetUpdateSite{ID: siteID.(int)})
 		}
 		if gws, ok := site["gateways"]; ok {
 			gateways := gws.([]interface{})
@@ -341,7 +341,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	vnetUpdate := &vnet.VNetUpdate{
 		Name:         d.Get("name").(string),
 		GuestTenants: []vnet.VNetUpdateGuestTenant{},
-		Sites:        siteNames,
+		Sites:        siteIDs,
 		State:        d.Get("state").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
