@@ -18,8 +18,8 @@ description: |-
 ### Required
 
 - **name** (String) The name of the resource, also acts as it's unique ID
-- **owner** (String)
 - **sites** (Block List, Min: 1) (see [below for nested schema](#nestedblock--sites))
+- **tenantid** (Number)
 
 ### Optional
 
@@ -31,7 +31,7 @@ description: |-
 
 Required:
 
-- **name** (String)
+- **id** (Number) The ID of this resource.
 
 Optional:
 
