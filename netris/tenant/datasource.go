@@ -58,9 +58,11 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 			if err != nil {
 				return err
 			}
-			err = d.Set("description", tenant.Description)
-			if err != nil {
-				return err
+			if tenant.Description != "" || d.Get("description").(string) != "" {
+				err = d.Set("description", tenant.Description)
+				if err != nil {
+					return err
+				}
 			}
 			break
 		}
