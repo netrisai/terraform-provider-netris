@@ -462,12 +462,14 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	multihop := make(map[string]interface{})
-	multihop["neighboraddress"] = bgp.NeighborAddress
-	multihop["updatesource"] = bgp.UpdateSource
-	multihop["hops"] = strconv.Itoa(bgp.Multihop)
-	err = d.Set("multihop", multihop)
-	if err != nil {
-		return err
+	if bgp.Multihop > 0 {
+		multihop["neighboraddress"] = bgp.NeighborAddress
+		multihop["updatesource"] = bgp.UpdateSource
+		multihop["hops"] = strconv.Itoa(bgp.Multihop)
+		err = d.Set("multihop", multihop)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = d.Set("bgppassword", bgp.BgpPassword)
