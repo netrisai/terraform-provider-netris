@@ -215,7 +215,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 		return false, err
 	}
 
-	if sw == nil {
+	if sw.ID == 0 {
 		return false, nil
 	}
 
