@@ -297,18 +297,24 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if pg, ok := getPortGroupByID(acl.SrcPortGroup, clientset); ok {
 		pgName = pg.Name
 	}
-	err = d.Set("srcportgroup", pgName)
-	if err != nil {
-		return err
+	if pgName != "" || d.Get("srcportgroup").(string) != "" {
+		err = d.Set("srcportgroup", pgName)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = d.Set("srcportfrom", acl.SrcPortFrom)
-	if err != nil {
-		return err
+	if acl.SrcPortFrom != 0 || d.Get("srcportfrom").(int) != 0 {
+		err = d.Set("srcportfrom", acl.SrcPortFrom)
+		if err != nil {
+			return err
+		}
 	}
-	err = d.Set("srcportto", acl.SrcPortTo)
-	if err != nil {
-		return err
+	if acl.SrcPortTo != 0 || d.Get("srcportto").(int) != 0 {
+		err = d.Set("srcportto", acl.SrcPortTo)
+		if err != nil {
+			return err
+		}
 	}
 	err = d.Set("dstprefix", fmt.Sprintf("%s/%d", acl.DstPrefix, acl.DstLength))
 	if err != nil {
@@ -318,17 +324,23 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if pg, ok := getPortGroupByID(acl.DstPortGroup, clientset); ok {
 		pgName = pg.Name
 	}
-	err = d.Set("dstportgroup", pgName)
-	if err != nil {
-		return err
+	if pgName != "" || d.Get("dstportgroup").(string) != "" {
+		err = d.Set("dstportgroup", pgName)
+		if err != nil {
+			return err
+		}
 	}
-	err = d.Set("dstportfrom", acl.DstPortFrom)
-	if err != nil {
-		return err
+	if acl.DstPortFrom != 0 || d.Get("dstportfrom").(int) != 0 {
+		err = d.Set("dstportfrom", acl.DstPortFrom)
+		if err != nil {
+			return err
+		}
 	}
-	err = d.Set("dstportto", acl.DstPortTo)
-	if err != nil {
-		return err
+	if acl.DstPortTo != 0 || d.Get("dstportto").(int) != 0 {
+		err = d.Set("dstportto", acl.DstPortTo)
+		if err != nil {
+			return err
+		}
 	}
 
 	if acl.ValidUntil != "" {
