@@ -41,9 +41,9 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
-			"owner": {
+			"tenantid": {
 				Required: true,
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				ForceNew: true,
 			},
 			"state": {
@@ -159,7 +159,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	vnetAdd := &vnet.VNetAdd{
 		Name:         d.Get("name").(string),
-		Tenant:       vnet.VNetAddTenant{Name: d.Get("owner").(string)},
+		Tenant:       vnet.VNetAddTenant{ID: d.Get("tenantid").(int)},
 		GuestTenants: []vnet.VNetAddTenant{},
 		Sites:        siteIDs,
 		State:        d.Get("state").(string),
@@ -221,7 +221,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("owner", vnet.Tenant.Name)
+	err = d.Set("tenantid", vnet.Tenant.ID)
 	if err != nil {
 		return err
 	}

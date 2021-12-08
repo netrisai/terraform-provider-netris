@@ -1,6 +1,6 @@
 # resource "netris_vnet" "my-vnet" {
 #   name = "my-vnet"
-#   owner = "Admin"
+#   tenantid = netris_tenant.admin.id
 #   state = "active"
 #   sites{
 #     id = netris_site.santa-clara.id
