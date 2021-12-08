@@ -257,10 +257,20 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		ipVersion = "ipv4"
 	}
 
+	multihopNeighborAddress := ""
+	multihopUpdateSource := ""
+	multihopHop := 0
+
 	multihopMap := d.Get("multihop").(map[string]interface{})
-	multihopNeighborAddress := multihopMap["neighboraddress"].(string)
-	multihopUpdateSource := multihopMap["updatesource"].(string)
-	multihopHop, _ := strconv.Atoi(multihopMap["hops"].(string))
+	if v, ok := multihopMap["neighboraddress"]; ok {
+		multihopNeighborAddress = v.(string)
+	}
+	if v, ok := multihopMap["updatesource"]; ok {
+		multihopUpdateSource = v.(string)
+	}
+	if v, ok := multihopMap["hops"]; ok {
+		multihopHop, _ = strconv.Atoi(v.(string))
+	}
 
 	prefixListInboundArr := []string{}
 	for _, pr := range d.Get("prefixlistinbound").([]interface{}) {
