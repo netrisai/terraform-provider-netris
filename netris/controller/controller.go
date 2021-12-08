@@ -48,6 +48,7 @@ func Resource() *schema.Resource {
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
 			"description": {
+				Computed:    true,
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
