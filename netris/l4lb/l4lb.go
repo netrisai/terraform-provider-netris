@@ -160,10 +160,20 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		proto = protocol
 	}
 
+	checkType := ""
+	checkTimeout := 0
+	checkRequestPath := ""
+
 	check := d.Get("check").(map[string]interface{})
-	checkType := check["type"].(string)
-	checkTimeout, _ := strconv.Atoi(check["timeout"].(string))
-	checkRequestPath, _ := check["requestPath"].(string)
+	if v, ok := check["type"]; ok {
+		checkType = v.(string)
+	}
+	if v, ok := check["type"]; ok {
+		checkTimeout, _ = strconv.Atoi(v.(string))
+	}
+	if v, ok := check["requestPath"]; ok {
+		checkRequestPath = v.(string)
+	}
 
 	healthCheck := "None"
 
@@ -299,10 +309,20 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		proto = protocol
 	}
 
+	checkType := ""
+	checkTimeout := 0
+	checkRequestPath := ""
+
 	check := d.Get("check").(map[string]interface{})
-	checkType := check["type"].(string)
-	checkTimeout := check["timeout"].(int)
-	checkRequestPath, _ := check["requestPath"].(string)
+	if v, ok := check["type"]; ok {
+		checkType = v.(string)
+	}
+	if v, ok := check["type"]; ok {
+		checkTimeout, _ = strconv.Atoi(v.(string))
+	}
+	if v, ok := check["requestPath"]; ok {
+		checkRequestPath = v.(string)
+	}
 
 	healthCheck := "None"
 
