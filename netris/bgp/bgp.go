@@ -100,38 +100,47 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeInt,
 			},
 			"defaultoriginate": {
+				Computed: true,
 				Optional: true,
 				Type:     schema.TypeBool,
 			},
 			"prefixinboundmax": {
+				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
 			},
 			"inboundroutemap": {
+				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
 			},
 			"outboundroutemap": {
+				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
 			},
 			"localpreference": {
+				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
 			},
 			"weight": {
+				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
 			},
 			"prependinbound": {
+				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
 			},
 			"prependoutbound": {
+				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
 			},
 			"prefixlistinbound": {
+				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeList,
 				Description: "Switch Ports",
@@ -140,6 +149,7 @@ func Resource() *schema.Resource {
 				},
 			},
 			"prefixlistoutbound": {
+				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeList,
 				Description: "Switch Ports",
@@ -148,6 +158,7 @@ func Resource() *schema.Resource {
 				},
 			},
 			"sendbgpcommunity": {
+				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeList,
 				Description: "Switch Ports",
