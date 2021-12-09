@@ -31,6 +31,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/link"
 	"github.com/netrisai/terraform-provider-netris/netris/nat"
 	"github.com/netrisai/terraform-provider-netris/netris/pgroup"
+	"github.com/netrisai/terraform-provider-netris/netris/port"
 	"github.com/netrisai/terraform-provider-netris/netris/portgroup"
 	"github.com/netrisai/terraform-provider-netris/netris/roh"
 	"github.com/netrisai/terraform-provider-netris/netris/routemap"
@@ -85,6 +86,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_routemap":          routemap.Resource(),
 			"netris_link":              link.Resource(),
 			"netris_nat":               nat.Resource(),
+			"netris_port":              port.Resource(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"netris_site":       site.DataResource(),

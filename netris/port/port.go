@@ -1,0 +1,358 @@
+/*
+Copyright 2021. Netris, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package port
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"strconv"
+	"strings"
+
+	"github.com/netrisai/netriswebapi/v2/types/port"
+
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	api "github.com/netrisai/netriswebapi/v2"
+)
+
+func Resource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"switchid": {
+				Type:     schema.TypeInt,
+				Required: true,
+			},
+			"tenantid": {
+				Type:     schema.TypeInt,
+				Required: true,
+			},
+			"breakout": {
+				Default:      "off",
+				ValidateFunc: validateBreakout,
+				Type:         schema.TypeString,
+				Optional:     true,
+			},
+			"mtu": {
+				Default:  "enabled",
+				Optional: true,
+				Type:     schema.TypeInt,
+			},
+			"autoneg": {
+				Default:      "none",
+				ValidateFunc: validateAutoneg,
+				Type:         schema.TypeString,
+				Optional:     true,
+			},
+			"speed": {
+				Default:      "auto",
+				ValidateFunc: validateSpeed,
+				Type:         schema.TypeString,
+				Optional:     true,
+			},
+			"extension": {
+				Optional: true,
+				Type:     schema.TypeMap,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"extensionname": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"vlanrange": {
+							ValidateFunc: validatePort,
+							Type:         schema.TypeString,
+							Required:     true,
+						},
+					},
+				},
+			},
+		},
+		Create: resourceCreate,
+		Read:   resourceRead,
+		Update: resourceUpdate,
+		Delete: resourceDelete,
+		Exists: resourceExists,
+		// Importer: &schema.ResourceImporter{
+		// 	State: resourceImport,
+		// },
+	}
+}
+
+func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
+	return true
+}
+
+func resourceCreate(d *schema.ResourceData, m interface{}) error {
+	clientset := m.(*api.Clientset)
+
+	var hwPort *port.Port
+	ports, err := clientset.Port().Get()
+	if err != nil {
+		return err
+	}
+
+	name := d.Get("name").(string)
+	description := d.Get("description").(string)
+	breakout := d.Get("breakout").(string)
+	mtu := d.Get("mtu").(int)
+	autoneg := d.Get("autoneg").(string)
+	speed := d.Get("speed").(string)
+	switchID := d.Get("switchid").(int)
+	tenantID := d.Get("tenantid").(int)
+
+	extension := port.PortUpdateExtenstion{}
+	ext := d.Get("extension").(map[string]interface{})
+	if v, ok := ext["vlanrange"]; ok {
+		vlanrange := strings.Split(v.(string), "-")
+		from, _ := strconv.Atoi(vlanrange[0])
+		to, _ := strconv.Atoi(vlanrange[1])
+		extension.Name = ext["extensionname"].(string)
+		extension.VLANFrom = from
+		extension.VLANTo = to
+	}
+
+	for _, p := range ports {
+		if p.Port == name && p.Tenant.ID == tenantID && p.Switch.ID == switchID {
+			hwPort = p
+			break
+		}
+	}
+
+	if hwPort == nil {
+		return fmt.Errorf("Coudn't find port '%s'", name)
+	}
+
+	portUpdate := &port.PortUpdate{
+		AdminDown:   hwPort.AdminDown,
+		AutoNeg:     autoneg,
+		Breakout:    breakout,
+		Description: description,
+		Duplex:      hwPort.Duplex,
+		Extension:   extension,
+		Mtu:         mtu,
+		Speed:       speedMap[speed],
+		Tenant:      port.IDName{ID: tenantID},
+	}
+
+	js, _ := json.Marshal(portUpdate)
+	log.Println("[DEBUG]", string(js))
+
+	reply, err := clientset.Port().Update(hwPort.ID, portUpdate)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	js, _ = json.Marshal(reply)
+	log.Println("[DEBUG]", string(js))
+
+	log.Println("[DEBUG]", string(reply.Data))
+
+	if reply.StatusCode != 200 {
+		return fmt.Errorf(string(reply.Data))
+	}
+
+	d.SetId(strconv.Itoa(hwPort.ID))
+	return nil
+}
+
+func resourceRead(d *schema.ResourceData, m interface{}) error {
+	clientset := m.(*api.Clientset)
+
+	id, _ := strconv.Atoi(d.Id())
+	hwPort, err := clientset.Port().GetByID(id)
+	if err != nil {
+		return err
+	}
+
+	d.SetId(strconv.Itoa(hwPort.ID))
+	err = d.Set("description", hwPort.Description)
+	if err != nil {
+		return err
+	}
+	err = d.Set("switchid", hwPort.Switch.ID)
+	if err != nil {
+		return err
+	}
+	err = d.Set("tenantid", hwPort.Tenant.ID)
+	if err != nil {
+		return err
+	}
+	err = d.Set("breakout", hwPort.Breakout)
+	if err != nil {
+		return err
+	}
+	err = d.Set("mtu", hwPort.Mtu)
+	if err != nil {
+		return err
+	}
+	err = d.Set("autoneg", hwPort.AutoNeg)
+	if err != nil {
+		return err
+	}
+	err = d.Set("speed", speedMapReversed[hwPort.DesiredSpeed])
+	if err != nil {
+		return err
+	}
+
+	var ext *port.PortExtension
+	list, err := clientset.Port().GetExtenstion()
+	if err != nil {
+		return err
+	}
+	for _, e := range list {
+		if e.ID == hwPort.Extension {
+			ext = e
+		}
+	}
+
+	extension := make(map[string]interface{})
+	if ext != nil {
+		extension["extensionname"] = ext.Name
+		extension["vlanrange"] = fmt.Sprintf("%d-%d", ext.VlanFrom, ext.VlanTo)
+	}
+
+	err = d.Set("extension", extension)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func resourceUpdate(d *schema.ResourceData, m interface{}) error {
+	clientset := m.(*api.Clientset)
+
+	name := d.Get("name").(string)
+	description := d.Get("description").(string)
+	breakout := d.Get("breakout").(string)
+	mtu := d.Get("mtu").(int)
+	autoneg := d.Get("autoneg").(string)
+	speed := d.Get("speed").(string)
+	tenantID := d.Get("tenantid").(int)
+
+	extension := port.PortUpdateExtenstion{}
+	ext := d.Get("extension").(map[string]interface{})
+	if v, ok := ext["vlanrange"]; ok {
+		vlanrange := strings.Split(v.(string), "-")
+		from, _ := strconv.Atoi(vlanrange[0])
+		to, _ := strconv.Atoi(vlanrange[1])
+		extension.Name = ext["extensionname"].(string)
+		extension.VLANFrom = from
+		extension.VLANTo = to
+	}
+
+	id, _ := strconv.Atoi(d.Id())
+	hwPort, err := clientset.Port().GetByID(id)
+	if err != nil {
+		return err
+	}
+
+	if hwPort == nil {
+		return fmt.Errorf("Coudn't find port '%s'", name)
+	}
+
+	portUpdate := &port.PortUpdate{
+		AdminDown:   hwPort.AdminDown,
+		AutoNeg:     autoneg,
+		Breakout:    breakout,
+		Description: description,
+		Duplex:      hwPort.Duplex,
+		Extension:   extension,
+		Mtu:         mtu,
+		Speed:       speedMap[speed],
+		Tenant:      port.IDName{ID: tenantID},
+	}
+
+	js, _ := json.Marshal(portUpdate)
+	log.Println("[DEBUG]", string(js))
+
+	reply, err := clientset.Port().Update(hwPort.ID, portUpdate)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	js, _ = json.Marshal(reply)
+	log.Println("[DEBUG]", string(js))
+
+	log.Println("[DEBUG]", string(reply.Data))
+
+	if reply.StatusCode != 200 {
+		return fmt.Errorf(string(reply.Data))
+	}
+
+	d.SetId(strconv.Itoa(hwPort.ID))
+	return nil
+}
+
+func resourceDelete(d *schema.ResourceData, m interface{}) error {
+	clientset := m.(*api.Clientset)
+
+	name := d.Get("name").(string)
+	tenantID := d.Get("tenantid").(int)
+
+	id, _ := strconv.Atoi(d.Id())
+
+	portUpdate := portDefault
+	portUpdate.Description = name
+	portUpdate.Tenant = port.IDName{ID: tenantID}
+
+	js, _ := json.Marshal(portUpdate)
+	log.Println("[DEBUG]", string(js))
+
+	reply, err := clientset.Port().Update(id, portUpdate)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	js, _ = json.Marshal(reply)
+	log.Println("[DEBUG]", string(js))
+
+	log.Println("[DEBUG]", string(reply.Data))
+
+	if reply.StatusCode != 200 {
+		return fmt.Errorf(string(reply.Data))
+	}
+
+	d.SetId("")
+	return nil
+}
+
+func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
+	clientset := m.(*api.Clientset)
+	id, _ := strconv.Atoi(d.Id())
+	port, err := clientset.Port().GetByID(id)
+	if err != nil {
+		return false, err
+	}
+
+	if port == nil {
+		return false, nil
+	}
+
+	return true, nil
+}
