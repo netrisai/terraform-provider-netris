@@ -35,7 +35,7 @@ func validateBreakout(val interface{}, key string) (warns []string, errs []error
 func validateAutoneg(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
 	if !(v == "default" || v == "on" || v == "off") {
-		errs = append(errs, fmt.Errorf("Autoneg available values are (none, on, off)"))
+		errs = append(errs, fmt.Errorf("Autoneg available values are (default, on, off)"))
 		return warns, errs
 	}
 	return warns, errs
