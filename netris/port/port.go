@@ -151,7 +151,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		portUpdate.Mtu = mtu
 		portUpdate.AutoNeg = autoneg
 		portUpdate.Speed = speedMap[speed]
-		portDefault().Extension = extension
+		portUpdate.Extension = extension
 	}
 
 	js, _ := json.Marshal(portUpdate)
@@ -281,7 +281,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		portUpdate.Mtu = mtu
 		portUpdate.AutoNeg = autoneg
 		portUpdate.Speed = speedMap[speed]
-		portDefault().Extension = extension
+		portUpdate.Extension = extension
 	}
 
 	js, _ := json.Marshal(portUpdate)
