@@ -25,8 +25,8 @@ import (
 
 func validateBreakout(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
-	if !(v == "off" || v == "4x10g" || v == "4x25g" || v == "4x100g" || v == "manual") {
-		errs = append(errs, fmt.Errorf("Breakout available values are (off, 4x10g, 4x25g, 4x100g, manual)"))
+	if !(v == "off" || v == "4x10" || v == "4x25" || v == "4x100" || v == "manual") {
+		errs = append(errs, fmt.Errorf("Breakout available values are (off, 4x10, 4x25, 4x100, manual)"))
 		return warns, errs
 	}
 	return warns, errs

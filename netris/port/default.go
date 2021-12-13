@@ -18,13 +18,16 @@ package port
 
 import "github.com/netrisai/netriswebapi/v2/types/port"
 
-var portDefault = &port.PortUpdate{
-	AdminDown: "no",
-	AutoNeg:   "none",
-	Breakout:  "off",
-	Duplex:    "full",
-	Mtu:       9000,
-	Speed:     "auto",
+func portDefault() *port.PortUpdate {
+	portDefault := &port.PortUpdate{
+		AdminDown: "no",
+		AutoNeg:   "none",
+		Breakout:  "off",
+		Duplex:    "full",
+		Mtu:       9000,
+		Speed:     "auto",
+	}
+	return portDefault
 }
 
 var speedMap = map[string]string{

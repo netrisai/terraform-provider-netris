@@ -55,7 +55,7 @@ func Resource() *schema.Resource {
 				Optional:     true,
 			},
 			"mtu": {
-				Default:  "enabled",
+				Default:  9000,
 				Optional: true,
 				Type:     schema.TypeInt,
 			},
@@ -116,22 +116,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	breakout := d.Get("breakout").(string)
-	mtu := d.Get("mtu").(int)
-	autoneg := d.Get("autoneg").(string)
-	speed := d.Get("speed").(string)
 	switchID := d.Get("switchid").(int)
 	tenantID := d.Get("tenantid").(int)
-
-	extension := port.PortUpdateExtenstion{}
-	ext := d.Get("extension").(map[string]interface{})
-	if v, ok := ext["vlanrange"]; ok {
-		vlanrange := strings.Split(v.(string), "-")
-		from, _ := strconv.Atoi(vlanrange[0])
-		to, _ := strconv.Atoi(vlanrange[1])
-		extension.Name = ext["extensionname"].(string)
-		extension.VLANFrom = from
-		extension.VLANTo = to
-	}
 
 	for _, p := range ports {
 		if p.Port == name && p.Tenant.ID == tenantID && p.Switch.ID == switchID {
@@ -144,16 +130,28 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Coudn't find port '%s'", name)
 	}
 
-	portUpdate := &port.PortUpdate{
-		AdminDown:   hwPort.AdminDown,
-		AutoNeg:     autoneg,
-		Breakout:    breakout,
-		Description: description,
-		Duplex:      hwPort.Duplex,
-		Extension:   extension,
-		Mtu:         mtu,
-		Speed:       speedMap[speed],
-		Tenant:      port.IDName{ID: tenantID},
+	portUpdate := portDefault()
+	portUpdate.Description = description
+	portUpdate.Tenant = port.IDName{ID: tenantID}
+	portUpdate.Breakout = breakout
+	if breakout == "off" || breakout == "manual" {
+		mtu := d.Get("mtu").(int)
+		autoneg := d.Get("autoneg").(string)
+		speed := d.Get("speed").(string)
+		extension := port.PortUpdateExtenstion{}
+		ext := d.Get("extension").(map[string]interface{})
+		if v, ok := ext["vlanrange"]; ok {
+			vlanrange := strings.Split(v.(string), "-")
+			from, _ := strconv.Atoi(vlanrange[0])
+			to, _ := strconv.Atoi(vlanrange[1])
+			extension.Name = ext["extensionname"].(string)
+			extension.VLANFrom = from
+			extension.VLANTo = to
+		}
+		portUpdate.Mtu = mtu
+		portUpdate.AutoNeg = autoneg
+		portUpdate.Speed = speedMap[speed]
+		portDefault().Extension = extension
 	}
 
 	js, _ := json.Marshal(portUpdate)
@@ -204,39 +202,41 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("mtu", hwPort.Mtu)
-	if err != nil {
-		return err
-	}
-	err = d.Set("autoneg", hwPort.AutoNeg)
-	if err != nil {
-		return err
-	}
-	err = d.Set("speed", speedMapReversed[hwPort.DesiredSpeed])
-	if err != nil {
-		return err
-	}
-
-	var ext *port.PortExtension
-	list, err := clientset.Port().GetExtenstion()
-	if err != nil {
-		return err
-	}
-	for _, e := range list {
-		if e.ID == hwPort.Extension {
-			ext = e
+	if hwPort.Breakout == "off" || hwPort.Breakout == "manual" {
+		err = d.Set("mtu", hwPort.Mtu)
+		if err != nil {
+			return err
 		}
-	}
+		err = d.Set("autoneg", hwPort.AutoNeg)
+		if err != nil {
+			return err
+		}
+		err = d.Set("speed", speedMapReversed[hwPort.DesiredSpeed])
+		if err != nil {
+			return err
+		}
 
-	extension := make(map[string]interface{})
-	if ext != nil {
-		extension["extensionname"] = ext.Name
-		extension["vlanrange"] = fmt.Sprintf("%d-%d", ext.VlanFrom, ext.VlanTo)
-	}
+		var ext *port.PortExtension
+		list, err := clientset.Port().GetExtenstion()
+		if err != nil {
+			return err
+		}
+		for _, e := range list {
+			if e.ID == hwPort.Extension {
+				ext = e
+			}
+		}
 
-	err = d.Set("extension", extension)
-	if err != nil {
-		return err
+		extension := make(map[string]interface{})
+		if ext != nil {
+			extension["extensionname"] = ext.Name
+			extension["vlanrange"] = fmt.Sprintf("%d-%d", ext.VlanFrom, ext.VlanTo)
+		}
+
+		err = d.Set("extension", extension)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -248,21 +248,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	breakout := d.Get("breakout").(string)
-	mtu := d.Get("mtu").(int)
-	autoneg := d.Get("autoneg").(string)
-	speed := d.Get("speed").(string)
 	tenantID := d.Get("tenantid").(int)
-
-	extension := port.PortUpdateExtenstion{}
-	ext := d.Get("extension").(map[string]interface{})
-	if v, ok := ext["vlanrange"]; ok {
-		vlanrange := strings.Split(v.(string), "-")
-		from, _ := strconv.Atoi(vlanrange[0])
-		to, _ := strconv.Atoi(vlanrange[1])
-		extension.Name = ext["extensionname"].(string)
-		extension.VLANFrom = from
-		extension.VLANTo = to
-	}
 
 	id, _ := strconv.Atoi(d.Id())
 	hwPort, err := clientset.Port().GetByID(id)
@@ -274,16 +260,28 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Coudn't find port '%s'", name)
 	}
 
-	portUpdate := &port.PortUpdate{
-		AdminDown:   hwPort.AdminDown,
-		AutoNeg:     autoneg,
-		Breakout:    breakout,
-		Description: description,
-		Duplex:      hwPort.Duplex,
-		Extension:   extension,
-		Mtu:         mtu,
-		Speed:       speedMap[speed],
-		Tenant:      port.IDName{ID: tenantID},
+	portUpdate := portDefault()
+	portUpdate.Description = description
+	portUpdate.Tenant = port.IDName{ID: tenantID}
+	portUpdate.Breakout = breakout
+	if breakout == "off" || breakout == "manual" {
+		mtu := d.Get("mtu").(int)
+		autoneg := d.Get("autoneg").(string)
+		speed := d.Get("speed").(string)
+		extension := port.PortUpdateExtenstion{}
+		ext := d.Get("extension").(map[string]interface{})
+		if v, ok := ext["vlanrange"]; ok {
+			vlanrange := strings.Split(v.(string), "-")
+			from, _ := strconv.Atoi(vlanrange[0])
+			to, _ := strconv.Atoi(vlanrange[1])
+			extension.Name = ext["extensionname"].(string)
+			extension.VLANFrom = from
+			extension.VLANTo = to
+		}
+		portUpdate.Mtu = mtu
+		portUpdate.AutoNeg = autoneg
+		portUpdate.Speed = speedMap[speed]
+		portDefault().Extension = extension
 	}
 
 	js, _ := json.Marshal(portUpdate)
@@ -316,7 +314,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 	id, _ := strconv.Atoi(d.Id())
 
-	portUpdate := portDefault
+	portUpdate := portDefault()
 	portUpdate.Description = name
 	portUpdate.Tenant = port.IDName{ID: tenantID}
 
