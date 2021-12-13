@@ -137,6 +137,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	if breakout == "off" || breakout == "manual" {
 		mtu := d.Get("mtu").(int)
 		autoneg := d.Get("autoneg").(string)
+		if autoneg == "default" {
+			autoneg = "none"
+		}
+		if autoneg == "default" {
+			autoneg = "none"
+		}
 		speed := d.Get("speed").(string)
 		extension := port.PortUpdateExtenstion{}
 		ext := d.Get("extension").(map[string]interface{})
@@ -207,7 +213,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return err
 		}
-		err = d.Set("autoneg", hwPort.AutoNeg)
+		autoneg := hwPort.AutoNeg
+		if autoneg == "none" {
+			autoneg = "default"
+		}
+		err = d.Set("autoneg", autoneg)
 		if err != nil {
 			return err
 		}
