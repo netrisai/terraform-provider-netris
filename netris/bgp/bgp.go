@@ -216,12 +216,19 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	transport := d.Get("transport").(map[string]interface{})
-	transportName := transport["name"].(string)
-	transportType := transport["type"].(string)
+	transportName := ""
+	transportType := ""
 	transportVlanID := 0
-	if transport["vlanid"] != nil {
-		transportVlanID, _ = strconv.Atoi(transport["vlanid"].(string))
+
+	transport := d.Get("transport").(map[string]interface{})
+	if v := transport["name"]; v != nil {
+		transportName = v.(string)
+	}
+	if v := transport["type"]; v != nil {
+		transportType = v.(string)
+	}
+	if v := transport["vlanid"]; v != nil {
+		transportVlanID, _ = strconv.Atoi(v.(string))
 	}
 
 	localPreferenceTmp := d.Get("localpreference").(int)
@@ -567,12 +574,19 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	transport := d.Get("transport").(map[string]interface{})
-	transportName := transport["name"].(string)
-	transportType := transport["type"].(string)
+	transportName := ""
+	transportType := ""
 	transportVlanID := 0
-	if transport["vlanid"] != nil {
-		transportVlanID, _ = strconv.Atoi(transport["vlanid"].(string))
+
+	transport := d.Get("transport").(map[string]interface{})
+	if v := transport["name"]; v != nil {
+		transportName = v.(string)
+	}
+	if v := transport["type"]; v != nil {
+		transportType = v.(string)
+	}
+	if v := transport["vlanid"]; v != nil {
+		transportVlanID, _ = strconv.Atoi(v.(string))
 	}
 
 	if transportVlanID > 1 && transportVlanID > 0 {
