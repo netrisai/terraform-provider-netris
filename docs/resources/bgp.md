@@ -35,6 +35,7 @@ description: |-
 - **multihop** (Map of String) Multihop
 - **neighboras** (Number)
 - **outboundroutemap** (String)
+- **portid** (Number)
 - **prefixinboundmax** (String)
 - **prefixlistinbound** (List of String) Switch Ports
 - **prefixlistoutbound** (List of String) Switch Ports
@@ -42,7 +43,8 @@ description: |-
 - **prependoutbound** (Number)
 - **sendbgpcommunity** (List of String) Switch Ports
 - **state** (String)
-- **transport** (Map of String) Switch Ports
+- **vlanid** (Number)
+- **vnetid** (Number)
 - **weight** (Number)
 
 
