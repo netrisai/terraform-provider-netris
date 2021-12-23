@@ -4,12 +4,11 @@
 # resource "netris_bgp" "my-bgp" {
 #    name = "my-bgp"
 #    siteid = data.netris_site.santa-clara.id
-#    hardware = "my-softgate"
+#    hardware = "sg-test"
 #    neighboras = 23456
-#    transport = {
-#      type = "vnet"
-#      name = "my-vnet"
-#    }
+#    portid = 21008
+#     # vnetid = 500
+#     vlanid = 3000
 #    localip = "192.0.0.2/30"
 #    remoteip = "192.0.0.1/30"
 #    description = "My First BGP"
@@ -22,7 +21,7 @@
 #    bgppassword = "somestrongpass"
 #    allowasin = 5
 #    defaultoriginate = false
-#    prefixinboundmax = 10000
+#    prefixinboundmax = 1000
 #    inboundroutemap = "my-in-rm"
 #    outboundroutemap = "my-out-rm"
 #    localpreference  = 100

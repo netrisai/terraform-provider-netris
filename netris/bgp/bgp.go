@@ -51,13 +51,20 @@ func Resource() *schema.Resource {
 				Optional: true,
 				Type:     schema.TypeInt,
 			},
-			"transport": {
-				Optional:    true,
-				Type:        schema.TypeMap,
-				Description: "Switch Ports",
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
+			"portid": {
+				Computed: true,
+				Optional: true,
+				Type:     schema.TypeInt,
+			},
+			"vnetid": {
+				Computed: true,
+				Optional: true,
+				Type:     schema.TypeInt,
+			},
+			"vlanid": {
+				Computed: true,
+				Optional: true,
+				Type:     schema.TypeInt,
 			},
 			"localip": {
 				ValidateFunc: validateIPPrefix,
@@ -186,11 +193,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	var (
-		vlanID    int
+		vlanID    = 1
 		state     = "enabled"
 		ipVersion = "ipv6"
 		hwID      = 0
-		port      = ""
+		portID    = 0
 		vnetID    = 0
 	)
 
@@ -216,20 +223,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	transportName := ""
-	transportType := ""
-	transportVlanID := 0
-
-	transport := d.Get("transport").(map[string]interface{})
-	if v := transport["name"]; v != nil {
-		transportName = v.(string)
-	}
-	if v := transport["type"]; v != nil {
-		transportType = v.(string)
-	}
-	if v := transport["vlanid"]; v != nil {
-		transportVlanID, _ = strconv.Atoi(v.(string))
-	}
+	transportVlanID := d.Get("vlanid").(int)
 
 	localPreferenceTmp := d.Get("localpreference").(int)
 	if localPreferenceTmp > 0 {
@@ -240,23 +234,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		state = d.Get("state").(string)
 	}
 
-	if transportType == "" {
-		transportType = "port"
+	if v := d.Get("portid").(int); v > 0 {
+		portID = v
+	} else if v := d.Get("vnetid").(int); v > 0 {
+		vnetID = v
 	}
 
-	if transportType == "port" {
-		port = transportName
-		vlanID = 1
-	} else {
-		vlanID = 1
-		if vnet, ok := findVNetByName(clientset, transportName); ok {
-			vnetID = vnet.ID
-		} else {
-			return fmt.Errorf("invalid vnet '%s'", transportName)
-		}
-	}
-
-	if transportVlanID > 1 && transportVlanID > 0 {
+	if transportVlanID >= 1 {
 		vlanID = transportVlanID
 	}
 
@@ -340,7 +324,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		PrependOutbound:    d.Get("prependoutbound").(int),
 		Hardware:           bgp.IDNone{ID: hwIDNone},
 		Vnet:               bgp.IDNone{ID: vnetIDNone},
-		Port:               bgp.IDName{Name: port},
+		Port:               bgp.IDName{ID: portID},
 		State:              state,
 		Weight:             d.Get("weight").(int),
 	}
@@ -422,35 +406,25 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	transport := make(map[string]interface{})
-	transportType := "port"
-	transportName := bgp.PortName
-	if port, ok := findPortByID(clientset, bgp.SiteID, bgp.SwitchPortID); ok {
-		transportName = fmt.Sprintf("%s@%s", port.PortName, port.SwitchName)
-	}
-
-	if bgp.CircuitInternal == 0 {
-		transportType = "vnet"
-		transportName = bgp.CircuitName
+	if a, ok := bgp.Vnet.ID.(float64); ok {
+		err := d.Set("vnetid", int(a))
+		if err != nil {
+			return err
+		}
 	} else {
-		tr := d.Get("transport").(map[string]interface{})
-		if tr["vlanid"] != nil {
-			transportVlanID, _ := strconv.Atoi(transport["vlanid"].(string))
-			if !(transportVlanID >= 1 && bgp.Vlan == 1) {
-				transport["vlanid"] = strconv.Itoa(bgp.Vlan)
-			}
-		} else if bgp.Vlan > 1 {
-			transport["vlanid"] = strconv.Itoa(bgp.Vlan)
+		err := d.Set("portid", bgp.Port.ID)
+		if err != nil {
+			return err
 		}
 	}
 
-	transport["type"] = transportType
-	transport["name"] = transportName
-
-	err = d.Set("transport", transport)
-	if err != nil {
-		return err
+	if d.Get("vlanid").(int) > 0 {
+		err := d.Set("vlanid", bgp.Vlan)
+		if err != nil {
+			return err
+		}
 	}
+
 	err = d.Set("localip", fmt.Sprintf("%s/%d", bgp.LocalIP, bgp.PrefixLength))
 	if err != nil {
 		return err
@@ -499,13 +473,18 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("inboundroutemap", bgp.InboundRouteMap)
-	if err != nil {
-		return err
+	if bgp.InboundRouteMap > 0 {
+		err = d.Set("inboundroutemap", bgp.InboundRouteMapName)
+		if err != nil {
+			return err
+		}
 	}
-	err = d.Set("outboundroutemap", bgp.OutboundRouteMap)
-	if err != nil {
-		return err
+
+	if bgp.OutboundRouteMap > 0 {
+		err = d.Set("outboundroutemap", bgp.OutboundRouteMapName)
+		if err != nil {
+			return err
+		}
 	}
 	err = d.Set("localpreference", bgp.LocalPreference)
 	if err != nil {
@@ -548,7 +527,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		state     = "enabled"
 		ipVersion = "ipv6"
 		hwID      = 0
-		port      = ""
+		portID    = 0
 		vnetID    = 0
 	)
 
@@ -574,24 +553,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	transportName := ""
-	transportType := ""
-	transportVlanID := 0
-
-	transport := d.Get("transport").(map[string]interface{})
-	if v := transport["name"]; v != nil {
-		transportName = v.(string)
-	}
-	if v := transport["type"]; v != nil {
-		transportType = v.(string)
-	}
-	if v := transport["vlanid"]; v != nil {
-		transportVlanID, _ = strconv.Atoi(v.(string))
-	}
-
-	if transportVlanID > 1 && transportVlanID > 0 {
-		vlanID = transportVlanID
-	}
+	transportVlanID := d.Get("vlanid").(int)
 
 	localPreferenceTmp := d.Get("localpreference").(int)
 	if localPreferenceTmp > 0 {
@@ -602,19 +564,14 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		state = d.Get("state").(string)
 	}
 
-	if transportType == "" {
-		transportType = "port"
+	if v := d.Get("portid").(int); v > 0 {
+		portID = v
+	} else if v := d.Get("vnetid").(int); v > 0 {
+		vnetID = v
 	}
 
-	if transportType == "port" {
-		port = transportName
-	} else {
-		vlanID = 1
-		if vnet, ok := findVNetByName(clientset, transportName); ok {
-			vnetID = vnet.ID
-		} else {
-			return fmt.Errorf("invalid vnet '%s'", transportName)
-		}
+	if transportVlanID >= 1 {
+		vlanID = transportVlanID
 	}
 
 	localIPString := d.Get("localip").(string)
@@ -662,6 +619,16 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		communityArr = append(communityArr, pr.(string))
 	}
 
+	var vnetIDNone interface{} = vnetID
+	if vnetID == 0 {
+		vnetIDNone = "none"
+	}
+
+	var hwIDNone interface{} = hwID
+	if hwID == 0 {
+		hwIDNone = "auto"
+	}
+
 	bgpID, _ := strconv.Atoi(d.Id())
 
 	bgpUpdate := &bgp.EBGPUpdate{
@@ -687,9 +654,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		PrefixListOutbound: strings.Join(prefixListOutbound, "\n"),
 		PrependInbound:     d.Get("prependinbound").(int),
 		PrependOutbound:    d.Get("prependoutbound").(int),
-		Hardware:           bgp.IDNone{ID: hwID},
-		Vnet:               bgp.IDNone{ID: vnetID},
-		Port:               bgp.IDName{Name: port},
+		Hardware:           bgp.IDNone{ID: hwIDNone},
+		Vnet:               bgp.IDNone{ID: vnetIDNone},
+		Port:               bgp.IDName{ID: portID},
 		State:              state,
 		Weight:             d.Get("weight").(int),
 	}
