@@ -94,6 +94,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_site":       site.DataResource(),
 			"netris_bgp_object": bgpobject.DataResource(),
 			"netris_tenant":     tenant.DataResource(),
+			"netris_port":       port.DataResource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
