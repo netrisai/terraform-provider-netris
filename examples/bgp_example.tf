@@ -1,12 +1,17 @@
 # data "netris_site" "santa-clara"{
 #     name = "Santa Clara"
 # }
+
+# data "netris_port" "swp1-sg-test"{
+#     name = "swp1@sg-test"
+# }
+
 # resource "netris_bgp" "my-bgp" {
 #    name = "my-bgp"
 #    siteid = data.netris_site.santa-clara.id
 #    hardware = "sg-test"
 #    neighboras = 23456
-#    portid = 21008
+#    portid = data.netris_port.swp1-sg-test.id
 #     # vnetid = 500
 #     vlanid = 3000
 #    localip = "192.0.0.2/30"
