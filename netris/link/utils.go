@@ -18,8 +18,10 @@ package link
 
 import (
 	"fmt"
+	"strconv"
 
 	api "github.com/netrisai/netriswebapi/v2"
+	"github.com/netrisai/netriswebapi/v2/types/inventory"
 	"github.com/netrisai/netriswebapi/v2/types/port"
 )
 
@@ -39,4 +41,36 @@ func findPortByName(ports []*port.Port, name string, clientset *api.Clientset) (
 		}
 	}
 	return nil, false
+}
+
+func hwToSoftgateUpdate(hw *inventory.HW) *inventory.HWSoftgateUpdate {
+	sg := &inventory.HWSoftgateUpdate{
+		Description: hw.Description,
+		Links:       hw.Links,
+		MainAddress: hw.MainAddress,
+		MgmtAddress: hw.MgmtAddress,
+		Name:        hw.Name,
+		Profile:     hw.Profile,
+		Site:        hw.Site,
+		Tenant:      hw.Tenant,
+	}
+	return sg
+}
+
+func hwToSwitchUpdate(hw *inventory.HW) *inventory.HWSwitchUpdate {
+	sg := &inventory.HWSwitchUpdate{
+		Asn:         strconv.Itoa(hw.Asn),
+		Description: hw.Description,
+		Links:       hw.Links,
+		MainAddress: hw.MainAddress,
+		MgmtAddress: hw.MgmtAddress,
+		Name:        hw.Name,
+		Nos:         inventory.NOS(hw.Nos),
+		PortCount:   hw.PortCount,
+		Profile:     hw.Profile,
+		Site:        hw.Site,
+		Tenant:      hw.Tenant,
+		Type:        hw.Type,
+	}
+	return sg
 }

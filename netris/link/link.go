@@ -23,8 +23,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/netrisai/netriswebapi/http"
 	api "github.com/netrisai/netriswebapi/v2"
-	"github.com/netrisai/netriswebapi/v2/types/link"
+	"github.com/netrisai/netriswebapi/v2/types/inventory"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -58,6 +59,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	origin := 0
 	dest := 0
+	hwID := 0
 
 	ports, err := clientset.Port().Get()
 	if err != nil {
@@ -66,27 +68,46 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	portList := d.Get("ports").([]interface{})
 	if o, ok := findPortByName(ports, portList[0].(string), clientset); ok {
+		hwID = o.Switch.ID
 		origin = o.ID
 	}
 	if d, ok := findPortByName(ports, portList[1].(string), clientset); ok {
 		dest = d.ID
 	}
 
-	linkAdd := &link.Link{
-		Origin: origin,
-		Dest:   dest,
-	}
-
-	js, _ := json.Marshal(linkAdd)
-	log.Println("[DEBUG]", string(js))
-
-	reply, err := clientset.Link().Add(linkAdd)
+	hw, err := clientset.Inventory().GetByID(hwID)
 	if err != nil {
-		log.Println("[DEBUG]", err)
 		return err
 	}
 
-	js, _ = json.Marshal(reply)
+	hwLink := inventory.HWLink{
+		Local:  inventory.IDName{ID: origin},
+		Remote: inventory.IDName{ID: dest},
+	}
+
+	hw.Links = append(hw.Links, hwLink)
+
+	var reply http.HTTPReply
+
+	if hw.Type == "switch" {
+		swUpdate := hwToSwitchUpdate(hw)
+		js, _ := json.Marshal(swUpdate)
+		log.Println("[DEBUG]", string(js))
+		reply, err = clientset.Inventory().UpdateSwitch(hw.ID, swUpdate)
+		if err != nil {
+			return err
+		}
+	} else if hw.Type == "offloader" {
+		sgUpdate := hwToSoftgateUpdate(hw)
+		js, _ := json.Marshal(sgUpdate)
+		log.Println("[DEBUG]", string(js))
+		reply, err = clientset.Inventory().UpdateSoftgate(hw.ID, sgUpdate)
+		if err != nil {
+			return err
+		}
+	}
+
+	js, _ := json.Marshal(reply)
 	log.Println("[DEBUG]", string(js))
 
 	log.Println("[DEBUG]", string(reply.Data))
@@ -108,6 +129,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	origin, _ := strconv.Atoi(itemid[0])
 	dest, _ := strconv.Atoi(itemid[1])
+	hwID := 0
 
 	portList := []interface{}{}
 
@@ -118,6 +140,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	if port, ok := findPortByID(ports, origin, clientset); ok {
 		portList = append(portList, fmt.Sprintf("%s@%s", port.Port, port.SwitchName))
+		hwID = port.Switch.ID
 	} else {
 		return fmt.Errorf("invalid link")
 	}
@@ -127,10 +150,26 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("invalid link")
 	}
 
-	d.SetId(d.Id())
-	err = d.Set("ports", portList)
+	hw, err := clientset.Inventory().GetByID(hwID)
 	if err != nil {
 		return err
+	}
+
+	linkExist := false
+
+	for _, link := range hw.Links {
+		if (link.Local.ID == origin && link.Remote.ID == dest) || (link.Local.ID == dest && link.Remote.ID == origin) {
+			linkExist = true
+			break
+		}
+	}
+
+	if linkExist {
+		d.SetId(d.Id())
+		err = d.Set("ports", portList)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -146,14 +185,51 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	origin, _ := strconv.Atoi(itemid[0])
 	dest, _ := strconv.Atoi(itemid[1])
 
-	linkW := &link.Link{
-		Origin: origin,
-		Dest:   dest,
-	}
-	reply, err := clientset.Link().Delete(linkW)
+	port, err := clientset.Port().GetByID(origin)
 	if err != nil {
 		return err
 	}
+	hwID := port.Switch.ID
+
+	hw, err := clientset.Inventory().GetByID(hwID)
+	if err != nil {
+		return err
+	}
+
+	for i, link := range hw.Links {
+		fmt.Println(i)
+		if (link.Local.ID == origin && link.Remote.ID == dest) || (link.Local.ID == dest && link.Remote.ID == origin) {
+			hw.Links[i] = hw.Links[len(hw.Links)-1]
+			hw.Links[len(hw.Links)-1] = inventory.HWLink{}
+			hw.Links = hw.Links[:len(hw.Links)-1]
+			break
+		}
+	}
+
+	var reply http.HTTPReply
+
+	if hw.Type == "switch" {
+		swUpdate := hwToSwitchUpdate(hw)
+		js, _ := json.Marshal(swUpdate)
+		log.Println("[DEBUG]", string(js))
+		reply, err = clientset.Inventory().UpdateSwitch(hw.ID, swUpdate)
+		if err != nil {
+			return err
+		}
+	} else if hw.Type == "offloader" {
+		sgUpdate := hwToSoftgateUpdate(hw)
+		js, _ := json.Marshal(sgUpdate)
+		log.Println("[DEBUG]", string(js))
+		reply, err = clientset.Inventory().UpdateSoftgate(hw.ID, sgUpdate)
+		if err != nil {
+			return err
+		}
+	}
+
+	js, _ := json.Marshal(reply)
+	log.Println("[DEBUG]", string(js))
+
+	log.Println("[DEBUG]", string(reply.Data))
 
 	if reply.StatusCode != 200 {
 		return fmt.Errorf(string(reply.Data))
@@ -165,26 +241,36 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-
 	itemid := strings.Split(d.Id(), "-")
 	if len(itemid) != 2 {
-		return false, nil
+		return false, fmt.Errorf("invalid link")
 	}
 
 	origin, _ := strconv.Atoi(itemid[0])
 	dest, _ := strconv.Atoi(itemid[1])
+	hwID := 0
 
 	ports, err := clientset.Port().Get()
 	if err != nil {
 		return false, err
 	}
 
-	if _, ok := findPortByID(ports, origin, clientset); !ok {
-		return false, nil
-	}
-	if _, ok := findPortByID(ports, dest, clientset); !ok {
-		return false, nil
+	if port, ok := findPortByID(ports, origin, clientset); ok {
+		hwID = port.Switch.ID
+	} else {
+		return false, fmt.Errorf("invalid link")
 	}
 
-	return true, nil
+	hw, err := clientset.Inventory().GetByID(hwID)
+	if err != nil {
+		return false, err
+	}
+
+	for _, link := range hw.Links {
+		if (link.Local.ID == origin && link.Remote.ID == dest) || (link.Local.ID == dest && link.Remote.ID == origin) {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
