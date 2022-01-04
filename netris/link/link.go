@@ -97,7 +97,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return err
 		}
-	} else if hw.Type == "offloader" {
+	} else if hw.Type == "softgate" {
 		sgUpdate := hwToSoftgateUpdate(hw)
 		js, _ := json.Marshal(sgUpdate)
 		log.Println("[DEBUG]", string(js))
@@ -216,7 +216,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return err
 		}
-	} else if hw.Type == "offloader" {
+	} else if hw.Type == "softgate" {
 		sgUpdate := hwToSoftgateUpdate(hw)
 		js, _ := json.Marshal(sgUpdate)
 		log.Println("[DEBUG]", string(js))
