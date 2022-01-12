@@ -89,6 +89,7 @@ func Resource() *schema.Resource {
 				Type:         schema.TypeString,
 			},
 			"dnattoport": {
+				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
 			},
@@ -253,9 +254,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("dnattoport", strconv.Itoa(nat.DnatToPort))
-	if err != nil {
-		return err
+	if !(nat.DnatToPort == 0 && d.Get("dnattoport").(string) == "") {
+		err = d.Set("dnattoport", strconv.Itoa(nat.DnatToPort))
+		if err != nil {
+			return err
+		}
 	}
 	err = d.Set("snattoip", nat.SnatToIP)
 	if err != nil {
