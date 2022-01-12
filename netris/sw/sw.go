@@ -45,6 +45,7 @@ func Resource() *schema.Resource {
 				Required: true,
 			},
 			"description": {
+				Computed: true,
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -69,6 +70,7 @@ func Resource() *schema.Resource {
 				Required: true,
 			},
 			"macaddress": {
+				Computed: true,
 				Type:     schema.TypeString,
 				Optional: true,
 			},
