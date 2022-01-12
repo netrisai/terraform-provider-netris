@@ -69,6 +69,7 @@ func Resource() *schema.Resource {
 				Type:         schema.TypeString,
 			},
 			"srcport": {
+				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
 			},
@@ -229,7 +230,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	if nat.SourcePort == "1-65535" && d.Get("srcport").(string) == "" {
+	if !(nat.SourcePort == "1-65535" && d.Get("srcport").(string) == "") {
 		err = d.Set("srcport", nat.SourcePort)
 		if err != nil {
 			return err
