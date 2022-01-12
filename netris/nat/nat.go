@@ -84,6 +84,7 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeString,
 			},
 			"dnattoip": {
+				Computed:     true,
 				ValidateFunc: validateIPPrefix,
 				Optional:     true,
 				Type:         schema.TypeString,
@@ -94,11 +95,13 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeString,
 			},
 			"snattoip": {
+				Computed:     true,
 				ValidateFunc: validateIPPrefix,
 				Optional:     true,
 				Type:         schema.TypeString,
 			},
 			"snattopool": {
+				Computed: true,
 				ValidateFunc: validateIPPrefix,
 				Optional:     true,
 				Type:         schema.TypeString,
