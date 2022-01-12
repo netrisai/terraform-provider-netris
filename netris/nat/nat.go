@@ -357,6 +357,10 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 		return false, nil
 	}
 
+	if nat.ID == 0 {
+		return false, nil
+	}
+
 	return true, nil
 }
 
