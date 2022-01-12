@@ -229,9 +229,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("srcport", nat.SourcePort)
-	if err != nil {
-		return err
+	if nat.SourcePort == "1-65535" && d.Get("srcport").(string) == "" {
+		err = d.Set("srcport", nat.SourcePort)
+		if err != nil {
+			return err
+		}
 	}
 	if dstAddr := strings.Split(d.Get("dstaddress").(string), "/")[0]; dstAddr != nat.DestinationAddress {
 		err = d.Set("dstaddress", nat.DestinationAddress)
