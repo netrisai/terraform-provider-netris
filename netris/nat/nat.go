@@ -45,7 +45,7 @@ func Resource() *schema.Resource {
 				Type:         schema.TypeString,
 			},
 			"comment": {
-				Default:  "",
+				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
 			},
