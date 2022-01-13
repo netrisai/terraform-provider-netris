@@ -101,7 +101,7 @@ func Resource() *schema.Resource {
 				Type:         schema.TypeString,
 			},
 			"snattopool": {
-				Computed: true,
+				Computed:     true,
 				ValidateFunc: validateIPPrefix,
 				Optional:     true,
 				Type:         schema.TypeString,
@@ -211,10 +211,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("state", nat.State.Value)
-	if err != nil {
-		return err
-	}
+		err = d.Set("state", nat.State.Value)
+		if err != nil {
+			return err
+		}
 	err = d.Set("comment", nat.Comment)
 	if err != nil {
 		return err
