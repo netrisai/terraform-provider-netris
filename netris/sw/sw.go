@@ -121,13 +121,23 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	var asnAny interface{} = d.Get("asnumber").(string)
+	asn := asnAny.(string)
+	if !(asn == "auto" || asn == "") {
+		asnInt, err := strconv.Atoi(asn)
+		if err != nil {
+			return err
+		}
+		asnAny = asnInt
+	}
+
 	swAdd := &inventory.HWSwitchAdd{
 		Name:        d.Get("name").(string),
 		Tenant:      inventory.IDName{ID: d.Get("tenantid").(int)},
 		Site:        inventory.IDName{ID: d.Get("siteid").(int)},
 		Description: d.Get("description").(string),
 		Nos:         nos,
-		Asn:         d.Get("asnumber").(string),
+		Asn:         asnAny,
 		Profile:     inventory.IDName{ID: profileID},
 		MainAddress: d.Get("mainip").(string),
 		MgmtAddress: d.Get("mgmtip").(string),
@@ -271,13 +281,23 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	var asnAny interface{} = d.Get("asnumber").(string)
+	asn := asnAny.(string)
+	if !(asn == "auto" || asn == "") {
+		asnInt, err := strconv.Atoi(asn)
+		if err != nil {
+			return err
+		}
+		asnAny = asnInt
+	}
+
 	swUpdate := &inventory.HWSwitchUpdate{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
 		Tenant:      inventory.IDName{ID: d.Get("tenantid").(int)},
 		Site:        inventory.IDName{ID: d.Get("siteid").(int)},
 		Nos:         nos,
-		Asn:         d.Get("asnumber").(string),
+		Asn:         asnAny,
 		Profile:     inventory.IDName{ID: profileID},
 		MainAddress: d.Get("mainip").(string),
 		MgmtAddress: d.Get("mgmtip").(string),
