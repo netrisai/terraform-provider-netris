@@ -18,7 +18,6 @@ package link
 
 import (
 	"fmt"
-	"strconv"
 
 	api "github.com/netrisai/netriswebapi/v2"
 	"github.com/netrisai/netriswebapi/v2/types/inventory"
@@ -59,7 +58,7 @@ func hwToSoftgateUpdate(hw *inventory.HW) *inventory.HWSoftgateUpdate {
 
 func hwToSwitchUpdate(hw *inventory.HW) *inventory.HWSwitchUpdate {
 	sg := &inventory.HWSwitchUpdate{
-		Asn:         strconv.Itoa(hw.Asn),
+		Asn:         hw.Asn,
 		Description: hw.Description,
 		Links:       hw.Links,
 		MainAddress: hw.MainAddress,
