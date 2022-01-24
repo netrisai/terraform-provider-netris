@@ -52,12 +52,16 @@ func getPubProtocols(d *schema.ResourceData, m interface{}) (protocols []acl2.Pu
 		proto := protocol["protocol"].(string)
 		portgroupid := protocol["portgroupid"].(int)
 		port := protocol["port"].(string)
-		protocols = append(protocols, acl2.PublisherWProtocol{
+		netrisProtocol := acl2.PublisherWProtocol{
 			Description: name,
 			Port:        port,
 			PortGroupID: portgroupid,
 			Proto:       proto,
-		})
+		}
+		if portgroupid > 0 {
+			netrisProtocol.PortGroupID = portgroupid
+		}
+		protocols = append(protocols, netrisProtocol)
 	}
 	return protocols
 }
