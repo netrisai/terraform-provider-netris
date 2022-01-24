@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/netrisai/terraform-provider-netris/netris/acl"
+	"github.com/netrisai/terraform-provider-netris/netris/acl2"
 	"github.com/netrisai/terraform-provider-netris/netris/allocation"
 	"github.com/netrisai/terraform-provider-netris/netris/bgp"
 	"github.com/netrisai/terraform-provider-netris/netris/bgpobject"
@@ -89,6 +90,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_nat":               nat.Resource(),
 			"netris_port":              port.Resource(),
 			"netris_route":             route.Resource(),
+			"netris_acltwozero":        acl2.Resource(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"netris_site":       site.DataResource(),
