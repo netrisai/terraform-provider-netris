@@ -51,10 +51,10 @@ func getPubProtocols(d *schema.ResourceData, m interface{}) (protocols []acl2.Pu
 		name := protocol["name"].(string)
 		proto := protocol["protocol"].(string)
 		portgroupid := protocol["portgroupid"].(int)
-		portid := protocol["portid"].(string)
+		port := protocol["port"].(string)
 		protocols = append(protocols, acl2.PublisherWProtocol{
 			Description: name,
-			Port:        portid,
+			Port:        port,
 			PortGroupID: portgroupid,
 			Proto:       proto,
 		})
