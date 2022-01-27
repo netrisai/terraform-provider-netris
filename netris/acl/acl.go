@@ -32,80 +32,115 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: `
+Netris supports ACLs for switch network access control. (ACL and ACL2.0) ACL is for defining network access lists in a source IP: Port, destination IP: Port format. ACL2.0 is an object-oriented service way of describing network access.
+Both ACL and ACL2.0 services support tenant/RBAC based approval workflows. Access control lists execute in switch hardware providing line-rate performance for security enforcement. It’s important to keep in mind that the number of ACLs is limited to the limited size of TCAM of network switches.
+## Example Usages
+` +
+"```" +
+`
+resource "netris_acl" "my-acl" {
+	name = "my-acl"
+	action = "permit"
+	comment = "Test"
+	proto = "tcp"
+	srcprefix = "192.0.2.0/24"
+	srcportfrom = 1
+	srcportto = 65535
+	dstprefix = "0.0.0.0/0"
+	dstportfrom = 80
+	dstportto = 80
+}
+`+
+"```",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "Unique name for the ACL entry.",
 			},
 			"action": {
 				Required: true,
 				Type:     schema.TypeString,
+				Description: "Permit or Deny forwarding of matched packets. Valid values are permit and deny.",
 			},
 			"comment": {
 				Default:  "",
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Descriptive comment, commonly used for approval workflows.",
 			},
 			"established": {
 				ValidateFunc: validateEstablished,
 				Default:      1,
 				Optional:     true,
 				Type:         schema.TypeInt,
+				Description: "For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Valid values are 0 and 1. Default value is 1",
 			},
 			"icmptype": {
 				ValidateFunc: validateICMP,
 				Default:      1,
 				Optional:     true,
 				Type:         schema.TypeInt,
+				Description: "Custom IPv4 ICMP code. Valid values should be in range 1-37 according to RFC 1700. Default value is 1",
 			},
 			"proto": {
 				ValidateFunc: validateProto,
 				Required:     true,
 				Type:         schema.TypeString,
+				Description: "IP protocol to match. Valid values are all, ip, tcp, udp, icmp, icmpv6.",
 			},
 			"reverse": {
 				Default:  true,
 				Optional: true,
 				Type:     schema.TypeBool,
+				Description: "For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Default value is true",
 			},
 			"srcprefix": {
 				ValidateFunc: validateIPPrefix,
 				Required:     true,
 				Type:         schema.TypeString,
+				Description: "Source IPv4/IPv6 address. Example 192.0.2.0/24",
 			},
 			"srcportfrom": {
 				ValidateFunc: validatePort,
 				Optional:     true,
 				Type:         schema.TypeInt,
+				Description: "Source port from. Valid values should be in range 1-65535",
 			},
 			"srcportto": {
 				ValidateFunc: validatePort,
 				Optional:     true,
 				Type:         schema.TypeInt,
+				Description: "Source port to. Valid values should be in range 1-65535",
 			},
 			"srcportgroup": {
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Match source ports on a group of ports. Valid value name of ACL Port Group",
 			},
 			"dstprefix": {
 				ValidateFunc: validateIPPrefix,
 				Required:     true,
 				Type:         schema.TypeString,
+				Description: "Destination IPv4/IPv6 address. Example 0.0.0.0/0",
 			},
 			"dstportfrom": {
 				ValidateFunc: validatePort,
 				Optional:     true,
 				Type:         schema.TypeInt,
+				Description: "Destination port from. Valid values should be in range 1-65535",
 			},
 			"dstportto": {
 				ValidateFunc: validatePort,
 				Optional:     true,
 				Type:         schema.TypeInt,
+				Description: "Destination port to. Valid values should be in range 1-65535",
 			},
 			"dstportgroup": {
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Match destination ports on a group of ports. Valid value name of ACL Port Group",
 			},
 			"validuntil": {
 				ValidateFunc: validateDate,
