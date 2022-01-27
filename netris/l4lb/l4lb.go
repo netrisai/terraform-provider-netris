@@ -168,7 +168,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := check["type"]; ok {
 		checkType = v.(string)
 	}
-	if v, ok := check["type"]; ok {
+	if v, ok := check["timeout"]; ok {
 		checkTimeout, _ = strconv.Atoi(v.(string))
 	}
 	if v, ok := check["requestPath"]; ok {
@@ -185,9 +185,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 
 		if checkType == "tcp" || checkType == "" {
-			healthCheck = "HTTP"
-		} else {
 			healthCheck = "TCP"
+		} else {
+			healthCheck = "HTTP"
 		}
 	}
 
@@ -203,7 +203,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Tenant:      tenantID,
 		SiteID:      siteID,
 		Automatic:   automatic,
-		Protocol:    proto,
+		Protocol:    strings.ToUpper(proto),
 		IP:          frontendIP,
 		Port:        d.Get("port").(int),
 		Status:      state,
@@ -267,7 +267,90 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
-	// clientset := m.(*api.Clientset)
+	clientset := m.(*api.Clientset)
+
+	id, _ := strconv.Atoi(d.Id())
+	var l4lb *l4lb.LoadBalancer
+
+	l4lbs, err := clientset.L4LB().Get()
+	if err != nil {
+		return nil
+	}
+	for _, lb := range l4lbs {
+		if lb.ID == id {
+			l4lb = lb
+			break
+		}
+	}
+
+	if !(l4lb != nil && l4lb.ID > 0) {
+		return fmt.Errorf("Coudn't find l4lb with id '%d'", id)
+	}
+
+	d.SetId(strconv.Itoa(l4lb.ID))
+	err = d.Set("name", l4lb.Name)
+	if err != nil {
+		return err
+	}
+	err = d.Set("tenantid", l4lb.TenantID)
+	if err != nil {
+		return err
+	}
+	err = d.Set("siteid", l4lb.SiteID)
+	if err != nil {
+		return err
+	}
+	state := "disable"
+	if l4lb.Status == "enable" {
+		state = "active"
+	}
+	err = d.Set("state", state)
+	if err != nil {
+		return err
+	}
+	err = d.Set("protocol", strings.ToLower(l4lb.Protocol))
+	if err != nil {
+		return err
+	}
+	err = d.Set("frontend", l4lb.IP)
+	if err != nil {
+		return err
+	}
+	err = d.Set("port", l4lb.Port)
+	if err != nil {
+		return err
+	}
+
+	check := make(map[string]interface{})
+	lbCheckType := "None"
+	lbCheckTimeout := ""
+	requestPath := ""
+	if l4lb.HealthCheck.HTTP.Timeout != "" {
+		lbCheckType = "http"
+		requestPath = l4lb.HealthCheck.HTTP.RequestPath
+		lbCheckTimeout = l4lb.HealthCheck.HTTP.Timeout
+	}
+	if l4lb.HealthCheck.TCP.Timeout != "" {
+		lbCheckType = "tcp"
+		requestPath = l4lb.HealthCheck.TCP.RequestPath
+		lbCheckTimeout = l4lb.HealthCheck.TCP.Timeout
+	}
+	check["type"] = lbCheckType
+	check["timeout"] = lbCheckTimeout
+	check["requestPath"] = requestPath
+	err = d.Set("check", check)
+	if err != nil {
+		return err
+	}
+
+	backends := []interface{}{}
+	for _, b := range l4lb.BackendIPs {
+		backends = append(backends, fmt.Sprintf("%s:%s", b.IP, b.Port))
+	}
+	err = d.Set("backend", backends)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -317,7 +400,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := check["type"]; ok {
 		checkType = v.(string)
 	}
-	if v, ok := check["type"]; ok {
+	if v, ok := check["timeout"]; ok {
 		checkTimeout, _ = strconv.Atoi(v.(string))
 	}
 	if v, ok := check["requestPath"]; ok {
@@ -334,9 +417,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 
 		if checkType == "tcp" || checkType == "" {
-			healthCheck = "HTTP"
-		} else {
 			healthCheck = "TCP"
+		} else {
+			healthCheck = "HTTP"
 		}
 	}
 
@@ -351,8 +434,10 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	l4lbUpdate := &l4lb.LoadBalancerUpdate{
 		ID:          id,
 		Name:        d.Get("name").(string),
+		TenantID:    d.Get("tenantid").(int),
+		SiteID:      d.Get("siteid").(int),
 		Automatic:   automatic,
-		Protocol:    proto,
+		Protocol:    strings.ToUpper(proto),
 		IP:          frontendIP,
 		Port:        d.Get("port").(int),
 		Status:      state,
