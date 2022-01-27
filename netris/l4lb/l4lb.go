@@ -70,7 +70,7 @@ func Resource() *schema.Resource {
 			},
 			"backend": {
 				Optional: true,
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -114,7 +114,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	lbBackends := []l4lb.LBAddBackend{}
 
-	l4lbMetaBackends := d.Get("backend").([]interface{})
+	l4lbMetaBackends := d.Get("backend").(*schema.Set).List()
 	ipForTenant := ""
 
 	for _, b := range l4lbMetaBackends {
@@ -365,8 +365,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	lbBackends := []l4lb.LBBackend{}
 
-	l4lbMetaBackends := d.Get("backend").([]interface{})
-
+	l4lbMetaBackends := d.Get("backend").(*schema.Set).List()
 	for _, b := range l4lbMetaBackends {
 		backend := b.(string)
 		valueMatch := bReg.FindStringSubmatch(string(backend))
