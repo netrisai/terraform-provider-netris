@@ -324,20 +324,17 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	check := make(map[string]interface{})
 	lbCheckType := "None"
 	lbCheckTimeout := ""
-	requestPath := ""
 	if l4lb.HealthCheck.HTTP.Timeout != "" {
 		lbCheckType = "http"
-		requestPath = l4lb.HealthCheck.HTTP.RequestPath
+		check["requestPath"] = l4lb.HealthCheck.HTTP.RequestPath
 		lbCheckTimeout = l4lb.HealthCheck.HTTP.Timeout
 	}
 	if l4lb.HealthCheck.TCP.Timeout != "" {
 		lbCheckType = "tcp"
-		requestPath = l4lb.HealthCheck.TCP.RequestPath
 		lbCheckTimeout = l4lb.HealthCheck.TCP.Timeout
 	}
 	check["type"] = lbCheckType
 	check["timeout"] = lbCheckTimeout
-	check["requestPath"] = requestPath
 	err = d.Set("check", check)
 	if err != nil {
 		return err
