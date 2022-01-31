@@ -70,7 +70,7 @@ func Resource() *schema.Resource {
 			},
 			"backend": {
 				Optional: true,
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -114,7 +114,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	lbBackends := []l4lb.LBAddBackend{}
 
-	l4lbMetaBackends := d.Get("backend").([]interface{})
+	l4lbMetaBackends := d.Get("backend").(*schema.Set).List()
 	ipForTenant := ""
 
 	for _, b := range l4lbMetaBackends {
@@ -324,20 +324,17 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	check := make(map[string]interface{})
 	lbCheckType := "None"
 	lbCheckTimeout := ""
-	requestPath := ""
 	if l4lb.HealthCheck.HTTP.Timeout != "" {
 		lbCheckType = "http"
-		requestPath = l4lb.HealthCheck.HTTP.RequestPath
+		check["requestPath"] = l4lb.HealthCheck.HTTP.RequestPath
 		lbCheckTimeout = l4lb.HealthCheck.HTTP.Timeout
 	}
 	if l4lb.HealthCheck.TCP.Timeout != "" {
 		lbCheckType = "tcp"
-		requestPath = l4lb.HealthCheck.TCP.RequestPath
 		lbCheckTimeout = l4lb.HealthCheck.TCP.Timeout
 	}
 	check["type"] = lbCheckType
 	check["timeout"] = lbCheckTimeout
-	check["requestPath"] = requestPath
 	err = d.Set("check", check)
 	if err != nil {
 		return err
@@ -368,8 +365,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	lbBackends := []l4lb.LBBackend{}
 
-	l4lbMetaBackends := d.Get("backend").([]interface{})
-
+	l4lbMetaBackends := d.Get("backend").(*schema.Set).List()
 	for _, b := range l4lbMetaBackends {
 		backend := b.(string)
 		valueMatch := bReg.FindStringSubmatch(string(backend))
