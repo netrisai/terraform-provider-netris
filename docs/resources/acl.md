@@ -3,30 +3,15 @@
 page_title: "netris_acl Resource - terraform-provider-netris"
 subcategory: ""
 description: |-
-  Netris supports ACLs for switch network access control. (ACL and ACL2.0) ACL is for defining network access lists in a source IP: Port, destination IP: Port format. ACL2.0 is an object-oriented service way of describing network access.
-  Both ACL and ACL2.0 services support tenant/RBAC based approval workflows. Access control lists execute in switch hardware providing line-rate performance for security enforcement. It’s important to keep in mind that the number of ACLs is limited to the limited size of TCAM of network switches.
-  Example Usages
-  
-  resource "netris_acl" "my-acl" {
-      name = "my-acl"
-      action = "permit"
-      comment = "Test"
-      proto = "tcp"
-      srcprefix = "192.0.2.0/24"
-      srcportfrom = 1
-      srcportto = 65535
-      dstprefix = "0.0.0.0/0"
-      dstportfrom = 80
-      dstportto = 80
-  }
+  Creates and manages ACLs
 ---
 
-# netris_acl (Resource)
+# netris_acl
 
 Netris supports ACLs for switch network access control. (ACL and ACL2.0) ACL is for defining network access lists in a source IP: Port, destination IP: Port format. ACL2.0 is an object-oriented service way of describing network access.
 Both ACL and ACL2.0 services support tenant/RBAC based approval workflows. Access control lists execute in switch hardware providing line-rate performance for security enforcement. It’s important to keep in mind that the number of ACLs is limited to the limited size of TCAM of network switches.
 ## Example Usages
-```
+```hcl
 resource "netris_acl" "my-acl" {
 	name = "my-acl"
 	action = "permit"

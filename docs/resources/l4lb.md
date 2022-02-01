@@ -21,7 +21,7 @@ description: |-
 
 ### Optional
 
-- **backend** (List of String)
+- **backend** (Set of String)
 - **check** (Map of String) Check Options
 - **frontend** (String)
 - **id** (String) The ID of this resource.
