@@ -3,7 +3,7 @@
 # }
 
 # data "netris_tenant" "default-tenant"{
-#     name = "Default"
+#     name = "Admin"
 # }
 
 # resource "netris_l4lb" "terraform-test" {
@@ -19,5 +19,5 @@
 #         timeout = 3000
 #         requestPath =  "/"
 #     }
-#        backend = ["10.10.10.1:45"]
+#     backend = ["10.10.10.1:45"]
 # }

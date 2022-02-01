@@ -12,8 +12,7 @@
 #    hardware = "sg-test"
 #    neighboras = 23456
 #    portid = data.netris_port.swp1-sg-test.id
-#     # vnetid = 500
-#     vlanid = 3000
+#    vlanid = 3000
 #    localip = "192.0.0.2/30"
 #    remoteip = "192.0.0.1/30"
 #    description = "My First BGP"
