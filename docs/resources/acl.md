@@ -47,7 +47,6 @@ resource "netris_acl" "my-acl" {
 - **dstportto** (Number) Destination port to. Valid values should be in range 1-65535
 - **established** (Number) For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Valid values are `0` and `1`. Default value is `1`
 - **icmptype** (Number) Custom IPv4 ICMP code. Valid values should be in range 1-37 according to RFC 1700. Default value is `1`
-- **id** (String) The ID of this resource.
 - **reverse** (Boolean) For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Default value is `true`
 - **srcportfrom** (Number) Source port from. Valid values should be in range 1-65535
 - **srcportgroup** (String) Match source ports on a group of ports. Valid value name of ACL Port Group

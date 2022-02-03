@@ -30,9 +30,3 @@ resource "netris_allocation" "my-allocation-mgmt" {
 - **name** (String) Unique name for current allocation.
 - **prefix** (String) Unique prefix for allocation, must not overlap with other allocations.
 - **tenantid** (Number) ID of tenant. Users of this tenant will be permitted to manage subnets under this allocation.
-
-### Optional
-
-- **id** (String) The ID of this resource.
-
-

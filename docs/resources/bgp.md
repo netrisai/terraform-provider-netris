@@ -8,7 +8,7 @@ description: |-
 
 # netris_bgp
 
-Netris will automatically generate and program the network configuration to meet the requirements.
+Creates and manages BGP resources. Netris will automatically generate and program the network configuration to meet the requirements.
 ## Example Usages
 ```hcl
 data "netris_site" "santa_clara"{
@@ -29,7 +29,6 @@ resource "netris_bgp" "my-bgp" {
   localip = "192.0.0.2/30"
   remoteip = "192.0.0.1/30"
   depends_on = [netris_softgate.softgate1]
-
 }
 ```
 
@@ -51,7 +50,6 @@ resource "netris_bgp" "my-bgp" {
 - **defaultoriginate** (Boolean) Originate default route to current neighbor. Default value is `false`.
 - **description** (String) BGP session description
 - **hardware** (String) Defines hardware for Layer-3 and BGP session termination. Valid value is hardware name or `auto` when BGP is terminated on VNet. Default value is `auto`.
-- **id** (String) The ID of this resource.
 - **inboundroutemap** (String) Reference to route-map resource. Valid value is route-map name.
 - **localpreference** (Number) BGP session local preference. Default value is `100`.
 - **multihop** (Map of String) Multihop BGP session configurations.
