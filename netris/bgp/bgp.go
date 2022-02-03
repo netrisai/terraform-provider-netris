@@ -33,65 +33,74 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages BGPs",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "User assigned name of BGP session.",
 			},
 			"siteid": {
 				Required: true,
 				Type:     schema.TypeInt,
+				Description: "Site (data center) ID where this BGP session should be terminated on.",
 			},
 			"hardware": {
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Defines hardware for Layer-3 and BGP session termination. Valid value is hardware name or `auto` when BGP is terminated on VNet. Default value is `auto`.",
 			},
 			"neighboras": {
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "BGP neighbor AS number.",
 			},
 			"portid": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "Port ID where BGP neighbor cable is connected. Can't be used together `vnetid`.",
 			},
 			"vnetid": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "Existing VNet service ID to terminate E-BGP on. Can't be used together `portid`.",
 			},
 			"vlanid": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "VLAN ID for tagging BGP neighbor facing ethernet frames. Valid values should be in range 2-4094.",
 			},
 			"localip": {
 				ValidateFunc: validateIPPrefix,
 				Required:     true,
 				Type:         schema.TypeString,
-				Description:  "Local IP. Example 10.0.1.1/24",
+				Description:  "BGP session local IP. Example `10.0.1.1/24`.",
 			},
 			"remoteip": {
 				ValidateFunc: validateIPPrefix,
 				Required:     true,
 				Type:         schema.TypeString,
-				Description:  "Remote IP. Example 10.0.1.2/24",
+				Description:  "BGP session remote IP. Example `10.0.1.2/24`.",
 			},
 			"description": {
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "BGP session description",
 			},
 			"state": {
 				Optional:     true,
 				Default:      "enabled",
 				ValidateFunc: validateState,
 				Type:         schema.TypeString,
+				Description: "Valid value is `enabled` or `disabled`; enabled - initiating and waiting for BGP connections, disabled - disable Layer-2 tunnel and Layer-3 address. Default value is `enabled`.",
 			},
 			"multihop": {
 				Optional:    true,
 				Type:        schema.TypeMap,
-				Description: "Multihop",
+				Description: "Multihop BGP session configurations.",
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
 					Optional:     true,
@@ -101,56 +110,66 @@ func Resource() *schema.Resource {
 			"bgppassword": {
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "BGP session password",
 			},
 			"allowasin": {
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "Optionally allow number of occurrences of the own AS number in received prefix AS-path. Default value is `0`.",
 			},
 			"defaultoriginate": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeBool,
+				Description: "Originate default route to current neighbor. Default value is `false`.",
 			},
 			"prefixinboundmax": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "BGP session will be interrupted if neighbor advertises more prefixes than defined. Equal to `1000` if BGP session is terminated on hardware type of switch.",
 			},
 			"inboundroutemap": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Reference to route-map resource. Valid value is route-map name.",
 			},
 			"outboundroutemap": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Reference to route-map resource. Valid value is route-map name.",
 			},
 			"localpreference": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "BGP session local preference. Default value is `100`.",
 			},
 			"weight": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "BGP session weight. Default value is `0`.",
 			},
 			"prependinbound": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "Number of times to prepend self AS to as-path of received prefix advertisements. Default value is `0`.",
 			},
 			"prependoutbound": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "Number of times to prepend self AS to as-path being advertised to neighbors. Default value is `0`.",
 			},
 			"prefixlistinbound": {
 				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Switch Ports",
+				Description: "List of inbound prefix list. Example `[\"deny 127.0.0.0/8 le 32\", \"permit 0.0.0.0/0 le 24\"]`.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -159,7 +178,7 @@ func Resource() *schema.Resource {
 				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Switch Ports",
+				Description: "List of outbound prefix list, if not defined autogenerated prefix list will apply which will permit defined allocations and assignments, and will deny all private addresses. Example `[\"permit 192.0.2.0/24 le 26\"]`.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -168,7 +187,7 @@ func Resource() *schema.Resource {
 				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Switch Ports",
+				Description: "Send BGP Community Unconditionally advertise defined list of BGP communities towards BGP neighbor. Format: AA:NN Community number in AA:NN format (where AA and NN are (0-65535)) or local-AS. Example `[\"65501:777\"]`.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},

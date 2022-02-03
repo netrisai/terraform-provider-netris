@@ -33,11 +33,11 @@ resource "netris_acl" "my-acl" {
 
 ### Required
 
-- **action** (String) Permit or Deny forwarding of matched packets. Valid values are permit and deny.
-- **dstprefix** (String) Destination IPv4/IPv6 address. Example 0.0.0.0/0
+- **action** (String) Permit or Deny forwarding of matched packets. Valid values are `permit` and `deny`.
+- **dstprefix** (String) Destination IPv4/IPv6 address. Example `0.0.0.0/0`
 - **name** (String) Unique name for the ACL entry.
-- **proto** (String) IP protocol to match. Valid values are all, ip, tcp, udp, icmp, icmpv6.
-- **srcprefix** (String) Source IPv4/IPv6 address. Example 192.0.2.0/24
+- **proto** (String) IP protocol to match. Valid values are `all`, `ip`, `tcp`, `udp`, `icmp`, `icmpv6`.
+- **srcprefix** (String) Source IPv4/IPv6 address. Example `192.0.2.0/24`
 
 ### Optional
 
@@ -45,10 +45,10 @@ resource "netris_acl" "my-acl" {
 - **dstportfrom** (Number) Destination port from. Valid values should be in range 1-65535
 - **dstportgroup** (String) Match destination ports on a group of ports. Valid value name of ACL Port Group
 - **dstportto** (Number) Destination port to. Valid values should be in range 1-65535
-- **established** (Number) For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Valid values are 0 and 1. Default value is 1
-- **icmptype** (Number) Custom IPv4 ICMP code. Valid values should be in range 1-37 according to RFC 1700. Default value is 1
+- **established** (Number) For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Valid values are `0` and `1`. Default value is `1`
+- **icmptype** (Number) Custom IPv4 ICMP code. Valid values should be in range 1-37 according to RFC 1700. Default value is `1`
 - **id** (String) The ID of this resource.
-- **reverse** (Boolean) For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Default value is true
+- **reverse** (Boolean) For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Default value is `true`
 - **srcportfrom** (Number) Source port from. Valid values should be in range 1-65535
 - **srcportgroup** (String) Match source ports on a group of ports. Valid value name of ACL Port Group
 - **srcportto** (Number) Source port to. Valid values should be in range 1-65535
