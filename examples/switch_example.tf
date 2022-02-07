@@ -1,3 +1,7 @@
+# data "netris_inventory_profile" "yerevanprofile" {
+#   name = "YerevanProfile"
+# }
+
 # resource "netris_switch" "my-switch" {
 #   name = "my-switch"
 #   tenantid = netris_tenant.admin.id
@@ -5,7 +9,7 @@
 #   description = "Terraform Test"
 #   nos = "cumulus_linux"
 #   asnumber = 4280000000
-#   profile = "my-profile"
+#   profileid = data.netris_inventory_profile.yerevanprofile.id
 #   mainip = "auto"
 #   mgmtip = "auto"
 #   macaddress = ""

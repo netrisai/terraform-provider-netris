@@ -57,8 +57,8 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"profile": {
-				Type:     schema.TypeString,
+			"profileid": {
+				Type:     schema.TypeInt,
 				Optional: true,
 			},
 			"mainip": {
@@ -109,17 +109,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	nos := nosMap[d.Get("nos").(string)]
 
-	profileID := 0
-	profiles, err := clientset.Inventory().GetProfiles()
-	if err != nil {
-		return err
-	}
-	for _, profile := range profiles {
-		if profile.Name == d.Get("profile").(string) {
-			profileID = profile.ID
-			break
-		}
-	}
+	profileID := d.Get("profileid").(int)
 
 	var asnAny interface{} = d.Get("asnumber").(string)
 	asn := asnAny.(string)
@@ -224,7 +214,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if sw.Profile.Name != "None" {
-		err = d.Set("profile", sw.Profile.Name)
+		err = d.Set("profileid", sw.Profile.ID)
 		if err != nil {
 			return err
 		}
@@ -269,17 +259,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	nos := nosMap[d.Get("nos").(string)]
 
-	profileID := 0
-	profiles, err := clientset.Inventory().GetProfiles()
-	if err != nil {
-		return err
-	}
-	for _, profile := range profiles {
-		if profile.Name == d.Get("profile").(string) {
-			profileID = profile.ID
-			break
-		}
-	}
+	profileID := d.Get("profileid").(int)
 
 	var asnAny interface{} = d.Get("asnumber").(string)
 	asn := asnAny.(string)
