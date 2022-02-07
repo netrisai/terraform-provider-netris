@@ -1,27 +1,27 @@
 # resource "netris_acltwozero" "terraform-test" {
-#   name = "terraform-testt"
+#   name = "terraform-test"
 #   privacy = "public"
 #   tenantid = 1
 #   state = "enabled"
 #   publishers {
-#     instanceids = [294]
+#     instanceids = [netris_roh.roh-terraform-test-1.id]
 #     lbvips = []
-#     prefixes = ["10.10.10.0/24", "20.10.10.0/24", "30.10.10.0/24"]
+#     prefixes = ["192.0.2.0/24"]
 #     protocol {
-#       name = "TCPP"
+#       name = "TCP"
 #       protocol = "tcp"
-#       port = "46"
+#       port = "80"
 #       portgroupid = 22
 #     }
 #   }
 #   subscribers {
-#     instanceids = [294]
+#     instanceids = [netris_roh.roh-terraform-test-2.id]
 #     prefix {
-#       prefix = "20.10.10.0/25"
+#       prefix = "198.51.100.0/25"
 #       comment = "test-prefix"
 #     }
 #     prefix {
-#       prefix = "30.10.10.0/24"
+#       prefix = "203.0.113.0/24"
 #       comment = "test-prefix-2"
 #     }
 #   }

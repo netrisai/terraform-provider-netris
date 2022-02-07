@@ -3,12 +3,28 @@
 page_title: "netris_acl Resource - terraform-provider-netris"
 subcategory: ""
 description: |-
-  
+  Creates and manages ACLs
 ---
 
-# netris_acl (Resource)
+# netris_acl
 
-
+Netris supports ACLs for switch network access control. (ACL and ACL2.0) ACL is for defining network access lists in a source IP: Port, destination IP: Port format. ACL2.0 is an object-oriented service way of describing network access.
+Both ACL and ACL2.0 services support tenant/RBAC based approval workflows. Access control lists execute in switch hardware providing line-rate performance for security enforcement. It’s important to keep in mind that the number of ACLs is limited to the limited size of TCAM of network switches.
+## Example Usages
+```hcl
+resource "netris_acl" "my-acl" {
+	name = "my-acl"
+	action = "permit"
+	comment = "Test"
+	proto = "tcp"
+	srcprefix = "192.0.2.0/24"
+	srcportfrom = 1
+	srcportto = 65535
+	dstprefix = "0.0.0.0/0"
+	dstportfrom = 80
+	dstportto = 80
+}
+```
 
 
 
@@ -17,25 +33,24 @@ description: |-
 
 ### Required
 
-- **action** (String)
-- **dstprefix** (String)
-- **name** (String) The name of the resource, also acts as it's unique ID
-- **proto** (String)
-- **srcprefix** (String)
+- **action** (String) Permit or Deny forwarding of matched packets. Valid values are `permit` and `deny`.
+- **dstprefix** (String) Destination IPv4/IPv6 address. Example `0.0.0.0/0`
+- **name** (String) Unique name for the ACL entry.
+- **proto** (String) IP protocol to match. Valid values are `all`, `ip`, `tcp`, `udp`, `icmp`, `icmpv6`.
+- **srcprefix** (String) Source IPv4/IPv6 address. Example `192.0.2.0/24`
 
 ### Optional
 
-- **comment** (String)
-- **dstportfrom** (Number)
-- **dstportgroup** (String)
-- **dstportto** (Number)
-- **established** (Number)
-- **icmptype** (Number)
-- **id** (String) The ID of this resource.
-- **reverse** (Boolean)
-- **srcportfrom** (Number)
-- **srcportgroup** (String)
-- **srcportto** (Number)
+- **comment** (String) Descriptive comment, commonly used for approval workflows.
+- **dstportfrom** (Number) Destination port from. Valid values should be in range 1-65535
+- **dstportgroup** (String) Match destination ports on a group of ports. Valid value name of ACL Port Group
+- **dstportto** (Number) Destination port to. Valid values should be in range 1-65535
+- **established** (Number) For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Valid values are `0` and `1`. Default value is `1`
+- **icmptype** (Number) Custom IPv4 ICMP code. Valid values should be in range 1-37 according to RFC 1700. Default value is `1`
+- **reverse** (Boolean) For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Default value is `true`
+- **srcportfrom** (Number) Source port from. Valid values should be in range 1-65535
+- **srcportgroup** (String) Match source ports on a group of ports. Valid value name of ACL Port Group
+- **srcportto** (Number) Source port to. Valid values should be in range 1-65535
 - **validuntil** (String)
 
 

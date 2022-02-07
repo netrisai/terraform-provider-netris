@@ -32,20 +32,23 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages Allocations",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "Unique name for current allocation.",
 			},
 			"prefix": {
 				Required: true,
 				Type:     schema.TypeString,
+				Description: "Unique prefix for allocation, must not overlap with other allocations.",
 			},
 			"tenantid": {
 				ForceNew: true,
 				Required: true,
 				Type:     schema.TypeInt,
+				Description: "ID of tenant. Users of this tenant will be permitted to manage subnets under this allocation.",
 			},
 		},
 		Create: resourceCreate,
