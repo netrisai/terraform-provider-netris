@@ -93,11 +93,12 @@ func Provider() terraform.ResourceProvider {
 			"netris_acltwozero":        acl2.Resource(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"netris_site":       site.DataResource(),
-			"netris_bgp_object": bgpobject.DataResource(),
-			"netris_tenant":     tenant.DataResource(),
-			"netris_port":       port.DataResource(),
-			"netris_vnet":       vnet.DataResource(),
+			"netris_site":              site.DataResource(),
+			"netris_bgp_object":        bgpobject.DataResource(),
+			"netris_tenant":            tenant.DataResource(),
+			"netris_port":              port.DataResource(),
+			"netris_vnet":              vnet.DataResource(),
+			"netris_inventory_profile": inventoryprofile.DataResource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
