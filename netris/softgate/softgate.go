@@ -48,13 +48,13 @@ func Resource() *schema.Resource {
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
 			"description": {
-				Computed: true,
+				Computed:    true,
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
-			"profile": {
-				Type:        schema.TypeString,
+			"profileid": {
+				Type:        schema.TypeInt,
 				Optional:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
 			},
@@ -87,17 +87,7 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	profileID := 0
-	profiles, err := clientset.Inventory().GetProfiles()
-	if err != nil {
-		return err
-	}
-	for _, profile := range profiles {
-		if profile.Name == d.Get("profile").(string) {
-			profileID = profile.ID
-			break
-		}
-	}
+	profileID := d.Get("profileid").(int)
 
 	softgateAdd := &inventory.HWSoftgate{
 		Name:        d.Get("name").(string),
@@ -172,6 +162,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("profileid", sw.Profile.ID)
+	if err != nil {
+		return err
+	}
 	err = d.Set("description", sw.Description)
 	if err != nil {
 		return err
@@ -195,17 +189,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	profileID := 0
-	profiles, err := clientset.Inventory().GetProfiles()
-	if err != nil {
-		return err
-	}
-	for _, profile := range profiles {
-		if profile.Name == d.Get("profile").(string) {
-			profileID = profile.ID
-			break
-		}
-	}
+	profileID := d.Get("profileid").(int)
 
 	softgateUpdate := &inventory.HWSoftgateUpdate{
 		Name:        d.Get("name").(string),
