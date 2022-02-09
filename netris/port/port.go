@@ -60,7 +60,7 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeInt,
 			},
 			"autoneg": {
-				Default:      "none",
+				Default:      "default",
 				ValidateFunc: validateAutoneg,
 				Type:         schema.TypeString,
 				Optional:     true,
@@ -72,8 +72,9 @@ func Resource() *schema.Resource {
 				Optional:     true,
 			},
 			"extension": {
-				Optional: true,
-				Type:     schema.TypeMap,
+				ValidateFunc: validateExtension,
+				Optional:     true,
+				Type:         schema.TypeMap,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"extensionname": {
@@ -153,6 +154,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			extension.Name = ext["extensionname"].(string)
 			extension.VLANFrom = from
 			extension.VLANTo = to
+			if e, ok := findExtensionByName(extension.Name, clientset); ok {
+				extension.ID = e.ID
+			}
 		}
 		portUpdate.Mtu = mtu
 		portUpdate.AutoNeg = autoneg
@@ -277,6 +281,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	if breakout == "off" || breakout == "manual" {
 		mtu := d.Get("mtu").(int)
 		autoneg := d.Get("autoneg").(string)
+		if autoneg == "default" {
+			autoneg = "none"
+		}
 		speed := d.Get("speed").(string)
 		extension := port.PortUpdateExtenstion{}
 		ext := d.Get("extension").(map[string]interface{})
@@ -287,6 +294,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			extension.Name = ext["extensionname"].(string)
 			extension.VLANFrom = from
 			extension.VLANTo = to
+			if e, ok := findExtensionByName(extension.Name, clientset); ok {
+				extension.ID = e.ID
+			}
 		}
 		portUpdate.Mtu = mtu
 		portUpdate.AutoNeg = autoneg
