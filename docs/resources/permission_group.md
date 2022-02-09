@@ -18,7 +18,7 @@ resource "netris_permission_group" "my-group" {
   name = "my-group"
   description = "Terraform Test Permission group"
   groups = [
-    "services:edit",
+		"services:edit",
 		"services.instances:view",
 		"services.vnet:view",
 		"services.acl:view",
