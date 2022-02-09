@@ -32,79 +32,93 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages NATs",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The unique name of NAT rule",
 			},
 			"state": {
 				ValidateFunc: validateState,
 				Default:      "enabled",
 				Optional:     true,
 				Type:         schema.TypeString,
+				Description: "Rule state. Valid value is `enabled` or `disabled`. Default value is `enabled`.",
 			},
 			"comment": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Custom comment for NAT rule",
 			},
 			"siteid": {
 				Required: true,
 				Type:     schema.TypeInt,
+				Description: "The site ID where this rule belongs",
 			},
 			"action": {
 				ValidateFunc: validateAction,
 				Required:     true,
 				Type:         schema.TypeString,
+				Description: "Rule action. Possible values: `DNAT`, `SNAT`, `ACCEPT_SNAT`, `MASQUERADE`",
 			},
 			"protocol": {
 				ValidateFunc: validateProto,
 				Required:     true,
 				Type:         schema.TypeString,
+				Description: "Possible values: `all`, `tcp`, `udp`, `icmp`",
 			},
 			"srcaddress": {
 				ValidateFunc: validateIPPrefix,
 				Required:     true,
 				Type:         schema.TypeString,
+				Description: "Match traffic sourced from this subnet",
 			},
 			"srcport": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Match traffic sourced from this port. Ignoring when protocol == `all` or `icmp`",
 			},
 			"dstaddress": {
 				ValidateFunc: validateIPPrefix,
 				Required:     true,
 				Type:         schema.TypeString,
+				Description: "Match traffic destined to this subnet",
 			},
 			"dstport": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Match traffic destined to this port. Ignoring when protocol == `all` or `icmp`",
 			},
 			"dnattoip": {
 				Computed:     true,
 				ValidateFunc: validateIPPrefix,
 				Optional:     true,
 				Type:         schema.TypeString,
+				Description: "The internal IP address to which external hosts will gain access as a result of a DNAT translation. Only when action == `DNAT`",
 			},
 			"dnattoport": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "The internal port to which external port will gain access as a result of a DNAT translation. Only when action == `DNAT`",
 			},
 			"snattoip": {
 				Computed:     true,
 				ValidateFunc: validateIPPrefix,
 				Optional:     true,
 				Type:         schema.TypeString,
+				Description: "Replace the original address with the specified one. Only when action == `SNAT`",
 			},
 			"snattopool": {
 				Computed:     true,
 				ValidateFunc: validateIPPrefix,
 				Optional:     true,
 				Type:         schema.TypeString,
+				Description: "Replace the original address with the pool of ip addresses. Only when action == `SNAT`",
 			},
 		},
 		Create: resourceCreate,

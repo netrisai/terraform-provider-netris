@@ -10,7 +10,7 @@ description: |-
 
 Define the links in the network. Once the links have been defined, the network is automatically configured as long as physical connectivity is in place and Netris Agents can communicate with Netris Controller.
 
-~> **Note:** Link require hardware to exist prior to association. Use `depends_on` to set an explicit dependency on the hardware (switch/softgate).
+~> **Note:** Link require hardware to exist prior to resource creation. Use `depends_on` to set an explicit dependency on the hardware (switch/softgate).
 
 
 ## Example Usages
