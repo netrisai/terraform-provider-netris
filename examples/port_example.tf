@@ -1,14 +1,14 @@
-# resource "netris_port" "swp4-artash-spine" {
-#   name = "swp4"
-#   description = "swp4 - Artash"
-#   switchid = 860
-#   tenantid = 128
-#   breakout = "manual"
-#   mtu = 9005
-#   autoneg = "none"
-#   speed = "1g"
-#   extension = {
-#     extensionname = "extname"
-#     vlanrange = "10-14"
-#   }
-# }
+resource "netris_port" "swp10_sw01" {
+  name = "swp10"
+  description = "swp10 - Some description"
+  switchid = netris_switch.sw01-nyc.id
+  tenantid = data.netris_tenant.admin.id
+  # breakout = "4x10"
+  mtu = 9005
+  autoneg = "on"
+  speed = "10g"
+  # extension = {
+  #   extensionname = "vlans10-14"
+  #   vlanrange = "10-14"
+  # }
+}
