@@ -20,9 +20,17 @@ import (
 	"fmt"
 
 	api "github.com/netrisai/netriswebapi/v2"
-	"github.com/netrisai/netriswebapi/v2/types/inventory"
 	"github.com/netrisai/netriswebapi/v2/types/port"
 )
+
+func findPortByName(ports []*port.Port, name string, clientset *api.Clientset) (*port.Port, bool) {
+	for _, port := range ports {
+		if fmt.Sprintf("%s@%s", port.Port_, port.SwitchName) == name {
+			return port, true
+		}
+	}
+	return nil, false
+}
 
 func findPortByID(ports []*port.Port, id int, clientset *api.Clientset) (*port.Port, bool) {
 	for _, port := range ports {
@@ -31,45 +39,4 @@ func findPortByID(ports []*port.Port, id int, clientset *api.Clientset) (*port.P
 		}
 	}
 	return nil, false
-}
-
-func findPortByName(ports []*port.Port, name string, clientset *api.Clientset) (*port.Port, bool) {
-	for _, port := range ports {
-		if fmt.Sprintf("%s@%s", port.Port, port.SwitchName) == name {
-			return port, true
-		}
-	}
-	return nil, false
-}
-
-func hwToSoftgateUpdate(hw *inventory.HW) *inventory.HWSoftgateUpdate {
-	sg := &inventory.HWSoftgateUpdate{
-		Description: hw.Description,
-		Links:       hw.Links,
-		MainAddress: hw.MainAddress,
-		MgmtAddress: hw.MgmtAddress,
-		Name:        hw.Name,
-		Profile:     hw.Profile,
-		Site:        hw.Site,
-		Tenant:      hw.Tenant,
-	}
-	return sg
-}
-
-func hwToSwitchUpdate(hw *inventory.HW) *inventory.HWSwitchUpdate {
-	sg := &inventory.HWSwitchUpdate{
-		Asn:         hw.Asn,
-		Description: hw.Description,
-		Links:       hw.Links,
-		MainAddress: hw.MainAddress,
-		MgmtAddress: hw.MgmtAddress,
-		Name:        hw.Name,
-		Nos:         inventory.NOS(hw.Nos),
-		PortCount:   hw.PortCount,
-		Profile:     hw.Profile,
-		Site:        hw.Site,
-		Tenant:      hw.Tenant,
-		Type:        hw.Type,
-	}
-	return sg
 }

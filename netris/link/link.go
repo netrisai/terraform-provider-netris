@@ -23,9 +23,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/netrisai/netriswebapi/http"
 	api "github.com/netrisai/netriswebapi/v2"
-	"github.com/netrisai/netriswebapi/v2/types/inventory"
+	"github.com/netrisai/netriswebapi/v2/types/link"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -57,9 +56,8 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	origin := 0
-	dest := 0
-	hwID := 0
+	local := 0
+	remote := 0
 
 	ports, err := clientset.Port().Get()
 	if err != nil {
@@ -68,46 +66,31 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	portList := d.Get("ports").([]interface{})
 	if o, ok := findPortByName(ports, portList[0].(string), clientset); ok {
-		hwID = o.Switch.ID
-		origin = o.ID
+		local = o.ID
+	} else {
+		return fmt.Errorf("Couldn't find port %s", portList[0])
 	}
 	if d, ok := findPortByName(ports, portList[1].(string), clientset); ok {
-		dest = d.ID
+		remote = d.ID
+	} else {
+		return fmt.Errorf("Couldn't find port %s", portList[1])
 	}
 
-	hw, err := clientset.Inventory().GetByID(hwID)
+	linkAdd := &link.Link{
+		Local:  link.LinkIDName{ID: local},
+		Remote: link.LinkIDName{ID: remote},
+	}
+
+	js, _ := json.Marshal(linkAdd)
+	log.Println("[DEBUG] linkAdd", string(js))
+
+	reply, err := clientset.Link().Add(linkAdd)
 	if err != nil {
+		log.Println("[DEBUG]", err)
 		return err
 	}
 
-	hwLink := inventory.HWLink{
-		Local:  inventory.IDName{ID: origin},
-		Remote: inventory.IDName{ID: dest},
-	}
-
-	hw.Links = append(hw.Links, hwLink)
-
-	var reply http.HTTPReply
-
-	if hw.Type == "switch" {
-		swUpdate := hwToSwitchUpdate(hw)
-		js, _ := json.Marshal(swUpdate)
-		log.Println("[DEBUG]", string(js))
-		reply, err = clientset.Inventory().UpdateSwitch(hw.ID, swUpdate)
-		if err != nil {
-			return err
-		}
-	} else if hw.Type == "softgate" {
-		sgUpdate := hwToSoftgateUpdate(hw)
-		js, _ := json.Marshal(sgUpdate)
-		log.Println("[DEBUG]", string(js))
-		reply, err = clientset.Inventory().UpdateSoftgate(hw.ID, sgUpdate)
-		if err != nil {
-			return err
-		}
-	}
-
-	js, _ := json.Marshal(reply)
+	js, _ = json.Marshal(reply)
 	log.Println("[DEBUG]", string(js))
 
 	log.Println("[DEBUG]", string(reply.Data))
@@ -116,7 +99,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	d.SetId(fmt.Sprintf("%d-%d", origin, dest))
+	d.SetId(fmt.Sprintf("%d-%d", local, remote))
 	return nil
 }
 
@@ -127,49 +110,53 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("invalid link")
 	}
 
-	origin, _ := strconv.Atoi(itemid[0])
-	dest, _ := strconv.Atoi(itemid[1])
-	hwID := 0
+	local, _ := strconv.Atoi(itemid[0])
+	remote, _ := strconv.Atoi(itemid[1])
+	localName := ""
+	remoteName := ""
 
 	portList := []interface{}{}
+
+	links, err := clientset.Link().Get()
+	if err != nil {
+		return err
+	}
 
 	ports, err := clientset.Port().Get()
 	if err != nil {
 		return err
 	}
 
-	if port, ok := findPortByID(ports, origin, clientset); ok {
-		portList = append(portList, fmt.Sprintf("%s@%s", port.Port, port.SwitchName))
-		hwID = port.Switch.ID
-	} else {
-		return fmt.Errorf("invalid link")
+	if o, ok := findPortByID(ports, local, clientset); ok {
+		localName = fmt.Sprintf("%s@%s", o.Port_, o.SwitchName)
 	}
-	if port, ok := findPortByID(ports, dest, clientset); ok {
-		portList = append(portList, fmt.Sprintf("%s@%s", port.Port, port.SwitchName))
-	} else {
-		return fmt.Errorf("invalid link")
+	if o, ok := findPortByID(ports, remote, clientset); ok {
+		remoteName = fmt.Sprintf("%s@%s", o.Port_, o.SwitchName)
 	}
 
-	hw, err := clientset.Inventory().GetByID(hwID)
-	if err != nil {
-		return err
-	}
-
-	linkExist := false
-
-	for _, link := range hw.Links {
-		if (link.Local.ID == origin && link.Remote.ID == dest) || (link.Local.ID == dest && link.Remote.ID == origin) {
-			linkExist = true
+	found := false
+	for _, link := range links {
+		if link.Local.ID == local && link.Remote.ID == remote {
+			portList = append(portList, localName)
+			portList = append(portList, remoteName)
+			found = true
+			break
+		} else if link.Local.ID == remote && link.Remote.ID == local {
+			portList = append(portList, remoteName)
+			portList = append(portList, localName)
+			found = true
 			break
 		}
 	}
 
-	if linkExist {
-		d.SetId(d.Id())
-		err = d.Set("ports", portList)
-		if err != nil {
-			return err
-		}
+	if !found {
+		return fmt.Errorf("Link not found")
+	}
+
+	d.SetId(d.Id())
+	err = d.Set("ports", portList)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -182,54 +169,18 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("invalid link")
 	}
 
-	origin, _ := strconv.Atoi(itemid[0])
-	dest, _ := strconv.Atoi(itemid[1])
+	local, _ := strconv.Atoi(itemid[0])
+	remote, _ := strconv.Atoi(itemid[1])
 
-	port, err := clientset.Port().GetByID(origin)
+	linkDelete := &link.Link{
+		Local:  link.LinkIDName{ID: local},
+		Remote: link.LinkIDName{ID: remote},
+	}
+
+	reply, err := clientset.Link().Delete(linkDelete)
 	if err != nil {
 		return err
 	}
-	hwID := port.Switch.ID
-
-	hw, err := clientset.Inventory().GetByID(hwID)
-	if err != nil {
-		return err
-	}
-
-	for i, link := range hw.Links {
-		fmt.Println(i)
-		if (link.Local.ID == origin && link.Remote.ID == dest) || (link.Local.ID == dest && link.Remote.ID == origin) {
-			hw.Links[i] = hw.Links[len(hw.Links)-1]
-			hw.Links[len(hw.Links)-1] = inventory.HWLink{}
-			hw.Links = hw.Links[:len(hw.Links)-1]
-			break
-		}
-	}
-
-	var reply http.HTTPReply
-
-	if hw.Type == "switch" {
-		swUpdate := hwToSwitchUpdate(hw)
-		js, _ := json.Marshal(swUpdate)
-		log.Println("[DEBUG]", string(js))
-		reply, err = clientset.Inventory().UpdateSwitch(hw.ID, swUpdate)
-		if err != nil {
-			return err
-		}
-	} else if hw.Type == "softgate" {
-		sgUpdate := hwToSoftgateUpdate(hw)
-		js, _ := json.Marshal(sgUpdate)
-		log.Println("[DEBUG]", string(js))
-		reply, err = clientset.Inventory().UpdateSoftgate(hw.ID, sgUpdate)
-		if err != nil {
-			return err
-		}
-	}
-
-	js, _ := json.Marshal(reply)
-	log.Println("[DEBUG]", string(js))
-
-	log.Println("[DEBUG]", string(reply.Data))
 
 	if reply.StatusCode != 200 {
 		return fmt.Errorf(string(reply.Data))
@@ -246,31 +197,23 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 		return false, fmt.Errorf("invalid link")
 	}
 
-	origin, _ := strconv.Atoi(itemid[0])
-	dest, _ := strconv.Atoi(itemid[1])
-	hwID := 0
+	local, _ := strconv.Atoi(itemid[0])
+	remote, _ := strconv.Atoi(itemid[1])
 
-	ports, err := clientset.Port().Get()
+	links, err := clientset.Link().Get()
 	if err != nil {
 		return false, err
 	}
 
-	if port, ok := findPortByID(ports, origin, clientset); ok {
-		hwID = port.Switch.ID
-	} else {
-		return false, fmt.Errorf("invalid link")
-	}
-
-	hw, err := clientset.Inventory().GetByID(hwID)
-	if err != nil {
-		return false, err
-	}
-
-	for _, link := range hw.Links {
-		if (link.Local.ID == origin && link.Remote.ID == dest) || (link.Local.ID == dest && link.Remote.ID == origin) {
-			return true, nil
+	found := false
+	for _, link := range links {
+		if (link.Local.ID == local && link.Remote.ID == remote) || (link.Local.ID == remote && link.Remote.ID == local) {
+			found = true
 		}
 	}
 
-	return false, nil
+	if !found {
+		return false, nil
+	}
+	return true, nil
 }
