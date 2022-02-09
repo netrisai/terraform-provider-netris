@@ -34,39 +34,46 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages L4LBs",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The name of the resource",
 			},
 			"tenantid": {
 				Optional: true,
 				Type:     schema.TypeInt,
 				ForceNew: true,
+				Description: "ID of tenant. Users of this tenant will be permitted to edit this unit.",
 			},
 			"siteid": {
 				Optional: true,
 				Type:     schema.TypeInt,
 				ForceNew: true,
+				Description: "The site ID. Resources defined in the selected site will be permitted to be used as backed entries for this L4 Load Balancer service.",
 			},
 			"state": {
 				Optional:     true,
 				Default:      "active",
 				ValidateFunc: validateState,
 				Type:         schema.TypeString,
+				Description: "Administrative status. Possible values: `active` or `disable`. Default value is `active`",
 			},
 			"protocol": {
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Protocol. Possible values: `tcp` or `udp`",
 			},
 			"frontend": {
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "L4LB frontend IP. If not specified, will be assigned automatically from subnets with relevant purpose.",
 			},
 			"port": {
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "L4LB frontend port to be exposed",
 			},
 			"backend": {
 				Optional: true,
@@ -74,11 +81,12 @@ func Resource() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Description: "List of backends. Valid value is `ip`:`port` Example `[\"192.0.2.100:443\", \"192.0.2.101:443\"]`",
 			},
 			"check": {
 				Optional:    true,
 				Type:        schema.TypeMap,
-				Description: "Check Options",
+				Description: "A health check determines whether instances in the target pool are healthy. If protocol == `udp` then check.type should be `none`",
 				Elem: &schema.Schema{
 					Type:     schema.TypeString,
 					Optional: true,
