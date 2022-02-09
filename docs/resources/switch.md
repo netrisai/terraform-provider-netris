@@ -31,6 +31,6 @@ description: |-
 - **description** (String)
 - **id** (String) The ID of this resource.
 - **macaddress** (String)
-- **profile** (String)
+- **profileid** (Number)
 
 
