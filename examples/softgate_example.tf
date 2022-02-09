@@ -1,5 +1,5 @@
-# data "netris_inventory_profile" "yerevanprofile" {
-#   name = "YerevanProfile"
+# data "netris_inventory_profile" "my-profile" {
+#   name = "my-profile"
 # }
 
 # resource "netris_softgate" "my-softgate" {
