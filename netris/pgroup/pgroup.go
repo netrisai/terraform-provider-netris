@@ -31,15 +31,17 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages Permission Groups",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The name of the Permission Group",
 			},
 			"description": {
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Permission Group description",
 			},
 			"groups": {
 				Optional: true,
@@ -47,6 +49,7 @@ func Resource() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Description: "List of groups. Example: `[\"services.l4loadbalancer:view\"]`. Possible action value is `view` or `edit`. Addition action value `external-acl` only for key `services.acl`",
 			},
 		},
 		Create: resourceCreate,
