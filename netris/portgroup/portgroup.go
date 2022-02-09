@@ -32,16 +32,17 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages ACL Port Groups",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The name of the ACL Port Group",
 			},
 			"ports": {
 				Required:    true,
 				Type:        schema.TypeList,
-				Description: "Ports",
+				Description: "List of ports. Valid values are: single port `22`, range of ports `1024-2048`",
 				Elem: &schema.Schema{
 					ValidateFunc: validatePort,
 					Type:         schema.TypeString,
