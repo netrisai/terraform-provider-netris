@@ -108,7 +108,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	address := d.Get("address").(string)
 	login := d.Get("login").(string)
 	password := d.Get("password").(string)
-	clientset, err := api.Client(address, login, password, 15)
+	clientset, err := api.Client(address, login, password, 60)
 	if err != nil {
 		return nil, err
 	}
