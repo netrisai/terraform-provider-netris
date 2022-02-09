@@ -215,7 +215,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	}
 
 	if !found {
-		return false, fmt.Errorf("Link not found")
+		return false, nil
 	}
 	return true, nil
 }
