@@ -30,33 +30,39 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages static routes",
 		Schema: map[string]*schema.Schema{
 			"description": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: "Description of route",
 			},
 			"prefix": {
 				Required: true,
 				Type:     schema.TypeString,
+				Description: "Route destination to match",
 			},
 			"nexthop": {
 				Required: true,
 				Type:     schema.TypeString,
 				ForceNew: true,
+				Description: "Traffic destined to the Prefix will be routed towards the Next-Hop. Note that static routes will be injected only on units that have the Next-Hop as a connected network",
 			},
 			"siteid": {
 				Required: true,
 				Type:     schema.TypeInt,
+				Description: "The site ID where the current route belongs",
 			},
 			"state": {
 				Default:  "enabled",
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Administrative state of the route. Possible values: `enabled` or `disabled`. Default value is `enabled`",
 			},
 			"hwids": {
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Hardware IDs",
+				Description: "Hardware ID where to apply this route. It is typically used for Null routes. If not set, Netris will automatically decide where to apply",
 				Elem: &schema.Schema{
 					Type: schema.TypeInt,
 				},
