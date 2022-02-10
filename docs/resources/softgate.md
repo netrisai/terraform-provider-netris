@@ -46,7 +46,6 @@ resource "netris_softgate" "my-softgate" {
     netris_subnet.my-subnet-loopback,
   ]
 }
-
 ```
 
 
