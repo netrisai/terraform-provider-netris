@@ -145,19 +145,23 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			autoneg = "none"
 		}
 		speed := d.Get("speed").(string)
+
 		extension := port.PortUpdateExtenstion{}
 		ext := d.Get("extension").(map[string]interface{})
-		if v, ok := ext["vlanrange"]; ok {
+		extensionName := ext["extensionname"].(string)
+		if e, ok := findExtensionByName(extensionName, clientset); ok {
+			extension.ID = e.ID
+		} else if v, ok := ext["vlanrange"]; ok {
 			vlanrange := strings.Split(v.(string), "-")
 			from, _ := strconv.Atoi(vlanrange[0])
 			to, _ := strconv.Atoi(vlanrange[1])
-			extension.Name = ext["extensionname"].(string)
 			extension.VLANFrom = from
 			extension.VLANTo = to
-			if e, ok := findExtensionByName(extension.Name, clientset); ok {
-				extension.ID = e.ID
-			}
+			extension.Name = extensionName
+		} else {
+			return fmt.Errorf("Please provide vlan range for extension \"%s\"", extensionName)
 		}
+
 		portUpdate.Mtu = mtu
 		portUpdate.AutoNeg = autoneg
 		portUpdate.Speed = speedMap[speed]
@@ -285,19 +289,23 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			autoneg = "none"
 		}
 		speed := d.Get("speed").(string)
+
 		extension := port.PortUpdateExtenstion{}
 		ext := d.Get("extension").(map[string]interface{})
-		if v, ok := ext["vlanrange"]; ok {
+		extensionName := ext["extensionname"].(string)
+		if e, ok := findExtensionByName(extensionName, clientset); ok {
+			extension.ID = e.ID
+		} else if v, ok := ext["vlanrange"]; ok {
 			vlanrange := strings.Split(v.(string), "-")
 			from, _ := strconv.Atoi(vlanrange[0])
 			to, _ := strconv.Atoi(vlanrange[1])
-			extension.Name = ext["extensionname"].(string)
 			extension.VLANFrom = from
 			extension.VLANTo = to
-			if e, ok := findExtensionByName(extension.Name, clientset); ok {
-				extension.ID = e.ID
-			}
+			extension.Name = extensionName
+		} else {
+			return fmt.Errorf("Please provide vlan range for extension \"%s\"", extensionName)
 		}
+
 		portUpdate.Mtu = mtu
 		portUpdate.AutoNeg = autoneg
 		portUpdate.Speed = speedMap[speed]
