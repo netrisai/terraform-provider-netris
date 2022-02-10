@@ -18,6 +18,8 @@ By using only Layer-3 interfaces, Layer-2 protocols such as Spanning Tree (STP) 
 
 The ROH architecture that is configured by Netris allows for leveraging ECMP load balancing capabilities of the switching hardware for the high-performance server load balancing (described in L3 Load Balancer section). For each instance of ROH, you’ll need to create a ROH entry in Netris Controller.
 
+~> **Note:** ROH require subnets and switches to exist prior to resource creation. Use `depends_on` to set an explicit dependency on the subnets and switches.
+
 ## Example Usages
 
 ### ROH
