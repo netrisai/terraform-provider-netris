@@ -1,12 +1,12 @@
-# resource "netris_user" "terrraform-user" {
-#   username = "terrraform-user"
-#   fullname = "Terraform"
-#   email = "test@test.test"
-#   emailcc = "test@test.test"
-#   phone = "123456789"
-#   company = "Company Inc."
-#   position = "Developer"
-#   userrole = "netris"
-#   pgroup = "netris"
-#   tenants = ["netris"]
-# }
+resource "netris_user" "terrraform-user" {
+  username = "terraform"
+  fullname = "Terraform"
+  email = "terraform@netris.ai"
+  emailcc = "devops@netris.ai"
+  phone = "6504570097"
+  company = "Netris, Inc."
+  position = "DevOps Engineer"
+  userrole = ""
+  pgroup = "my-group"
+  tenants = ["my-tenant"]
+}
