@@ -84,6 +84,7 @@ func Resource() *schema.Resource {
 				Optional: true,
 				Type:     schema.TypeMap,
 				Description: "Port extension configurations.",
+				ValidateFunc: validateExtension,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"extensionname": {
@@ -157,16 +158,25 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			autoneg = "none"
 		}
 		speed := d.Get("speed").(string)
+
 		extension := port.PortUpdateExtenstion{}
 		ext := d.Get("extension").(map[string]interface{})
-		if v, ok := ext["vlanrange"]; ok {
-			vlanrange := strings.Split(v.(string), "-")
-			from, _ := strconv.Atoi(vlanrange[0])
-			to, _ := strconv.Atoi(vlanrange[1])
-			extension.Name = ext["extensionname"].(string)
-			extension.VLANFrom = from
-			extension.VLANTo = to
+		if n, ok := ext["extensionname"]; ok {
+			extensionName := n.(string)
+			if e, ok := findExtensionByName(extensionName, clientset); ok {
+				extension.ID = e.ID
+			} else if v, ok := ext["vlanrange"]; ok {
+				vlanrange := strings.Split(v.(string), "-")
+				from, _ := strconv.Atoi(vlanrange[0])
+				to, _ := strconv.Atoi(vlanrange[1])
+				extension.VLANFrom = from
+				extension.VLANTo = to
+				extension.Name = extensionName
+			} else {
+				return fmt.Errorf("Please provide vlan range for extension \"%s\"", extensionName)
+			}
 		}
+
 		portUpdate.Mtu = mtu
 		portUpdate.AutoNeg = autoneg
 		portUpdate.Speed = speedMap[speed]
@@ -290,17 +300,29 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	if breakout == "off" || breakout == "manual" {
 		mtu := d.Get("mtu").(int)
 		autoneg := d.Get("autoneg").(string)
+		if autoneg == "default" {
+			autoneg = "none"
+		}
 		speed := d.Get("speed").(string)
+
 		extension := port.PortUpdateExtenstion{}
 		ext := d.Get("extension").(map[string]interface{})
-		if v, ok := ext["vlanrange"]; ok {
-			vlanrange := strings.Split(v.(string), "-")
-			from, _ := strconv.Atoi(vlanrange[0])
-			to, _ := strconv.Atoi(vlanrange[1])
-			extension.Name = ext["extensionname"].(string)
-			extension.VLANFrom = from
-			extension.VLANTo = to
+		if n, ok := ext["extensionname"]; ok {
+			extensionName := n.(string)
+			if e, ok := findExtensionByName(extensionName, clientset); ok {
+				extension.ID = e.ID
+			} else if v, ok := ext["vlanrange"]; ok {
+				vlanrange := strings.Split(v.(string), "-")
+				from, _ := strconv.Atoi(vlanrange[0])
+				to, _ := strconv.Atoi(vlanrange[1])
+				extension.VLANFrom = from
+				extension.VLANTo = to
+				extension.Name = extensionName
+			} else {
+				return fmt.Errorf("Please provide vlan range for extension \"%s\"", extensionName)
+			}
 		}
+
 		portUpdate.Mtu = mtu
 		portUpdate.AutoNeg = autoneg
 		portUpdate.Speed = speedMap[speed]
