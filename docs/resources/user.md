@@ -10,6 +10,8 @@ description: |-
 
 Define a new user in Netris.
 
+~> **Note:** User require `userrole`/`pgroup`/`tenants` to exist prior to resource creation. Use `depends_on` to set an explicit dependency on the `userrole`/`pgroup`/`tenants`.
+
 ## Example Usages
 
 ```hcl
@@ -24,6 +26,10 @@ resource "netris_user" "terrraform-user" {
   userrole = ""
   pgroup = "my-group"
   tenants = ["my-tenant"]
+  depends_on = [
+    netris_permission_group.my-group,
+    netris_tenant.my-tenant,
+  ]
 }
 ```
 

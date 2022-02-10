@@ -32,14 +32,17 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages User Roles",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: "The name of the user role.",
 			},
 			"pgroup": {
 				Required: true,
 				Type:     schema.TypeString,
+				Description: "The name of existing permission group",
 			},
 			"tenantids": {
 				Optional: true,
@@ -47,6 +50,7 @@ func Resource() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeInt,
 				},
+				Description: "List of tenant IDs",
 			},
 		},
 		Create: resourceCreate,
