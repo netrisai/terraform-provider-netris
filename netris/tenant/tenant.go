@@ -32,16 +32,18 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages Tenants",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The name of the tenant",
 			},
 			"description": {
 				Optional: true,
 				Type:     schema.TypeString,
 				ForceNew: true,
+				Description: "Tenant's description",
 			},
 		},
 		Create: resourceCreate,
