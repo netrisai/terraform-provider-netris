@@ -148,18 +148,20 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 		extension := port.PortUpdateExtenstion{}
 		ext := d.Get("extension").(map[string]interface{})
-		extensionName := ext["extensionname"].(string)
-		if e, ok := findExtensionByName(extensionName, clientset); ok {
-			extension.ID = e.ID
-		} else if v, ok := ext["vlanrange"]; ok {
-			vlanrange := strings.Split(v.(string), "-")
-			from, _ := strconv.Atoi(vlanrange[0])
-			to, _ := strconv.Atoi(vlanrange[1])
-			extension.VLANFrom = from
-			extension.VLANTo = to
-			extension.Name = extensionName
-		} else {
-			return fmt.Errorf("Please provide vlan range for extension \"%s\"", extensionName)
+		if n, ok := ext["extensionname"]; ok {
+			extensionName := n.(string)
+			if e, ok := findExtensionByName(extensionName, clientset); ok {
+				extension.ID = e.ID
+			} else if v, ok := ext["vlanrange"]; ok {
+				vlanrange := strings.Split(v.(string), "-")
+				from, _ := strconv.Atoi(vlanrange[0])
+				to, _ := strconv.Atoi(vlanrange[1])
+				extension.VLANFrom = from
+				extension.VLANTo = to
+				extension.Name = extensionName
+			} else {
+				return fmt.Errorf("Please provide vlan range for extension \"%s\"", extensionName)
+			}
 		}
 
 		portUpdate.Mtu = mtu
@@ -292,18 +294,20 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 		extension := port.PortUpdateExtenstion{}
 		ext := d.Get("extension").(map[string]interface{})
-		extensionName := ext["extensionname"].(string)
-		if e, ok := findExtensionByName(extensionName, clientset); ok {
-			extension.ID = e.ID
-		} else if v, ok := ext["vlanrange"]; ok {
-			vlanrange := strings.Split(v.(string), "-")
-			from, _ := strconv.Atoi(vlanrange[0])
-			to, _ := strconv.Atoi(vlanrange[1])
-			extension.VLANFrom = from
-			extension.VLANTo = to
-			extension.Name = extensionName
-		} else {
-			return fmt.Errorf("Please provide vlan range for extension \"%s\"", extensionName)
+		if n, ok := ext["extensionname"]; ok {
+			extensionName := n.(string)
+			if e, ok := findExtensionByName(extensionName, clientset); ok {
+				extension.ID = e.ID
+			} else if v, ok := ext["vlanrange"]; ok {
+				vlanrange := strings.Split(v.(string), "-")
+				from, _ := strconv.Atoi(vlanrange[0])
+				to, _ := strconv.Atoi(vlanrange[1])
+				extension.VLANFrom = from
+				extension.VLANTo = to
+				extension.Name = extensionName
+			} else {
+				return fmt.Errorf("Please provide vlan range for extension \"%s\"", extensionName)
+			}
 		}
 
 		portUpdate.Mtu = mtu
