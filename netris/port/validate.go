@@ -41,6 +41,22 @@ func validateAutoneg(val interface{}, key string) (warns []string, errs []error)
 	return warns, errs
 }
 
+func validateExtension(val interface{}, key string) (warns []string, errs []error) {
+	ext := val.(map[string]interface{})
+	if v, ok := ext["vlanrange"]; ok {
+		vlanrange := strings.Split(v.(string), "-")
+		if len(vlanrange) != 2 {
+			errs = append(errs, fmt.Errorf("Invalid vlan range in port extension"))
+			return warns, errs
+		}
+	}
+	if v, ok := ext["extensionname"]; ok && v == "" {
+		errs = append(errs, fmt.Errorf("Empty extension name"))
+		return warns, errs
+	}
+	return warns, errs
+}
+
 func validateSpeed(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
 	if !(v == "auto" || v == "1g" || v == "10g" || v == "25g" || v == "40g" || v == "50g" || v == "100g" || v == "200g" || v == "400g") {
