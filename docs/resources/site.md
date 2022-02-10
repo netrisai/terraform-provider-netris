@@ -21,7 +21,6 @@ resource "netris_site" "santa-clara" {
   sitemesh = "hub"
   acldefaultpolicy = "permit"
 }
-
 ```
 
 

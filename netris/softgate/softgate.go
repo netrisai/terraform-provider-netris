@@ -31,42 +31,43 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages Softgates",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "User assigned name of softgate.",
 			},
 			"tenantid": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "ID of tenant. Users of this tenant will be permitted to edit this unit.",
 			},
 			"siteid": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The site ID where this softgate belongs.",
 			},
 			"description": {
 				Computed:    true,
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "Softgate description.",
 			},
 			"profileid": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "An inventory profile ID to define global configuration (NTP, DNS, timezone, etc...)",
 			},
 			"mainip": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "A unique IP address which will be used as a loopback address of this unit. Valid value is ip address (example `198.51.100.11`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.",
 			},
 			"mgmtip": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "A unique IP address to be used on out of band management interface. Valid value is ip address (example `192.0.2.11`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.",
 			},
 		},
 		Create: resourceCreate,
