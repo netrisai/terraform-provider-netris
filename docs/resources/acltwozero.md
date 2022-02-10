@@ -3,12 +3,45 @@
 page_title: "netris_acltwozero Resource - terraform-provider-netris"
 subcategory: ""
 description: |-
-  
+  Creates and manages ACLs 2.0
 ---
 
-# netris_acltwozero (Resource)
+# netris_acltwozero
 
+Netris supports ACLs for switch network access control. (ACL and ACL2.0) ACL is for defining network access lists in a source IP: Port, destination IP: Port format. ACL2.0 is an object-oriented service way of describing network access.
+Both ACL and ACL2.0 services support tenant/RBAC based approval workflows. Access control lists execute in switch hardware providing line-rate performance for security enforcement. It’s important to keep in mind that the number of ACLs is limited to the limited size of TCAM of network switches.
 
+## Example Usages
+```hcl
+resource "netris_acltwozero" "terraform-acltwozero" {
+  name = "terraform-acltwozero"
+  privacy = "public"
+  tenantid = data.netris_tenant.admin.id
+  state = "enabled"
+  publishers {
+    instanceids = [netris_roh.roh_srv1.id]
+    lbvips = []
+    prefixes = ["192.0.2.0/24"]
+    protocol {
+      name = "TCP"
+      protocol = "tcp"
+      port = "80"
+      # portgroupid = netris_portgroup.my_portgroup.id
+    }
+  }
+  subscribers {
+    instanceids = [netris_roh.roh_srv2.id]
+    prefix {
+      prefix = "198.51.100.0/25"
+      comment = "test-prefix"
+    }
+    prefix {
+      prefix = "203.0.113.0/24"
+      comment = "test-prefix-2"
+    }
+  }
+}
+```
 
 
 
@@ -17,15 +50,14 @@ description: |-
 
 ### Required
 
-- **name** (String)
-- **privacy** (String)
-- **tenantid** (Number)
+- **name** (String) ACL 2.0 unique name
+- **privacy** (String) Valid values are `public`, `private`, `hidden`. Public - Service is visible to all users and every user can subscribe instances and get access without approval. Private - Service is visible to all users, instances can be subscribed either by service owning tenant members or will require approval. Hidden - Service is not visible to any user except those who are part of tenant owning the service, instances can be subscribed only by service owning tenant members.
+- **tenantid** (Number) ID of tenant. Users of this tenant will be permitted to manage this acl
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **publishers** (Block List) Publishers (see [below for nested schema](#nestedblock--publishers))
-- **state** (String)
+- **publishers** (Block List) The block of publisher configurations (see [below for nested schema](#nestedblock--publishers))
+- **state** (String) State of the resource. Valid values are `enabled` or `disabled`
 - **subscribers** (Block List) Publishers (see [below for nested schema](#nestedblock--subscribers))
 
 <a id="nestedblock--publishers"></a>
@@ -33,20 +65,20 @@ description: |-
 
 Optional:
 
-- **instanceids** (List of Number) Instance IDs
-- **lbvips** (List of Number) LB VIPs
-- **prefixes** (List of String) Instance IDs
-- **protocol** (Block List) LB VIPs (see [below for nested schema](#nestedblock--publishers--protocol))
+- **instanceids** (List of Number) List of Instances ID (ROH)
+- **lbvips** (List of Number) List of LB VIPs ID
+- **prefixes** (List of String) List with prefixes
+- **protocol** (Block List) The block of protocol configurations (see [below for nested schema](#nestedblock--publishers--protocol))
 
 <a id="nestedblock--publishers--protocol"></a>
 ### Nested Schema for `publishers.protocol`
 
 Optional:
 
-- **name** (String)
-- **port** (String)
-- **portgroupid** (Number)
-- **protocol** (String)
+- **name** (String) Custom name for the current protocol
+- **port** (String) Port number. Example `80`. Or protocol number when protocol == `ip`
+- **portgroupid** (Number) ID of Port Group. Use instead of port key
+- **protocol** (String) Valid protocol. Possible values: `ip`, `tcp`, `udp`, `icmp`, `all`
 
 
 
