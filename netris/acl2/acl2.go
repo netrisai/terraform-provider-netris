@@ -119,13 +119,13 @@ func Resource() *schema.Resource {
 			"subscribers": {
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Publishers",
+				Description: "The block of subscriber configurations",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"instanceids": {
 							Type:        schema.TypeList,
 							Optional:    true,
-							Description: "Instance IDs",
+							Description: "List of Instances ID (ROH)",
 							Elem: &schema.Schema{
 								Type: schema.TypeInt,
 							},
@@ -133,16 +133,18 @@ func Resource() *schema.Resource {
 						"prefix": {
 							Type:        schema.TypeList,
 							Optional:    true,
-							Description: "Prefixes",
+							Description: "List of prefixes",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"prefix": {
 										Required: true,
 										Type:     schema.TypeString,
+										Description: "Valid prefix",
 									},
 									"comment": {
 										Optional: true,
 										Type:     schema.TypeString,
+										Description: "Optional comment",
 									},
 								},
 							},

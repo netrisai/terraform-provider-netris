@@ -58,7 +58,7 @@ resource "netris_acltwozero" "terraform-acltwozero" {
 
 - **publishers** (Block List) The block of publisher configurations (see [below for nested schema](#nestedblock--publishers))
 - **state** (String) State of the resource. Valid values are `enabled` or `disabled`
-- **subscribers** (Block List) Publishers (see [below for nested schema](#nestedblock--subscribers))
+- **subscribers** (Block List) The block of subscriber configurations (see [below for nested schema](#nestedblock--subscribers))
 
 <a id="nestedblock--publishers"></a>
 ### Nested Schema for `publishers`
@@ -87,18 +87,18 @@ Optional:
 
 Optional:
 
-- **instanceids** (List of Number) Instance IDs
-- **prefix** (Block List) Prefixes (see [below for nested schema](#nestedblock--subscribers--prefix))
+- **instanceids** (List of Number) List of Instances ID (ROH)
+- **prefix** (Block List) List of prefixes (see [below for nested schema](#nestedblock--subscribers--prefix))
 
 <a id="nestedblock--subscribers--prefix"></a>
 ### Nested Schema for `subscribers.prefix`
 
 Required:
 
-- **prefix** (String)
+- **prefix** (String) Valid prefix
 
 Optional:
 
-- **comment** (String)
+- **comment** (String) Optional comment
 
 
