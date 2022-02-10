@@ -31,41 +31,45 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages Sites",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The name of the site",
 			},
 			"publicasn": {
 				Required: true,
 				Type:     schema.TypeInt,
+				Description: "Site public ASN that should be used for external bgp peer configuration",
 			},
 			"rohasn": {
 				Required: true,
 				Type:     schema.TypeInt,
+				Description: "ASN for ROH (Routing on the Host) compute instances, should be unique within the scope of a site, can be same for different sites",
 			},
 			"vmasn": {
 				Required: true,
 				Type:     schema.TypeInt,
+				Description: "ASN for ROH (Routing on the Host) virtual compute instances, should be unique within the scope of a site, can be same for different sites",
 			},
 			"rohroutingprofile": {
 				ValidateFunc: validateRoutingProfile,
 				Required:     true,
 				Type:         schema.TypeString,
-				Description:  "Routing profile available values are (default, default_agg, full_table)",
+				Description:  "ROH Routing profile defines set of routing prefixes to be advertised to ROH instances. Possible values: `default`, `default_agg`, `full`. Default route only - Will advertise 0.0.0.0/0 + loopback address of physically connected switch. Default + Aggregate - Will add prefixes of defined subnets + `Default` profile. Full - Will advertise all prefixes available in the routing table of the connected switch",
 			},
 			"sitemesh": {
 				ValidateFunc: validateSiteMesh,
 				Required:     true,
 				Type:         schema.TypeString,
-				Description:  "Site mesh available values are (disabled, hub, spoke, dspoke)",
+				Description:  "Site to site VPN mode. Site mesh available values are: `disabled`, `hub`, `spoke`, `dspoke`",
 			},
 			"acldefaultpolicy": {
 				ValidateFunc: validateACLPolicy,
 				Required:     true,
 				Type:         schema.TypeString,
-				Description:  "ACL policy available values are (permit, deny)",
+				Description:  "Possible values: `permit` or `deny`. Deny - Layer-3 packet forwarding is denied by default. ACLs are required to permit necessary traffic flows. Deny ACLs will be applied before Permit ACLs. Permit - Layer-3 packet forwarding is allowed by default. ACLs are required to deny unwanted traffic flows. Permit ACLs will be applied before Deny ACLs.",
 			},
 		},
 		Create: resourceCreate,
