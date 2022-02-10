@@ -32,20 +32,23 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages BGP Objects",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The name of the BGP Object",
 			},
 			"type": {
 				ValidateFunc: validateType,
 				Required:     true,
 				Type:         schema.TypeString,
+				Description: "BGP Objects type. Possible values: `ipv4`, `ipv6`, `aspath`, `community`, `extended`, `large`. Detailed documentation about objects types is available [here](https://www.netris.ai/docs/en/stable/network-policies.html#bgp-objects)",
 			},
 			"value": {
 				Required: true,
 				Type:     schema.TypeString,
+				Description: "Object value. For type `ipv4`, `ipv6` value can be multiline",
 			},
 		},
 		Create: resourceCreate,
