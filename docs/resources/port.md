@@ -12,6 +12,7 @@ Switch ports can be directly managed by this resource.
 
 ~> **WARNING:** This resource won't create any new ports. It's just for configuring already existing ports.
 
+## Example Usages
 
 ```hcl
 resource "netris_port" "swp10_my-switch" {

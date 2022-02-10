@@ -31,37 +31,42 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages Instances (ROH)",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "Instance name. If type == `hypervisor` the name must be the same as the hypervisor's hostname",
 			},
 			"tenantid": {
 				Required: true,
 				Type:     schema.TypeInt,
 				ForceNew: true,
+				Description: "ID of tenant. Users of this tenant will be permitted to manage instance",
 			},
 			"siteid": {
 				Required: true,
 				Type:     schema.TypeInt,
+				Description: "The site ID where the current ROH instance belongs",
 			},
 			"type": {
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateType,
 				Type:         schema.TypeString,
+				Description: "Possible values: `physical` or `hypervisor` Physical Server, for all servers forming a BGP adjacency directly with the switch fabric. Hypervisor, for using the hypervisor as an interim router. Proxmox is currently the only supported hypervisor.",
 			},
 			"routingprofile": {
 				ValidateFunc: validateRProfile,
 				Default:      "inherit",
 				Optional:     true,
 				Type:         schema.TypeString,
+				Description: "Possible values: `inherit`, `default`, `default_agg`, `full_table`. Default value is `inherit`. Detailed documentation about routing profiles is available [here](https://www.netris.ai/docs/en/stable/roh.html#adding-roh-hosts)",
 			},
 			"unicastips": {
 				Required:    true,
 				Type:        schema.TypeList,
-				Description: "Unicast IP addresses",
+				Description: "List of IPv4 addresses for the loopback interface.",
 				Elem: &schema.Schema{
 					ValidateFunc: validateIP,
 					Type:         schema.TypeString,
@@ -70,7 +75,7 @@ func Resource() *schema.Resource {
 			"anycastips": {
 				Required:    true,
 				Type:        schema.TypeList,
-				Description: "Anycast IP addresses",
+				Description: "List of anycast IP addresses",
 				Elem: &schema.Schema{
 					ValidateFunc: validateIP,
 					Type:         schema.TypeString,
@@ -79,7 +84,7 @@ func Resource() *schema.Resource {
 			"ports": {
 				Required:    true,
 				Type:        schema.TypeList,
-				Description: "Ports",
+				Description: "List of physical switch ports",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -87,7 +92,7 @@ func Resource() *schema.Resource {
 			"inboundprefixlist": {
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Inbound prefix list",
+				Description: "List of additional prefixes that the ROH server may advertise. Only when type == `hypervisor`",
 				Elem: &schema.Schema{
 					ValidateFunc: validatePrefixRule,
 					Type:         schema.TypeString,

@@ -10,6 +10,8 @@ description: |-
 
 Define the ACL Port Groups, then use them in the ACL.
 
+## Example Usages
+
 ```hcl
 resource "netris_portgroup" "my_portgroup" {
     name = "my_portgroup"
