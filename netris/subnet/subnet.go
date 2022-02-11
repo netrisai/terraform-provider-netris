@@ -32,33 +32,38 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages Subnet",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "Unique name for current subnet.",
 			},
 			"prefix": {
 				ForceNew: true,
 				Required: true,
 				Type:     schema.TypeString,
+				Description: "Unique prefix for subnet, must not overlap with other subnets.",
 			},
 			"tenantid": {
 				Required: true,
 				Type:     schema.TypeInt,
+				Description: "ID of tenant. Users of this tenant will be permitted to manage the subnet.",
 			},
 			"purpose": {
 				Required: true,
 				Type:     schema.TypeString,
+				Description: "Describes which kind of service will be able to use this subnet. Possible values: `common`, `loopback`, `management`, `load-balancer`, `nat`, `inactive`",
 			},
 			"defaultgateway": {
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "Use when purpose is set to `management`.",
 			},
 			"siteids": {
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Sites",
+				Description: "List of sites IDs where this subnet is available.",
 				Elem: &schema.Schema{
 					Type: schema.TypeInt,
 				},

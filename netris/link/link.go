@@ -31,6 +31,7 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages Links",
 		Schema: map[string]*schema.Schema{
 			"ports": {
 				ForceNew: true,
@@ -40,6 +41,7 @@ func Resource() *schema.Resource {
 					// ValidateFunc: validateIP,
 					Type: schema.TypeString,
 				},
+				Description: "List of two ports.",
 			},
 		},
 		Create: resourceCreate,

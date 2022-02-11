@@ -31,34 +31,39 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages ACLs 2.0",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: "ACL 2.0 unique name",
 			},
 			"privacy": {
 				Required: true,
 				ForceNew: true,
 				Type:     schema.TypeString,
+				Description: "Valid values are `public`, `private`, `hidden`. Public - Service is visible to all users and every user can subscribe instances and get access without approval. Private - Service is visible to all users, instances can be subscribed either by service owning tenant members or will require approval. Hidden - Service is not visible to any user except those who are part of tenant owning the service, instances can be subscribed only by service owning tenant members.",
 			},
 			"tenantid": {
 				Required: true,
 				Type:     schema.TypeInt,
+				Description: "ID of tenant. Users of this tenant will be permitted to manage this acl",
 			},
 			"state": {
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "State of the resource. Valid values are `enabled` or `disabled`",
 			},
 			"publishers": {
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Publishers",
+				Description: "The block of publisher configurations",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"instanceids": {
 							Type:        schema.TypeList,
 							Optional:    true,
-							Description: "Instance IDs",
+							Description: "List of Instances ID (ROH)",
 							Elem: &schema.Schema{
 								Type: schema.TypeInt,
 							},
@@ -66,7 +71,7 @@ func Resource() *schema.Resource {
 						"lbvips": {
 							Type:        schema.TypeList,
 							Optional:    true,
-							Description: "LB VIPs",
+							Description: "List of LB VIPs ID",
 							Elem: &schema.Schema{
 								Type: schema.TypeInt,
 							},
@@ -74,7 +79,7 @@ func Resource() *schema.Resource {
 						"prefixes": {
 							Type:        schema.TypeList,
 							Optional:    true,
-							Description: "Instance IDs",
+							Description: "List with prefixes",
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
@@ -82,24 +87,28 @@ func Resource() *schema.Resource {
 						"protocol": {
 							Type:        schema.TypeList,
 							Optional:    true,
-							Description: "LB VIPs",
+							Description: "The block of protocol configurations",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"name": {
 										Type:     schema.TypeString,
 										Optional: true,
+										Description: "Custom name for the current protocol",
 									},
 									"protocol": {
 										Type:     schema.TypeString,
 										Optional: true,
+										Description: "Valid protocol. Possible values: `ip`, `tcp`, `udp`, `icmp`, `all`",
 									},
 									"port": {
 										Optional: true,
 										Type:     schema.TypeString,
+										Description: "Port number. Example `80`. Or protocol number when protocol == `ip`",
 									},
 									"portgroupid": {
 										Optional: true,
 										Type:     schema.TypeInt,
+										Description: "ID of Port Group. Use instead of port key",
 									},
 								},
 							},
@@ -110,13 +119,13 @@ func Resource() *schema.Resource {
 			"subscribers": {
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Publishers",
+				Description: "The block of subscriber configurations",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"instanceids": {
 							Type:        schema.TypeList,
 							Optional:    true,
-							Description: "Instance IDs",
+							Description: "List of Instances ID (ROH)",
 							Elem: &schema.Schema{
 								Type: schema.TypeInt,
 							},
@@ -124,16 +133,18 @@ func Resource() *schema.Resource {
 						"prefix": {
 							Type:        schema.TypeList,
 							Optional:    true,
-							Description: "Prefixes",
+							Description: "List of prefixes",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"prefix": {
 										Required: true,
 										Type:     schema.TypeString,
+										Description: "Valid prefix",
 									},
 									"comment": {
 										Optional: true,
 										Type:     schema.TypeString,
+										Description: "Optional comment",
 									},
 								},
 							},

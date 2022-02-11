@@ -35,45 +35,53 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages Vnets",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The name of the vnet",
 			},
 			"tenantid": {
 				Required: true,
 				Type:     schema.TypeInt,
 				ForceNew: true,
+				Description: "ID of tenant. Users of this tenant will be permitted to edit this unit.",
 			},
 			"state": {
 				Optional:     true,
 				Default:      "active",
 				ValidateFunc: validateState,
 				Type:         schema.TypeString,
+				Description: "V-Net state. Allowed values: `active` or `disabled`. Default value is `active`",
 			},
 			"sites": {
 				Required: true,
 				Type:     schema.TypeList,
+				Description: "Block of per site vnet configuration",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
 							Type:     schema.TypeInt,
 							Required: true,
+							Description: "The site ID. Ports from these sites will be allowed to participate in the V-Net. (Multi-site vnet would require backbone connectivity between sites).",
 						},
 						"ports": {
 							Optional: true,
 							Type:     schema.TypeList,
+							Description: "Block of ports",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"name": {
 										Type:     schema.TypeString,
 										Optional: true,
+										Description: "Switch port name. Example: `swp5@my-sw01`",
 									},
 									"vlanid": {
 										Default:  "1",
 										Type:     schema.TypeString,
 										Optional: true,
+										Description: "VLAN tag for current port. If vlanid is not set - means port untagged",
 									},
 								},
 							},
@@ -81,12 +89,14 @@ func Resource() *schema.Resource {
 						"gateways": {
 							Optional: true,
 							Type:     schema.TypeList,
+							Description: "Block of gateways",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"prefix": {
 										ValidateFunc: validateGateway,
 										Type:         schema.TypeString,
 										Required:     true,
+										Description: "The address will be serving as anycast default gateway for selected subnet. Example: `203.0.113.1/25`",
 									},
 									"vlanid": {
 										Type:     schema.TypeString,

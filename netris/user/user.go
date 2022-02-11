@@ -34,44 +34,52 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages Users",
 		Schema: map[string]*schema.Schema{
 			"username": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "User Login",
+				Description: "Unique username.",
 			},
 			"fullname": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Full Name",
+				Description: "Full Name of the user.",
 			},
 			"email": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: "The email address of the user. Also used for system notifications and for password retrieval.",
 			},
 			"emailcc": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Description: "Send copies of email notifications to this address.",
 			},
 			"phone": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Description: "User’s phone number.",
 			},
 			"company": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Description: "Company the user works for. Usually useful for multi-tenant systems where the company provides Netris Controller access to customers.",
 			},
 			"position": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Description: "Position within the company.",
 			},
 			"userrole": {
 				Required: true,
 				Type:     schema.TypeString,
+				Description: "Name of User Role. When using a User Role object to define RBAC (role-based access control), `pgroup` and `tenants` fields will be ignoring.",
 			},
 			"pgroup": {
 				Required: true,
 				Type:     schema.TypeString,
+				Description: "Name of Permission Group. User permissions for viewing and editing parts of the Netris Controller. (if User Role is not used).",
 			},
 			"tenants": {
 				Optional: true,
@@ -79,6 +87,7 @@ func Resource() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Description: "List of tenants. (if User Role is not used).",
 			},
 		},
 		Create: resourceCreate,

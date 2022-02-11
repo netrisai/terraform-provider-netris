@@ -30,41 +30,50 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages BGP Route-maps",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: "The name of route-map",
 			},
 			"sequence": {
 				Optional: true,
 				Type:     schema.TypeList,
+				Description: "The block of sequence. The sequence number will be assigned automatically",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"description": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Description: "Current black free description",
 						},
 						"policy": {
 							Type:     schema.TypeString,
 							Required: true,
+							Description: "Permit or deny the routes which match below all match clauses within the current sequence. Possible values: `permit` or `deny`",
 						},
 						"match": {
 							Optional: true,
 							Type:     schema.TypeList,
+							Description: "Block of Rules for route matching.",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"type": {
 										Type:         schema.TypeString,
 										ValidateFunc: validateMatchType,
 										Required:     true,
+										Description: "Type of the object to match: `as_path`, `community`, `extended_community`, `large_community`, `ipv4_prefix_list`, `ipv4_next_hop`, `route_source`, `ipv6_prefix_list`, `ipv6_next_hop`, `local_preference`, `med`, `origin`, `route_tag`",
 									},
 									"value": {
 										Type:     schema.TypeString,
 										Optional: true,
+										Description: "Value of the object. Only for types: `ipv6_next_hop`, `local_preference`, `med`, `origin`, `route_tag`. Possible value for type `origin` is: `egp`, `incomplete`, `igp`",
 									},
 									"objectid": {
 										Type:     schema.TypeInt,
 										Optional: true,
+										Description: "The ID of bgp object. Only for types: `as_path`, `community`, `extended_community`, `large_community`, `ipv4_prefix_list`, `ipv4_next_hop`, `route_source`, `ipv6_prefix_list`",
 									},
 								},
 							},
@@ -77,14 +86,17 @@ func Resource() *schema.Resource {
 									"type": {
 										Type:     schema.TypeString,
 										Required: true,
+										Description: "Define whether to manipulate a particular BGP attribute or go to another sequence. Possible values: `set`, `goto`, `next`",
 									},
 									"parameter": {
 										Type:     schema.TypeString,
 										Optional: true,
+										Description: "The attribute to be manipulated. Possible values: `as_path`, `community`, `large_community`, `ipv4_next_hop`, `ipv6_next_hop`, `local_preference`, `med`, `origin`, `route_tag`, `weight`",
 									},
 									"value": {
 										Type:     schema.TypeString,
 										Required: true,
+										Description: "New attribute value",
 									},
 								},
 							},

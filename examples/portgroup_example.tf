@@ -1,4 +1,4 @@
-# resource "netris_portgroup" "portgroup-terraform-test" {
-#     name = "portgroup-terraform-test"
-#     ports = ["122", "1-24", "33"]
-# }
+resource "netris_portgroup" "my_portgroup" {
+    name = "my_portgroup"
+    ports = ["22", "1024-2048", "33554"]
+}

@@ -1,5 +1,8 @@
-# resource "netris_user_role" "terrraform-test" {
-#   name = "terrraform-test"
-#   pgroup = "anahit"
-#   tenantids = [netris_tenant.admin.id]
-# }
+data "netris_tenant" "my-tenant" {
+  name = "my-tenant"
+}
+resource "netris_user_role" "terrraform-userrole" {
+  name = "terrraform"
+  pgroup = "my-group"
+  tenantids = [data.netris_tenant.my-tenant.id]
+}

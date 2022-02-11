@@ -42,7 +42,7 @@ func Resource() *schema.Resource {
 			"action": {
 				Required: true,
 				Type:     schema.TypeString,
-				Description: "Permit or Deny forwarding of matched packets. Valid values are permit and deny.",
+				Description: "Permit or Deny forwarding of matched packets. Valid values are `permit` and `deny`.",
 			},
 			"comment": {
 				Default:  "",
@@ -55,32 +55,32 @@ func Resource() *schema.Resource {
 				Default:      1,
 				Optional:     true,
 				Type:         schema.TypeInt,
-				Description: "For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Valid values are 0 and 1. Default value is 1",
+				Description: "For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Valid values are `0` and `1`. Default value is `1`",
 			},
 			"icmptype": {
 				ValidateFunc: validateICMP,
 				Default:      1,
 				Optional:     true,
 				Type:         schema.TypeInt,
-				Description: "Custom IPv4 ICMP code. Valid values should be in range 1-37 according to RFC 1700. Default value is 1",
+				Description: "Custom IPv4 ICMP code. Valid values should be in range 1-37 according to RFC 1700. Default value is `1`",
 			},
 			"proto": {
 				ValidateFunc: validateProto,
 				Required:     true,
 				Type:         schema.TypeString,
-				Description: "IP protocol to match. Valid values are all, ip, tcp, udp, icmp, icmpv6.",
+				Description: "IP protocol to match. Valid values are `all`, `ip`, `tcp`, `udp`, `icmp`, `icmpv6`.",
 			},
 			"reverse": {
 				Default:  true,
 				Optional: true,
 				Type:     schema.TypeBool,
-				Description: "For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Default value is true",
+				Description: "For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Default value is `true`",
 			},
 			"srcprefix": {
 				ValidateFunc: validateIPPrefix,
 				Required:     true,
 				Type:         schema.TypeString,
-				Description: "Source IPv4/IPv6 address. Example 192.0.2.0/24",
+				Description: "Source IPv4/IPv6 address. Example `192.0.2.0/24`",
 			},
 			"srcportfrom": {
 				ValidateFunc: validatePort,
@@ -103,7 +103,7 @@ func Resource() *schema.Resource {
 				ValidateFunc: validateIPPrefix,
 				Required:     true,
 				Type:         schema.TypeString,
-				Description: "Destination IPv4/IPv6 address. Example 0.0.0.0/0",
+				Description: "Destination IPv4/IPv6 address. Example `0.0.0.0/0`",
 			},
 			"dstportfrom": {
 				ValidateFunc: validatePort,

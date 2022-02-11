@@ -3,12 +3,64 @@
 page_title: "netris_roh Resource - terraform-provider-netris"
 subcategory: ""
 description: |-
-  
+  Creates and manages Instances (ROH)
 ---
 
-# netris_roh (Resource)
+# netris_roh
 
+To create more resilient and higher-performance data centers, some companies leverage the Linux ecosystem to run routing protocols directly on their servers. This is commonly known as ROH (Routing on the Host).
 
+In ROH architectures, servers use a routing daemon to establish a BGP adjacency with the switch fabric on every physical link. ROH can run on bare metal servers, VMs, and even containers. The most commonly used routing daemon/suite is FRR.
+
+Hosts connected to the network in ROH architecture don’t have IP addresses on a shared Ethernet segment; instead an IP address is configured on the loopback interface and advertised over all BGP links towards switch fabric. This is a modern and optimal design, leveraging Layer-3 networking from the fabric to the servers.
+
+By using only Layer-3 interfaces, Layer-2 protocols such as Spanning Tree (STP) can be minized and the reliability of the network increases.
+
+The ROH architecture that is configured by Netris allows for leveraging ECMP load balancing capabilities of the switching hardware for the high-performance server load balancing (described in L3 Load Balancer section). For each instance of ROH, you’ll need to create a ROH entry in Netris Controller.
+
+~> **Note:** ROH require subnets and switches to exist prior to resource creation. Use `depends_on` to set an explicit dependency on the subnets and switches.
+
+## Example Usages
+
+### ROH
+
+```hcl
+data "netris_site" "santa_clara"{
+    name = "Santa Clara"
+}
+
+data "netris_tenant" "admin"{
+  name = "Admin"
+}
+
+resource "netris_roh" "my_roh" {
+  name = "my-roh"
+  tenantid = data.netris_tenant.admin.id
+  siteid = data.netris_site.santa_clara.id
+  type = "physical"
+  routingprofile = "default_agg"
+  unicastips = ["192.168.2.50/24"]
+  anycastips = []
+  ports = ["swp3@my-switch1", "swp3@my-switch2"]
+  depends_on = [netris_subnet.roh, netris_switch.my-switch1, netris_switch.my-switch1]
+}
+```
+
+### ROH with anycast IP
+
+```hcl
+resource "netris_roh" "my_roh_anycast" {
+  name = "my-roh-anycast"
+  tenantid = data.netris_tenant.admin.id
+  siteid = data.netris_site.santa_clara.id
+  type = "physical"
+  routingprofile = "default_agg"
+  unicastips = ["192.168.2.61/24"]
+  anycastips = ["192.168.2.60/24"]
+  ports = ["swp2@my-switch1", "swp2@my-switch2"]
+  depends_on = [netris_subnet.roh, netris_switch.my-switch1, netris_switch.my-switch1]
+}
+```
 
 
 
@@ -17,18 +69,17 @@ description: |-
 
 ### Required
 
-- **anycastips** (List of String) Anycast IP addresses
-- **name** (String) The name of the resource, also acts as it's unique ID
-- **ports** (List of String) Ports
-- **siteid** (Number)
-- **tenantid** (Number)
-- **type** (String)
-- **unicastips** (List of String) Unicast IP addresses
+- **anycastips** (List of String) List of anycast IP addresses
+- **name** (String) Instance name. If type == `hypervisor` the name must be the same as the hypervisor's hostname
+- **ports** (List of String) List of physical switch ports
+- **siteid** (Number) The site ID where the current ROH instance belongs
+- **tenantid** (Number) ID of tenant. Users of this tenant will be permitted to manage instance
+- **type** (String) Possible values: `physical` or `hypervisor` Physical Server, for all servers forming a BGP adjacency directly with the switch fabric. Hypervisor, for using the hypervisor as an interim router. Proxmox is currently the only supported hypervisor.
+- **unicastips** (List of String) List of IPv4 addresses for the loopback interface.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **inboundprefixlist** (List of String) Inbound prefix list
-- **routingprofile** (String)
+- **inboundprefixlist** (List of String) List of additional prefixes that the ROH server may advertise. Only when type == `hypervisor`
+- **routingprofile** (String) Possible values: `inherit`, `default`, `default_agg`, `full_table`. Default value is `inherit`. Detailed documentation about routing profiles is available [here](https://www.netris.ai/docs/en/stable/roh.html#adding-roh-hosts)
 
 

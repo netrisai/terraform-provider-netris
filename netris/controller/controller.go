@@ -31,32 +31,33 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates and manages controllers",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "User assigned name of controllers.",
 			},
 			"tenantid": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "ID of tenant. Users of this tenant will be permitted to edit this unit.",
 			},
 			"siteid": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The site ID where this controller belongs.",
 			},
 			"description": {
 				Computed:    true,
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "Controller description.",
 			},
 			"mainip": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "A unique IP address which will be used as a loopback address of this unit. Valid value is ip address (example `198.51.100.10`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.",
 			},
 		},
 		Create: resourceCreate,

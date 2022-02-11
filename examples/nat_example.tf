@@ -1,16 +1,38 @@
-# resource "netris_nat" "nat-terraform-test" {
-#     name = "nat-terraform-test"
-#     state = "enabled"
-#     comment = "Terraform Test"
-#     siteid = netris_site.santa-clara.id
-#     action = "DNAT"
-#     protocol = "tcp"
-#     srcaddress = "0.0.0.0/0"
-#     srcport = "25"
-#     dstaddress = "10.10.10.0/24"
-#     dstport = "25"
-#     dnattoip = "1.2.3.4/32"
-#     dnattoport = 100
-#     snattoip = "2.0.2.1"
-#     snattopool = "2.0.2.1/32"
-# }
+resource "netris_nat" "my_snat" {
+  name = "MY SNAT"
+  comment = "Terraform Test SNAT"
+  state = "enabled"
+  siteid = netris_site.santa-clara.id
+  action = "SNAT"
+  protocol = "all"
+  srcaddress = "10.10.10.0/24"
+  dstaddress = "0.0.0.0/0"
+  snattoip = "203.0.113.192"
+  # snattopool = "203.0.113.192/26"
+  depends_on = [netris_subnet.my-subnet-common]
+}
+
+resource "netris_nat" "my_dnat" {
+  name = "MY DNAT"
+  state = "enabled"
+  siteid = netris_site.santa-clara.id
+  action = "DNAT"
+  protocol = "tcp"
+  srcaddress = "0.0.0.0/0"
+  srcport = "1-65535"
+  dstaddress = "203.0.113.193/32"
+  dstport = "8080"
+  dnattoip = "10.10.10.60/32"
+  dnattoport = 80
+  depends_on = [netris_subnet.my-subnet-common]
+}
+
+resource "netris_nat" "my_snat_accept" {
+  name = "MY SNAT ACCEPT"
+  state = "enabled"
+  siteid = netris_site.us.id
+  action = "ACCEPT_SNAT"
+  protocol = "all"
+  srcaddress = "10.10.10.0/24"
+  dstaddress = "10.10.0.0/16"
+}

@@ -1,21 +1,31 @@
-# resource "netris_roh" "roh-terraform-test-1" {
-#     name = "roh-terraform-test-1"
-#     tenantid = netris_tenant.admin.id
-#     siteid = netris_site.santa-clara.id
-#     type = "physical"
-#     routingprofile = "default"
-#     unicastips = ["7.0.0.34/9"]
-#     anycastips = ["7.0.0.35/9"]
-#     ports = ["swp5@leaf1"]
-# }
+data "netris_site" "santa_clara"{
+  name = "Santa Clara"
+}
 
-# resource "netris_roh" "roh-terraform-test-2" {
-#     name = "roh-terraform-test-2"
-#     tenantid = netris_tenant.admin.id
-#     siteid = netris_site.santa-clara.id
-#     type = "hypervisor"
-#     unicastips = ["7.0.0.46/9"]
-#     anycastips = ["7.0.0.7/9", "7.0.0.8/9"]
-#     ports = ["swp3@leaf1"]
-#     inboundprefixlist = ["permit 7.0.0.0/9 le 25", "permit 10.0.0.0/24 le 28"]
-# }
+data "netris_tenant" "admin"{
+  name = "Admin"
+}
+
+resource "netris_roh" "my_roh" {
+  name = "my-roh"
+  tenantid = data.netris_tenant.admin.id
+  siteid = data.netris_site.santa_clara.id
+  type = "physical"
+  routingprofile = "default_agg"
+  unicastips = ["192.168.2.50/24"]
+  anycastips = []
+  ports = ["swp3@my-switch1", "swp3@my-switch2"]
+  depends_on = [netris_subnet.roh, netris_switch.my-switch1, netris_switch.my-switch1]
+}
+
+resource "netris_roh" "my_roh_anycast" {
+  name = "my-roh-anycast"
+  tenantid = data.netris_tenant.admin.id
+  siteid = data.netris_site.santa_clara.id
+  type = "physical"
+  routingprofile = "default_agg"
+  unicastips = ["192.168.2.61/24"]
+  anycastips = ["192.168.2.60/24"]
+  ports = ["swp2@my-switch1", "swp2@my-switch2"]
+  depends_on = [netris_subnet.roh, netris_switch.my-switch1, netris_switch.my-switch1]
+}
