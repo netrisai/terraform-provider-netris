@@ -1,15 +1,16 @@
 resource "netris_bgp_object" "my-bgp-object" {
   name = "my-bgp-object"
   type = "ipv4"
-  value = "permit 10.10.0.0/22 ge 26 le 26"
+  value = "permit 8.8.8.0/24"
 }
 
 resource "netris_bgp_object" "my-bgp-object-multiline" {
   name = "my-bgp-object-multiline"
   type = "ipv4"
   value = <<EOF
-permit 10.10.10.0/24 le 27
-permit 4.4.4.0/24
+permit 192.0.2.0/24
+permit 198.51.100.0/24
+permit 203.0.113.0/24 le 26
 EOF
 }
 

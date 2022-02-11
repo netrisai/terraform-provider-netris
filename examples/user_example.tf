@@ -9,4 +9,8 @@ resource "netris_user" "terrraform-user" {
   userrole = ""
   pgroup = "my-group"
   tenants = ["my-tenant"]
+  depends_on = [
+    netris_tenant.my-tenant,
+    netris_permission_group.my-group
+  ]
 }
