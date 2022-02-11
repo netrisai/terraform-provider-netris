@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "netris" {
-  # address = ""                         # overwrite env: NETRIS_ADDRESS
-  # login = ""                           # overwrite env: NETRIS_LOGIN
-  # password = ""                        # overwrite env: NETRIS_PASSWORD
+  # address = "http://example.com"           # overwrite env: NETRIS_ADDRESS
+  # login = "netris"                         # overwrite env: NETRIS_LOGIN
+  # password = "newNet0ps"                   # overwrite env: NETRIS_PASSWORD
 }

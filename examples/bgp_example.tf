@@ -1,22 +1,25 @@
-data "netris_site" "santa_clara"{
-    name = "Santa Clara"
+data "netris_port" "swp14_sw1"{
+  name = "swp14@my-switch01"
+  depends_on = [netris_switch.my-switch01]
 }
 
-data "netris_port" "swp5_sw1"{
-    name = "swp5@sw1"
-    depends_on = [netris_switch.sw1]
+data "netris_port" "swp14_sw2"{
+  name = "swp14@my-switch02"
+  depends_on = [netris_switch.my-switch02]
 }
 
-resource "netris_bgp" "my-bgp" {
-   name = "my-bgp"
-   siteid = data.netris_site.santa_clara.id
-   hardware = "my-softgate"
+resource "netris_bgp" "my-bgp-isp1" {
+   name = "my-bgp-isp1"
+   siteid = netris_site.santa-clara.id
+   hardware = "my-softgate01"
    neighboras = 23456
-   portid = data.netris_port.swp5_sw1.id
+   portid = data.netris_port.swp14_sw1.id
    vlanid = 3000
-   localip = "192.0.0.2/30"
-   remoteip = "192.0.0.1/30"
-  #  description = "My First BGP"
+   localip = "172.19.25.2/30"
+   remoteip = "172.19.25.1/30"
+   description = "My ISP1 BGP"
+   inboundroutemap = netris_routemap.routemap-in.name
+   outboundroutemap = netris_routemap.routemap-out.name
   #  state = "enabled"
   #  multihop = {
   #    neighboraddress = "185.54.21.5"
@@ -27,8 +30,6 @@ resource "netris_bgp" "my-bgp" {
   #  allowasin = 5
   #  defaultoriginate = false
   #  prefixinboundmax = 1000
-  #  inboundroutemap = "my-in-rm"
-  #  outboundroutemap = "my-out-rm"
   #  localpreference  = 100
   #  weight = 0
   #  prependinbound = 2
@@ -36,5 +37,36 @@ resource "netris_bgp" "my-bgp" {
   #  prefixlistinbound = ["deny 127.0.0.0/8 le 32", "permit 0.0.0.0/0 le 24"]
   #  prefixlistoutbound = ["permit 192.0.2.0/24", "permit 198.51.100.0/24 le 25"]
   #  sendbgpcommunity = ["65501:777"]
-  depends_on = [netris_softgate.softgate1]
+  depends_on = [netris_softgate.my-softgate01]
+}
+
+resource "netris_bgp" "my-bgp-isp2" {
+   name = "my-bgp-isp2"
+   siteid = netris_site.santa-clara.id
+   hardware = "my-softgate02"
+   neighboras = 64600
+   portid = data.netris_port.swp14_sw2.id
+   localip = "172.19.35.2/30"
+   remoteip = "172.19.35.1/30"
+   description = "My ISP2 BGP"
+  #  inboundroutemap = netris_routemap.routemap-in.name
+  #  outboundroutemap = netris_routemap.routemap-out.name
+  #  state = "enabled"
+  #  multihop = {
+  #    neighboraddress = "185.54.21.5"
+  #    updatesource = "198.51.100.11/32"
+  #    hops = "5"
+  #  }
+  #  bgppassword = "somestrongpass"
+  #  allowasin = 5
+  #  defaultoriginate = false
+  #  prefixinboundmax = 1000
+  #  localpreference  = 100
+  #  weight = 0
+  #  prependinbound = 2
+   prependoutbound = 2
+   prefixlistinbound = ["deny 127.0.0.0/8 le 32", "permit 0.0.0.0/0 le 24"]
+   prefixlistoutbound = ["permit 192.0.2.0/24", "permit 198.51.100.0/24 le 25", "permit 203.0.113.0/24 le 26"]
+  #  sendbgpcommunity = ["65501:777"]
+  depends_on = [netris_softgate.my-softgate02]
 }
