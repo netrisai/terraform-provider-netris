@@ -15,7 +15,7 @@ There are 2 main types of IP prefixes - allocation and subnet. Allocations are I
 ## Example Usages
 
 ```hcl
-data "netris_site" "santa_clara" {
+data "netris_site" "santa-clara" {
   name = "Santa Clara"
 }
 
@@ -29,7 +29,7 @@ resource "netris_subnet" "my-subnet-mgmt" {
   tenantid = data.netris_tenant.admin.id
   purpose = "management"
   defaultgateway = "192.0.2.1"
-  siteids = [netris_site.santa-clara.id]
+  siteids = [data.netris_site.santa-clara.id]
   depends_on = [
     netris_allocation.my-allocation-mgmt,
   ]

@@ -15,6 +15,12 @@ Netris SoftGate nodes are required to support NAT (Network Address Translation).
 
 ## Example Usages
 
+```hcl
+data "netris_site" "santa-clara" {
+  name = "Santa Clara"
+}
+```
+
 ### SNAT 
 
 ```hcl
@@ -22,7 +28,7 @@ resource "netris_nat" "my_snat" {
   name = "MY SNAT"
   comment = "Terraform Test SNAT"
   state = "enabled"
-  siteid = netris_site.santa-clara.id
+  siteid = data.netris_site.santa-clara.id
   action = "SNAT"
   protocol = "all"
   srcaddress = "10.10.10.0/24"
@@ -39,7 +45,7 @@ resource "netris_nat" "my_snat" {
 resource "netris_nat" "my_dnat" {
   name = "MY DNAT"
   state = "enabled"
-  siteid = netris_site.santa-clara.id
+  siteid = data.netris_site.santa-clara.id
   action = "DNAT"
   protocol = "tcp"
   srcaddress = "0.0.0.0/0"
@@ -58,7 +64,7 @@ resource "netris_nat" "my_dnat" {
 resource "netris_nat" "my_snat_accept" {
   name = "MY SNAT ACCEPT"
   state = "enabled"
-  siteid = netris_site.us.id
+  siteid = data.netris_site.santa-clara.id
   action = "ACCEPT_SNAT"
   protocol = "all"
   srcaddress = "10.10.10.0/24"

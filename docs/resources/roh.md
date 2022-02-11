@@ -25,7 +25,7 @@ The ROH architecture that is configured by Netris allows for leveraging ECMP loa
 ### ROH
 
 ```hcl
-data "netris_site" "santa_clara" {
+data "netris_site" "santa-clara" {
   name = "Santa Clara"
 }
 
@@ -36,7 +36,7 @@ data "netris_tenant" "admin" {
 resource "netris_roh" "my_roh" {
   name = "my-roh"
   tenantid = data.netris_tenant.admin.id
-  siteid = data.netris_site.santa_clara.id
+  siteid = data.netris_site.santa-clara.id
   type = "physical"
   routingprofile = "default_agg"
   unicastips = ["192.168.2.50/24"]
@@ -52,7 +52,7 @@ resource "netris_roh" "my_roh" {
 resource "netris_roh" "my_roh_anycast" {
   name = "my-roh-anycast"
   tenantid = data.netris_tenant.admin.id
-  siteid = data.netris_site.santa_clara.id
+  siteid = data.netris_site.santa-clara.id
   type = "physical"
   routingprofile = "default_agg"
   unicastips = ["192.168.2.61/24"]

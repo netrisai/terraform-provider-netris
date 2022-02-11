@@ -15,6 +15,10 @@ Switch ports can be directly managed by this resource.
 ## Example Usages
 
 ```hcl
+data "netris_tenant" "admin" {
+  name = "Admin"
+}
+
 resource "netris_port" "swp10_my-switch" {
   name = "swp10"
   description = "swp10 - Some description"

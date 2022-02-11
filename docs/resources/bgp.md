@@ -11,7 +11,7 @@ description: |-
 Creates and manages BGP resources. Netris will automatically generate and program the network configuration to meet the requirements.
 ## Example Usages
 ```hcl
-data "netris_site" "santa_clara" {
+data "netris_site" "santa-clara" {
   name = "Santa Clara"
 }
 
@@ -22,7 +22,7 @@ data "netris_port" "swp5_sw1" {
 
 resource "netris_bgp" "my-bgp" {
   name = "my-bgp"
-  siteid = data.netris_site.santa_clara.id
+  siteid = data.netris_site.santa-clara.id
   hardware = "softgate1"
   neighboras = 23456
   portid = data.netris_port.swp5_sw1.id

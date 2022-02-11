@@ -16,7 +16,7 @@ V-Net is a virtual networking service that provide a Layer-2 (unrouted) or Layer
 ## Example Usages
 
 ```hcl
-data "netris_site" "santa_clara" {
+data "netris_site" "santa-clara" {
   name = "Santa Clara"
 }
 
@@ -26,10 +26,10 @@ data "netris_tenant" "admin" {
 
 resource "netris_vnet" "my-vnet" {
   name = "my-vnet"
-  tenantid = netris_tenant.admin.id
+  tenantid = data.netris_tenant.admin.id
   state = "active"
   sites{
-    id = netris_site.santa_clara.id
+    id = data.netris_site.santa-clara.id
     gateways {
       prefix = "203.0.113.1/25"
     }

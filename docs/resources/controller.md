@@ -15,14 +15,14 @@ data "netris_tenant" "admin" {
   name = "Admin"
 }
 
-data "netris_site" "santa_clara" {
+data "netris_site" "santa-clara" {
   name = "Santa Clara"
 }
 
 resource "netris_controller" "controller" {
   name = "controller"
-  tenantid = netris_tenant.admin.id
-  siteid = netris_site.santa_clara.id
+  tenantid = data.netris_tenant.admin.id
+  siteid = data.netris_site.santa-clara.id
   description = "Terraform Test Controller"
   mainip = "auto"
   depends_on = [

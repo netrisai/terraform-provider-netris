@@ -28,29 +28,13 @@ terraform {
 
 # Configure the Netris Provider.
 provider "netris" {
-  address = var.controller_address
-  login = var.controller_login
-  password = var.controller_password
+  address = var.controller_address                                                    # overwrite env: NETRIS_ADDRESS
+  login = var.controller_login                                                        # overwrite env: NETRIS_LOGIN
+  password = var.controller_password                                                  # overwrite env: NETRIS_PASSWORD
 }
-
-# Create a VNet: Adding physical switch ports to a virtual overlay network
-resource "netris_vnet" "my-vnet" {
-  name = "my-vnet"
-  owner = "Admin"
-  sites{
-    name = "Santa Clara"
-    gateways {
-      prefix = "203.0.113.1/24"
-    }
-    ports {
-      name = "swp1@my-softgate"
-    }
-  }
-}
-
 ```
 
-## Argument Reference
+### Argument Reference
 
 The provider supports the following arguments:
 
@@ -60,5 +44,190 @@ The provider supports the following arguments:
   also be specified with the `NETRIS_LOGIN` environment variable.
 * `password` - (Required) This is your Netris-Controller password. This can
   also be specified with the `NETRIS_PASSWORD` environment variable.
+
+
+## A simple infrastructure creation example
+
+```hcl
+terraform {
+  required_providers {
+    netris = {
+      source  = "netrisai/netris"
+    }
+  }
+  required_version = ">= 0.13"
+}
+
+# Configure the Netris Provider.
+provider "netris" {
+  address = var.controller_address                                                    # overwrite env: NETRIS_ADDRESS
+  login = var.controller_login                                                        # overwrite env: NETRIS_LOGIN
+  password = var.controller_password                                                  # overwrite env: NETRIS_PASSWORD
+}
+
+data "netris_tenant" "admin"{
+  name = "Admin"
+}
+
+resource "netris_site" "santa-clara" {
+  name = "Santa Clara"
+  publicasn = 65001
+  rohasn = 65502
+  vmasn = 65503
+  rohroutingprofile = "default"
+  sitemesh = "hub"
+  acldefaultpolicy = "permit"
+}
+
+resource "netris_allocation" "my-allocation-mgmt" {
+  name = "my-allocation-mgmt"
+  prefix = "192.0.2.0/24"
+  tenantid = data.netris_tenant.admin.id
+}
+
+resource "netris_allocation" "my-allocation-loopback" {
+  name = "my-allocation-loopback"
+  prefix = "198.51.100.0/24"
+  tenantid = data.netris_tenant.admin.id
+}
+
+resource "netris_allocation" "my-allocation-common" {
+  name = "my-allocation-common"
+  prefix = "203.0.113.0/24"
+  tenantid = data.netris_tenant.admin.id
+}
+
+resource "netris_subnet" "my-subnet-mgmt" {
+  name = "my-subnet-mgmt"
+  prefix = "192.0.2.0/24"
+  tenantid = data.netris_tenant.admin.id
+  purpose = "management"
+  defaultgateway = "192.0.2.1"
+  siteids = [netris_site.santa-clara.id]
+  depends_on = [
+    netris_allocation.my-allocation-mgmt,
+  ]
+}
+
+resource "netris_subnet" "my-subnet-loopback" {
+  name = "my-subnet-loopback"
+  prefix = "198.51.100.0/24"
+  tenantid = data.netris_tenant.admin.id
+  purpose = "loopback"
+  siteids = [netris_site.santa-clara.id]
+  depends_on = [
+    netris_allocation.my-allocation-loopback,
+  ]
+}
+
+resource "netris_subnet" "my-subnet-common" {
+  name = "my-subnet-common"
+  prefix = "203.0.113.0/25"
+  tenantid = data.netris_tenant.admin.id
+  purpose = "common"
+  siteids = [netris_site.santa-clara.id]
+  depends_on = [
+    netris_allocation.my-allocation-common,
+  ]
+}
+
+resource "netris_inventory_profile" "my-profile" {
+  name = "my-profile"
+  description = "My First Inventory Profile"
+  ipv4ssh = ["10.0.10.0/24", "172.16.16.16"]
+  ipv6ssh = ["2001:DB8::/32"]
+  timezone = "America/Los_Angeles"
+  ntpservers = ["0.pool.ntp.org", "132.163.96.5"]
+  dnsservers = ["1.1.1.1", "8.8.8.8"]
+  customrule {
+    sourcesubnet = "10.0.0.0/8"
+    srcport = ""
+    dstport = "22"
+    protocol = "tcp"
+  }
+}
+
+resource "netris_softgate" "my-softgate" {
+  name = "my-softgate"
+  tenantid = data.netris_tenant.admin.id
+  siteid = netris_site.santa-clara.id
+  description = "Softgate 1"
+  profileid = netris_inventory_profile.my-profile.id
+  mainip = "auto"
+  mgmtip = "auto"
+  depends_on = [
+    netris_subnet.my-subnet-mgmt,
+    netris_subnet.my-subnet-loopback,
+  ]
+}
+
+resource "netris_switch" "my-switch" {
+  name = "my-switch"
+  tenantid = data.netris_tenant.admin.id
+  siteid = netris_site.santa-clara.id
+  description = "Switch 01"
+  nos = "cumulus_linux"
+  asnumber = "auto"
+  profileid = netris_inventory_profile.my-profile.id
+  mainip = "auto"
+  mgmtip = "auto"
+  portcount = 16
+  depends_on = [
+    netris_subnet.my-subnet-mgmt,
+    netris_subnet.my-subnet-loopback,
+  ]
+}
+
+resource "netris_link" "sg-to-sw" {
+  ports = [
+    "swp1@my-softgate",
+    "swp16@my-switch"
+  ]
+  depends_on = [
+    netris_softgate.my-softgate,
+    netris_switch.my-switch,
+  ]
+}
+
+resource "netris_vnet" "my-vnet" {
+  name = "my-vnet"
+  tenantid = data.netris_tenant.admin.id
+  state = "active"
+  sites{
+    id = netris_site.santa-clara.id
+    gateways {
+      prefix = "203.0.113.1/25"
+    }
+    ports {
+      name = "swp5@my-switch"
+      vlanid = 1050
+    }
+  }
+  depends_on = [
+    netris_switch.my-switch,
+    netris_subnet.my-subnet-common,
+  ]
+}
+
+data "netris_port" "swp10_my_switch"{
+  name = "swp10@my-switch"
+  depends_on = [netris_switch.my-switch]
+}
+
+resource "netris_bgp" "my-bgp" {
+  name = "my-bgp"
+  siteid = netris_site.santa-clara.id
+  hardware = "my-softgate"
+  neighboras = 23456
+  portid = data.netris_port.swp10_my_switch.id
+  vlanid = 3000
+  localip = "172.16.0.2/30"
+  remoteip = "172.16.0.1/30"
+  description = "My First BGP"
+  prefixlistinbound = ["deny 127.0.0.0/8 le 32", "permit 0.0.0.0/0 le 24"]
+  prefixlistoutbound = ["permit 192.0.2.0/24", "permit 198.51.100.0/24 le 25", "permit 203.0.113.0/24 le 26"]
+  depends_on = [netris_link.sg-to-sw]
+}
+```
 
 -> See the [Netris documentation](https://www.netris.ai/docs/) for additional information.
