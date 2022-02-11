@@ -25,11 +25,11 @@ The ROH architecture that is configured by Netris allows for leveraging ECMP loa
 ### ROH
 
 ```hcl
-data "netris_site" "santa_clara"{
-    name = "Santa Clara"
+data "netris_site" "santa_clara" {
+  name = "Santa Clara"
 }
 
-data "netris_tenant" "admin"{
+data "netris_tenant" "admin" {
   name = "Admin"
 }
 
@@ -81,5 +81,3 @@ resource "netris_roh" "my_roh_anycast" {
 
 - **inboundprefixlist** (List of String) List of additional prefixes that the ROH server may advertise. Only when type == `hypervisor`
 - **routingprofile** (String) Possible values: `inherit`, `default`, `default_agg`, `full_table`. Default value is `inherit`. Detailed documentation about routing profiles is available [here](https://www.netris.ai/docs/en/stable/roh.html#adding-roh-hosts)
-
-

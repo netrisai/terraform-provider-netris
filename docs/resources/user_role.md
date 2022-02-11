@@ -19,6 +19,7 @@ Permission Groups and Tenants can be either linked directly to an individual use
 data "netris_tenant" "my-tenant" {
   name = "my-tenant"
 }
+
 resource "netris_user_role" "terrraform-userrole" {
   name = "terrraform"
   pgroup = "my-group"
@@ -39,5 +40,3 @@ resource "netris_user_role" "terrraform-userrole" {
 ### Optional
 
 - **tenantids** (List of Number) List of tenant IDs
-
-

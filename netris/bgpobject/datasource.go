@@ -29,19 +29,22 @@ import (
 
 func DataResource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Data Source: BGP Objects",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The name of the BGP Object",
 			},
 			"type": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Description: "BGP Objects type. Detailed documentation about objects types is available [here](https://www.netris.ai/docs/en/stable/network-policies.html#bgp-objects)",
 			},
 			"value": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Description: "Object value.",
 			},
 		},
 		Read:   dataResourceRead,

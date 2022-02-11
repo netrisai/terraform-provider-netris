@@ -19,17 +19,17 @@ Typical use cases for static routing:
 ## Example Usages
 
 ```hcl
-data "netris_site" "santa-clara"{
-    name = "Santa Clara"
+data "netris_site" "santa-clara" {
+  name = "Santa Clara"
 }
 
 resource "netris_route" "route-terraform-test" {
-    description = "Terraform Test"
-    prefix = "10.0.0.0/25"
-    nexthop = "10.0.1.5"
-    siteid = data.netris_site.santa-clara.id
-    state = "active"
-    # hwids = [netris_switch.my-switch1.id]
+  description = "Terraform Test"
+  prefix = "10.0.0.0/25"
+  nexthop = "10.0.1.5"
+  siteid = data.netris_site.santa-clara.id
+  state = "active"
+  # hwids = [netris_switch.my-switch1.id]
 }
 ```
 
@@ -48,5 +48,3 @@ resource "netris_route" "route-terraform-test" {
 
 - **hwids** (List of Number) Hardware ID where to apply this route. It is typically used for Null routes. If not set, Netris will automatically decide where to apply
 - **state** (String) Administrative state of the route. Possible values: `enabled` or `disabled`. Default value is `enabled`
-
-

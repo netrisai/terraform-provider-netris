@@ -89,5 +89,3 @@ resource "netris_nat" "my_snat_accept" {
 - **snattopool** (String) Replace the original address with the pool of ip addresses. Only when action == `SNAT`
 - **srcport** (String) Match traffic sourced from this port. Ignoring when protocol == `all` or `icmp`
 - **state** (String) Rule state. Valid value is `enabled` or `disabled`. Default value is `enabled`.
-
-

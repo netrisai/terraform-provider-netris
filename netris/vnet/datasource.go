@@ -32,44 +32,53 @@ import (
 
 func DataResource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Data Source: Vnets",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: "The name of the vnet.",
 			},
 			"tenantid": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "ID of tenant. Users of this tenant will be permitted to edit this unit.",
 			},
 			"state": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeString,
+				Description: "V-Net state.",
 			},
 			"sites": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeList,
+				Description: "Block of per site vnet configuration.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
 							Type:     schema.TypeInt,
 							Required: true,
+							Description: "The site ID. Ports from these sites will be allowed to participate in the V-Net.",
 						},
 						"ports": {
 							Optional: true,
 							Type:     schema.TypeList,
+							Description: "Block of ports",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"name": {
 										Type:     schema.TypeString,
 										Optional: true,
+										Description: "Switch port name.",
 									},
 									"vlanid": {
 										Default:  "1",
 										Type:     schema.TypeString,
 										Optional: true,
+										Description: "VLAN tag for current port.",
 									},
 								},
 							},
@@ -77,12 +86,14 @@ func DataResource() *schema.Resource {
 						"gateways": {
 							Optional: true,
 							Type:     schema.TypeList,
+							Description: "Block of gateways.",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"prefix": {
 										ValidateFunc: validateGateway,
 										Type:         schema.TypeString,
 										Required:     true,
+										Description: "The address will be serving as anycast default gateway for selected subnet.",
 									},
 									"vlanid": {
 										Type:     schema.TypeString,

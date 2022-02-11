@@ -93,5 +93,3 @@ Optional:
 
 - **name** (String) Switch port name. Example: `swp5@my-sw01`
 - **vlanid** (String) VLAN tag for current port. If vlanid is not set - means port untagged
-
-

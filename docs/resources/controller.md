@@ -11,11 +11,11 @@ description: |-
 Create and manage a controller resource in the inventory.
 ## Example Usages
 ```hcl
-data "netris_tenant" "admin"{
+data "netris_tenant" "admin" {
   name = "Admin"
 }
 
-data "netris_site" "santa_clara"{
+data "netris_site" "santa_clara" {
   name = "Santa Clara"
 }
 

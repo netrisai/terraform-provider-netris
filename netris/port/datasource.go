@@ -28,59 +28,71 @@ import (
 
 func DataResource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Data Source: Switch Ports",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: "Port's exact name",
 			},
 			"description": {
 				Computed: true,
 				Type:     schema.TypeString,
 				Optional: true,
+				Description: "Port desired description",
 			},
 			"switchid": {
 				Computed: true,
 				Type:     schema.TypeInt,
 				Optional: true,
+				Description: "The switch ID to whom this port belongs",
 			},
 			"tenantid": {
 				Computed: true,
 				Type:     schema.TypeInt,
 				Optional: true,
+				Description: "ID of tenant. Users of this tenant will be permitted to manage port",
 			},
 			"breakout": {
 				Computed: true,
 				Type:     schema.TypeString,
 				Optional: true,
+				Description: "Toggle breakout.",
 			},
 			"mtu": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeInt,
+				Description: "MTU must be integer between 68 and 9216.",
 			},
 			"autoneg": {
 				Computed: true,
 				Type:     schema.TypeString,
 				Optional: true,
+				Description: "Toggle auto negotiation.",
 			},
 			"speed": {
 				Computed: true,
 				Type:     schema.TypeString,
 				Optional: true,
+				Description: "Toggle interface speed, make sure that current switch supports the configured speed.",
 			},
 			"extension": {
 				Computed: true,
 				Optional: true,
 				Type:     schema.TypeMap,
+				Description: "Port extension configurations.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"extensionname": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Description: "Name for new extension.",
 						},
 						"vlanrange": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Description: "VLAN ID range for new extension port.",
 						},
 					},
 				},

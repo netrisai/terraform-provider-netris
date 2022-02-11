@@ -29,22 +29,23 @@ import (
 
 func DataResource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Data Source: inventory profiles",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The name of inventory profile",
 			},
 			"description": {
 				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeString,
-				Description: "A description of an item",
+				Description: "Inventory profile description",
 			},
 			"ipv4ssh": {
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Allow SSH from IPV4",
+				Description: "List of IPv4 subnets allowed to ssh.",
 				Elem: &schema.Schema{
 					ValidateFunc: validateIP,
 					Type:         schema.TypeString,
@@ -53,7 +54,7 @@ func DataResource() *schema.Resource {
 			"ipv6ssh": {
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Allow SSH from IPV6",
+				Description: "List of IPv6 subnets allowed to ssh.",
 				Elem: &schema.Schema{
 					ValidateFunc: validateIP,
 					Type:         schema.TypeString,
@@ -63,12 +64,12 @@ func DataResource() *schema.Resource {
 				ValidateFunc: validateTimeZone,
 				Optional:     true,
 				Type:         schema.TypeString,
-				Description:  "A description of an item",
+				Description:  "Devices using this inventory profile will adjust their system time to the selected timezone. Valid value is a name from the TZ [database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).",
 			},
 			"ntpservers": {
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "NTP servers",
+				Description: "List of domain names or IP addresses of NTP servers.",
 				Elem: &schema.Schema{
 					ValidateFunc: validateNTP,
 					Type:         schema.TypeString,
@@ -77,7 +78,7 @@ func DataResource() *schema.Resource {
 			"dnsservers": {
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "DNS servers",
+				Description: "List of IP addresses of DNS servers.",
 				Elem: &schema.Schema{
 					ValidateFunc: validateIP,
 					Type:         schema.TypeString,
@@ -86,28 +87,32 @@ func DataResource() *schema.Resource {
 			"customrule": {
 				Optional:    true,
 				Type:        schema.TypeList,
-				Description: "Custom Rule",
+				Description: "Custom Rules configuration block. User defined rules to allow certain traffic.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"sourcesubnet": {
 							ValidateFunc: validateIPPrefix,
 							Type:         schema.TypeString,
 							Required:     true,
+							Description: "Source Subnet.",
 						},
 						"srcport": {
 							ValidateFunc: validatePort,
 							Type:         schema.TypeString,
 							Required:     true,
+							Description: "Source port. 1-65535, or empty for any.",
 						},
 						"dstport": {
 							ValidateFunc: validatePort,
 							Type:         schema.TypeString,
 							Required:     true,
+							Description: "Destination port. 1-65535, or empty for any.",
 						},
 						"protocol": {
 							ValidateFunc: validateProtocol,
 							Type:         schema.TypeString,
 							Required:     true,
+							Description: "Protocol.",
 						},
 					},
 				},

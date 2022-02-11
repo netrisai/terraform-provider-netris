@@ -64,5 +64,3 @@ resource "netris_softgate" "my-softgate" {
 
 - **description** (String) Softgate description.
 - **profileid** (Number) An inventory profile ID to define global configuration (NTP, DNS, timezone, etc...)
-
-
