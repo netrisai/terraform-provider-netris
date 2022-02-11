@@ -52,5 +52,3 @@ resource "netris_acl" "my-acl" {
 - **srcportgroup** (String) Match source ports on a group of ports. Valid value name of ACL Port Group
 - **srcportto** (Number) Source port to. Valid values should be in range 1-65535
 - **validuntil** (String)
-
-

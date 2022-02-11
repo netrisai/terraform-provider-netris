@@ -55,5 +55,3 @@ Required:
 - **protocol** (String) Protocol. Valid value is `udp`, `tcp` or `any`.
 - **sourcesubnet** (String) Source Subnet. Example `10.0.0.0/8`
 - **srcport** (String) Source port. 1-65535, or empty for any.
-
-

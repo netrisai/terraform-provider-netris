@@ -11,11 +11,11 @@ description: |-
 Creates and manages BGP resources. Netris will automatically generate and program the network configuration to meet the requirements.
 ## Example Usages
 ```hcl
-data "netris_site" "santa_clara"{
+data "netris_site" "santa_clara" {
   name = "Santa Clara"
 }
 
-data "netris_port" "swp5_sw1"{
+data "netris_port" "swp5_sw1" {
   name = "swp5@sw1"
   depends_on = [netris_switch.sw1]
 }
@@ -69,5 +69,3 @@ resource "netris_bgp" "my-bgp" {
 - **vlanid** (Number) VLAN ID for tagging BGP neighbor facing ethernet frames. Valid values should be in range 2-4094.
 - **vnetid** (Number) Existing VNet service ID to terminate E-BGP on. Can't be used together `portid`.
 - **weight** (Number) BGP session weight. Default value is `0`.
-
-

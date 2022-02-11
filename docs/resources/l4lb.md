@@ -11,11 +11,11 @@ description: |-
 Netris L4 Load Balancer (L4LB) leverages SoftGate(Linux router) nodes to provide Layer-4 load balancing services, including on-demand cloud load balancing with native integration with Kubernetes. L4 Load Balancer service requires at least one SoftGate node to be available in a given Site, as well as at least one IP address assignment (purpose=load balancer).
 
 ```hcl
-data "netris_site" "santa_clara"{
-    name = "Santa Clara"
+data "netris_site" "santa_clara" {
+  name = "Santa Clara"
 }
 
-data "netris_tenant" "admin"{
+data "netris_tenant" "admin" {
   name = "Admin"
 }
 
@@ -54,6 +54,3 @@ resource "netris_l4lb" "my_l4lb" {
 ### Optional
 
 - **state** (String) Administrative status. Possible values: `active` or `disable`. Default value is `active`
-
-
-

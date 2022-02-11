@@ -11,8 +11,9 @@ description: |-
 There are 2 main types of IP prefixes - allocation and subnet. Allocations are IP ranges allocated to an organization via RIR/LIR or private IP ranges that are going to be used by the network. Subnets are prefixes which are going to be used in services. Subnets are always childs of allocation. Allocations do not have parent subnets.
 ## Example Usages
 ```hcl
-data "netris_tenant" "admin"{
+data "netris_tenant" "admin" {
   name = "Admin"
+}
 
 resource "netris_allocation" "my-allocation-mgmt" {
   name = "my-allocation-mgmt"

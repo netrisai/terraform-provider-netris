@@ -100,5 +100,3 @@ Required:
 Optional:
 
 - **comment** (String) Optional comment
-
-

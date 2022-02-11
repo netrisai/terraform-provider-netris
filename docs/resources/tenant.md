@@ -16,8 +16,8 @@ A Tenant has just two fields, the unique name and custom description.
 
 ```hcl
 resource "netris_tenant" "my-tenant" {
-      name = "my-tenant"
-      description = "Terraform Test Tenant"
+  name = "my-tenant"
+  description = "Terraform Test Tenant"
 }
 ```
 
@@ -32,5 +32,3 @@ resource "netris_tenant" "my-tenant" {
 ### Optional
 
 - **description** (String) Tenant's description
-
-

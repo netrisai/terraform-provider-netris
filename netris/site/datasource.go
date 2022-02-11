@@ -26,11 +26,12 @@ import (
 
 func DataResource() *schema.Resource {
 	return &schema.Resource{
+		Description: "Data Source: Sites",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the resource, also acts as it's unique ID",
+				Description: "The name of the site",
 			},
 		},
 		Read:   dataResourceRead,
