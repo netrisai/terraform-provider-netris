@@ -33,29 +33,29 @@ func Resource() *schema.Resource {
 		Description: "Creates and manages BGP Route-maps",
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "The name of route-map",
 			},
 			"sequence": {
-				Optional: true,
-				Type:     schema.TypeList,
+				Optional:    true,
+				Type:        schema.TypeList,
 				Description: "The block of sequence. The sequence number will be assigned automatically",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"description": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
 							Description: "Current black free description",
 						},
 						"policy": {
-							Type:     schema.TypeString,
-							Required: true,
+							Type:        schema.TypeString,
+							Required:    true,
 							Description: "Permit or deny the routes which match below all match clauses within the current sequence. Possible values: `permit` or `deny`",
 						},
 						"match": {
-							Optional: true,
-							Type:     schema.TypeList,
+							Optional:    true,
+							Type:        schema.TypeList,
 							Description: "Block of Rules for route matching.",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -63,16 +63,16 @@ func Resource() *schema.Resource {
 										Type:         schema.TypeString,
 										ValidateFunc: validateMatchType,
 										Required:     true,
-										Description: "Type of the object to match: `as_path`, `community`, `extended_community`, `large_community`, `ipv4_prefix_list`, `ipv4_next_hop`, `route_source`, `ipv6_prefix_list`, `ipv6_next_hop`, `local_preference`, `med`, `origin`, `route_tag`",
+										Description:  "Type of the object to match: `as_path`, `community`, `extended_community`, `large_community`, `ipv4_prefix_list`, `ipv4_next_hop`, `route_source`, `ipv6_prefix_list`, `ipv6_next_hop`, `local_preference`, `med`, `origin`, `route_tag`",
 									},
 									"value": {
-										Type:     schema.TypeString,
-										Optional: true,
+										Type:        schema.TypeString,
+										Optional:    true,
 										Description: "Value of the object. Only for types: `ipv6_next_hop`, `local_preference`, `med`, `origin`, `route_tag`. Possible value for type `origin` is: `egp`, `incomplete`, `igp`",
 									},
 									"objectid": {
-										Type:     schema.TypeInt,
-										Optional: true,
+										Type:        schema.TypeInt,
+										Optional:    true,
 										Description: "The ID of bgp object. Only for types: `as_path`, `community`, `extended_community`, `large_community`, `ipv4_prefix_list`, `ipv4_next_hop`, `route_source`, `ipv6_prefix_list`",
 									},
 								},
@@ -84,18 +84,18 @@ func Resource() *schema.Resource {
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"type": {
-										Type:     schema.TypeString,
-										Required: true,
+										Type:        schema.TypeString,
+										Required:    true,
 										Description: "Define whether to manipulate a particular BGP attribute or go to another sequence. Possible values: `set`, `goto`, `next`",
 									},
 									"parameter": {
-										Type:     schema.TypeString,
-										Optional: true,
+										Type:        schema.TypeString,
+										Optional:    true,
 										Description: "The attribute to be manipulated. Possible values: `as_path`, `community`, `large_community`, `ipv4_next_hop`, `ipv6_next_hop`, `local_preference`, `med`, `origin`, `route_tag`, `weight`",
 									},
 									"value": {
-										Type:     schema.TypeString,
-										Required: true,
+										Type:        schema.TypeString,
+										Required:    true,
 										Description: "New attribute value",
 									},
 								},
@@ -348,14 +348,9 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-	var ok bool
 	id, _ := strconv.Atoi(d.Id())
-	_, ok = findByID(id, clientset)
-	if !ok {
-		return false, fmt.Errorf("Coudn't find routemap '%s'", d.Get("name").(string))
-	}
-
-	return true, nil
+	_, ok := findByID(id, clientset)
+	return ok, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
