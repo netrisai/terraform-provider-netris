@@ -210,15 +210,9 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-
-	name := d.Get("name").(string)
 	id, _ := strconv.Atoi(d.Id())
-	var ok bool
-	if _, ok = findPortGroupByID(id, clientset); !ok {
-		return false, fmt.Errorf("coudn't find portgroup '%s'", name)
-	}
-
-	return true, nil
+	_, ok := findPortGroupByID(id, clientset)
+	return ok, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
