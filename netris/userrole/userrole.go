@@ -35,13 +35,13 @@ func Resource() *schema.Resource {
 		Description: "Creates and manages User Roles",
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "The name of the user role.",
 			},
 			"pgroup": {
-				Required: true,
-				Type:     schema.TypeString,
+				Required:    true,
+				Type:        schema.TypeString,
 				Description: "The name of existing permission group",
 			},
 			"tenantids": {
@@ -257,7 +257,6 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	var ur *userrole.UserRole = nil
 
 	uroles, err := clientset.UserRole().Get()
 	if err != nil {
@@ -266,16 +265,11 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 
 	for _, urole := range uroles {
 		if urole.ID == id {
-			ur = urole
-			break
+			return true, nil
 		}
 	}
 
-	if ur == nil {
-		return false, fmt.Errorf("couldn't find user role '%s'", d.Get("name").(string))
-	}
-
-	return true, nil
+	return false, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
