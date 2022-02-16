@@ -39,8 +39,8 @@ func Resource() *schema.Resource {
 				Description: "The name of the Permission Group",
 			},
 			"description": {
-				Optional: true,
-				Type:     schema.TypeString,
+				Optional:    true,
+				Type:        schema.TypeString,
 				Description: "Permission Group description",
 			},
 			"groups": {
@@ -273,8 +273,6 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	var gr *permission.PermissionGroup = nil
-
 	groups, err := clientset.Permission().Get()
 	if err != nil {
 		return false, err
@@ -282,16 +280,11 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 
 	for _, group := range groups {
 		if group.ID == id {
-			gr = group
-			break
+			return true, nil
 		}
 	}
 
-	if gr == nil {
-		return false, fmt.Errorf("couldn't find permission group '%s'", d.Get("name").(string))
-	}
-
-	return true, nil
+	return false, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
