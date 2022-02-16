@@ -47,38 +47,38 @@ func Resource() *schema.Resource {
 				Description: "Full Name of the user.",
 			},
 			"email": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "The email address of the user. Also used for system notifications and for password retrieval.",
 			},
 			"emailcc": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
 				Description: "Send copies of email notifications to this address.",
 			},
 			"phone": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
 				Description: "User’s phone number.",
 			},
 			"company": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
 				Description: "Company the user works for. Usually useful for multi-tenant systems where the company provides Netris Controller access to customers.",
 			},
 			"position": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
 				Description: "Position within the company.",
 			},
 			"userrole": {
-				Required: true,
-				Type:     schema.TypeString,
+				Required:    true,
+				Type:        schema.TypeString,
 				Description: "Name of User Role. When using a User Role object to define RBAC (role-based access control), `pgroup` and `tenants` fields will be ignoring.",
 			},
 			"pgroup": {
-				Required: true,
-				Type:     schema.TypeString,
+				Required:    true,
+				Type:        schema.TypeString,
 				Description: "Name of Permission Group. User permissions for viewing and editing parts of the Netris Controller. (if User Role is not used).",
 			},
 			"tenants": {
@@ -400,7 +400,6 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	var u *user.User = nil
 
 	users, err := clientset.User().Get()
 	if err != nil {
@@ -409,16 +408,11 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 
 	for _, user := range users {
 		if user.ID == id {
-			u = user
-			break
+			return true, nil
 		}
 	}
 
-	if u == nil {
-		return false, fmt.Errorf("couldn't find user '%s'", d.Get("username").(string))
-	}
-
-	return true, nil
+	return false, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
