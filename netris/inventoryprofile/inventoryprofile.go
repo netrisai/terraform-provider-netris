@@ -97,25 +97,25 @@ func Resource() *schema.Resource {
 							ValidateFunc: validateIPPrefix,
 							Type:         schema.TypeString,
 							Required:     true,
-							Description: "Source Subnet. Example `10.0.0.0/8`",
+							Description:  "Source Subnet. Example `10.0.0.0/8`",
 						},
 						"srcport": {
 							ValidateFunc: validatePort,
 							Type:         schema.TypeString,
 							Required:     true,
-							Description: "Source port. 1-65535, or empty for any.",
+							Description:  "Source port. 1-65535, or empty for any.",
 						},
 						"dstport": {
 							ValidateFunc: validatePort,
 							Type:         schema.TypeString,
 							Required:     true,
-							Description: "Destination port. 1-65535, or empty for any.",
+							Description:  "Destination port. 1-65535, or empty for any.",
 						},
 						"protocol": {
 							ValidateFunc: validateProtocol,
 							Type:         schema.TypeString,
 							Required:     true,
-							Description: "Protocol. Valid value is `udp`, `tcp` or `any`.",
+							Description:  "Protocol. Valid value is `udp`, `tcp` or `any`.",
 						},
 					},
 				},
@@ -381,14 +381,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-	var ok bool
 	id, _ := strconv.Atoi(d.Id())
-	_, ok = findByID(id, clientset)
-	if !ok {
-		return false, fmt.Errorf("Coudn't find inventory profile '%s'", d.Get("name").(string))
-	}
-
-	return true, nil
+	_, ok := findByID(id, clientset)
+	return ok, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
