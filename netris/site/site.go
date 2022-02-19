@@ -39,18 +39,18 @@ func Resource() *schema.Resource {
 				Description: "The name of the site",
 			},
 			"publicasn": {
-				Required: true,
-				Type:     schema.TypeInt,
+				Required:    true,
+				Type:        schema.TypeInt,
 				Description: "Site public ASN that should be used for external bgp peer configuration",
 			},
 			"rohasn": {
-				Required: true,
-				Type:     schema.TypeInt,
+				Required:    true,
+				Type:        schema.TypeInt,
 				Description: "ASN for ROH (Routing on the Host) compute instances, should be unique within the scope of a site, can be same for different sites",
 			},
 			"vmasn": {
-				Required: true,
-				Type:     schema.TypeInt,
+				Required:    true,
+				Type:        schema.TypeInt,
 				Description: "ASN for ROH (Routing on the Host) virtual compute instances, should be unique within the scope of a site, can be same for different sites",
 			},
 			"rohroutingprofile": {
@@ -119,7 +119,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	log.Println("[DEBUG]", string(reply.Data))
 
-	id := 0
+	idStruct := struct {
+		ID int `json:"id"`
+	}{}
 
 	data, err := reply.Parse()
 	if err != nil {
@@ -127,18 +129,18 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	err = http.Decode(data.Data, &id)
+	err = http.Decode(data.Data, &idStruct)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
 	}
 
-	log.Println("[DEBUG] ID:", id)
+	log.Println("[DEBUG] ID:", idStruct.ID)
 
 	if reply.StatusCode != 200 {
 		return fmt.Errorf(string(reply.Data))
 	}
-	d.SetId(strconv.Itoa(id))
+	d.SetId(strconv.Itoa(idStruct.ID))
 
 	return nil
 }
