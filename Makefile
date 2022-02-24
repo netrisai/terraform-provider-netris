@@ -5,6 +5,7 @@ NAME=netris
 BINARY=terraform-provider-${NAME}
 VERSION=0.1.0
 OS_ARCH=darwin_amd64
+WORKDIRECTORY=examples
 
 default: install
 
@@ -16,23 +17,23 @@ install: build
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 
 uninstall:
-	rm -rf examples/.terraform*
+	rm -rf ${WORKDIRECTORY}/.terraform*
 
 uninstall-all:
-	rm -rf examples/.terraform*
-	rm -rf examples/*.tfstate*
+	rm -rf ${WORKDIRECTORY}/.terraform*
+	rm -rf ${WORKDIRECTORY}/*.tfstate*
 
 init: install
-	cd examples && terraform init
+	cd ${WORKDIRECTORY} && terraform init
 
 apply: init
-	cd examples && terraform apply -auto-approve
+	cd ${WORKDIRECTORY} && terraform apply -auto-approve
 
 plan: init
-	cd examples && terraform plan
+	cd ${WORKDIRECTORY} && terraform plan
 
 destroy:
-	cd examples && terraform destroy -auto-approve
+	cd ${WORKDIRECTORY} && terraform destroy -auto-approve
 
 reapply: destroy uninstall apply
 
