@@ -95,7 +95,7 @@ func Resource() *schema.Resource {
 									},
 									"value": {
 										Type:        schema.TypeString,
-										Required:    true,
+										Optional:    true,
 										Description: "New attribute value",
 									},
 								},
@@ -136,7 +136,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			actionItem := act.(map[string]interface{})
 			action.Type = actionItem["type"].(string)
 			action.Parameter = actionItem["parameter"].(string)
-			if action.Type == "goto" {
+			if action.Type == "goto" || action.Type == "next" {
 				action.Parameter = "community"
 			}
 			action.Value = actionItem["value"].(string)
@@ -242,9 +242,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		for _, a := range seq.Actions {
 			action := make(map[string]interface{})
 			action["type"] = a.Type
-			action["value"] = a.Value
-			if a.Parameter != "" && a.Type != "goto" {
-				action["parameter"] = a.Parameter
+			if a.Type != "next" {
+				action["value"] = a.Value
+				if a.Parameter != "" && a.Type != "goto" {
+					action["parameter"] = a.Parameter
+				}
 			}
 			actions = append(actions, action)
 		}
@@ -278,7 +280,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			actionItem := act.(map[string]interface{})
 			action.Type = actionItem["type"].(string)
 			action.Parameter = actionItem["parameter"].(string)
-			if action.Type == "goto" {
+			if action.Type == "goto" || action.Type == "next" {
 				action.Parameter = "community"
 			}
 			action.Value = actionItem["value"].(string)
