@@ -41,36 +41,36 @@ func Resource() *schema.Resource {
 				Description: "User assigned name of BGP session.",
 			},
 			"siteid": {
-				Required: true,
-				Type:     schema.TypeInt,
+				Required:    true,
+				Type:        schema.TypeInt,
 				Description: "Site (data center) ID where this BGP session should be terminated on.",
 			},
 			"hardware": {
-				Optional: true,
-				Type:     schema.TypeString,
+				Optional:    true,
+				Type:        schema.TypeString,
 				Description: "Defines hardware for Layer-3 and BGP session termination. Valid value is hardware name or `auto` when BGP is terminated on VNet. Default value is `auto`.",
 			},
 			"neighboras": {
-				Optional: true,
-				Type:     schema.TypeInt,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "BGP neighbor AS number.",
 			},
 			"portid": {
-				Computed: true,
-				Optional: true,
-				Type:     schema.TypeInt,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "Port ID where BGP neighbor cable is connected. Can't be used together `vnetid`.",
 			},
 			"vnetid": {
-				Computed: true,
-				Optional: true,
-				Type:     schema.TypeInt,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "Existing VNet service ID to terminate E-BGP on. Can't be used together `portid`.",
 			},
 			"vlanid": {
-				Computed: true,
-				Optional: true,
-				Type:     schema.TypeInt,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "VLAN ID for tagging BGP neighbor facing ethernet frames. Valid values should be in range 2-4094.",
 			},
 			"localip": {
@@ -86,8 +86,8 @@ func Resource() *schema.Resource {
 				Description:  "BGP session remote IP. Example `10.0.1.2/24`.",
 			},
 			"description": {
-				Optional: true,
-				Type:     schema.TypeString,
+				Optional:    true,
+				Type:        schema.TypeString,
 				Description: "BGP session description",
 			},
 			"state": {
@@ -95,7 +95,7 @@ func Resource() *schema.Resource {
 				Default:      "enabled",
 				ValidateFunc: validateState,
 				Type:         schema.TypeString,
-				Description: "Valid value is `enabled` or `disabled`; enabled - initiating and waiting for BGP connections, disabled - disable Layer-2 tunnel and Layer-3 address. Default value is `enabled`.",
+				Description:  "Valid value is `enabled` or `disabled`; enabled - initiating and waiting for BGP connections, disabled - disable Layer-2 tunnel and Layer-3 address. Default value is `enabled`.",
 			},
 			"multihop": {
 				Optional:    true,
@@ -108,61 +108,61 @@ func Resource() *schema.Resource {
 				},
 			},
 			"bgppassword": {
-				Optional: true,
-				Type:     schema.TypeString,
+				Optional:    true,
+				Type:        schema.TypeString,
 				Description: "BGP session password",
 			},
 			"allowasin": {
-				Optional: true,
-				Type:     schema.TypeInt,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "Optionally allow number of occurrences of the own AS number in received prefix AS-path. Default value is `0`.",
 			},
 			"defaultoriginate": {
-				Computed: true,
-				Optional: true,
-				Type:     schema.TypeBool,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeBool,
 				Description: "Originate default route to current neighbor. Default value is `false`.",
 			},
 			"prefixinboundmax": {
-				Computed: true,
-				Optional: true,
-				Type:     schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeString,
 				Description: "BGP session will be interrupted if neighbor advertises more prefixes than defined. Equal to `1000` if BGP session is terminated on hardware type of switch.",
 			},
 			"inboundroutemap": {
-				Computed: true,
-				Optional: true,
-				Type:     schema.TypeString,
+				Default:     0,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "Reference to route-map resource. Valid value is route-map name.",
 			},
 			"outboundroutemap": {
-				Computed: true,
-				Optional: true,
-				Type:     schema.TypeString,
+				Default:     0,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "Reference to route-map resource. Valid value is route-map name.",
 			},
 			"localpreference": {
-				Computed: true,
-				Optional: true,
-				Type:     schema.TypeInt,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "BGP session local preference. Default value is `100`.",
 			},
 			"weight": {
-				Computed: true,
-				Optional: true,
-				Type:     schema.TypeInt,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "BGP session weight. Default value is `0`.",
 			},
 			"prependinbound": {
-				Computed: true,
-				Optional: true,
-				Type:     schema.TypeInt,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "Number of times to prepend self AS to as-path of received prefix advertisements. Default value is `0`.",
 			},
 			"prependoutbound": {
-				Computed: true,
-				Optional: true,
-				Type:     schema.TypeInt,
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "Number of times to prepend self AS to as-path being advertised to neighbors. Default value is `0`.",
 			},
 			"prefixlistinbound": {
@@ -336,6 +336,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		NeighborAS:         d.Get("neighboras").(int),
 		PrefixLength:       prefixLength,
 		DefaultOriginate:   originate,
+		InboundRouteMap:    d.Get("inboundroutemap").(int),
+		OutboundRouteMap:   d.Get("outboundroutemap").(int),
 		PrefixInboundMax:   d.Get("prefixinboundmax").(string),
 		PrefixListInbound:  strings.Join(prefixListInboundArr, "\n"),
 		PrefixListOutbound: strings.Join(prefixListOutbound, "\n"),
@@ -492,19 +494,16 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	if bgp.InboundRouteMap > 0 {
-		err = d.Set("inboundroutemap", bgp.InboundRouteMapName)
-		if err != nil {
-			return err
-		}
+	err = d.Set("inboundroutemap", bgp.InboundRouteMap)
+	if err != nil {
+		return err
 	}
 
-	if bgp.OutboundRouteMap > 0 {
-		err = d.Set("outboundroutemap", bgp.OutboundRouteMapName)
-		if err != nil {
-			return err
-		}
+	err = d.Set("outboundroutemap", bgp.OutboundRouteMap)
+	if err != nil {
+		return err
 	}
+
 	err = d.Set("localpreference", bgp.LocalPreference)
 	if err != nil {
 		return err
@@ -668,6 +667,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		NeighborAS:         d.Get("neighboras").(int),
 		PrefixLength:       prefixLength,
 		DefaultOriginate:   originate,
+		InboundRouteMap:    d.Get("inboundroutemap").(int),
+		OutboundRouteMap:   d.Get("outboundroutemap").(int),
 		PrefixInboundMax:   d.Get("prefixinboundmax").(string),
 		PrefixListInbound:  strings.Join(prefixListInboundArr, "\n"),
 		PrefixListOutbound: strings.Join(prefixListOutbound, "\n"),
