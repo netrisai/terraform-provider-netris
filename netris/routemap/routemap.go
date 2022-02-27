@@ -136,6 +136,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			actionItem := act.(map[string]interface{})
 			action.Type = actionItem["type"].(string)
 			action.Parameter = actionItem["parameter"].(string)
+			if action.Type == "goto" {
+				action.Parameter = "community"
+			}
 			action.Value = actionItem["value"].(string)
 			actions = append(actions, action)
 		}
@@ -240,7 +243,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 			action := make(map[string]interface{})
 			action["type"] = a.Type
 			action["value"] = a.Value
-			if a.Parameter != "" {
+			if a.Parameter != "" && a.Type != "goto" {
 				action["parameter"] = a.Parameter
 			}
 			actions = append(actions, action)
@@ -275,6 +278,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			actionItem := act.(map[string]interface{})
 			action.Type = actionItem["type"].(string)
 			action.Parameter = actionItem["parameter"].(string)
+			if action.Type == "goto" {
+				action.Parameter = "community"
+			}
 			action.Value = actionItem["value"].(string)
 			actions = append(actions, action)
 		}
