@@ -77,7 +77,7 @@ func Resource() *schema.Resource {
 				Description: "Name of User Role. When using a User Role object to define RBAC (role-based access control), `pgroup` and `tenants` fields will be ignoring.",
 			},
 			"pgroup": {
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 				Description: "Name of Permission Group. User permissions for viewing and editing parts of the Netris Controller. (if User Role is not used).",
 			},
