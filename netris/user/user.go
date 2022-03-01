@@ -94,7 +94,7 @@ func Resource() *schema.Resource {
 						"edit": {
 							Type:        schema.TypeBool,
 							Optional:    true,
-							Default:     false,
+							Default:     true,
 							Description: "Edit access for tenant",
 						},
 					},
