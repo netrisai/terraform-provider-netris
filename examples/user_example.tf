@@ -8,7 +8,14 @@ resource "netris_user" "terrraform-user" {
   position = "DevOps Engineer"
   userrole = ""
   pgroup = "my-group"
-  tenants = ["my-tenant"]
+  tenants {
+    id = -1
+    edit = true
+  }
+  tenants {
+    id = netris_tenant.my-tenant.id
+    edit = true
+  }
   depends_on = [
     netris_tenant.my-tenant,
     netris_permission_group.my-group
