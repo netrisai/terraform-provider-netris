@@ -89,7 +89,7 @@ func Resource() *schema.Resource {
 						"id": {
 							Type:        schema.TypeInt,
 							Required:    true,
-							Description: "Tenant ID",
+							Description: "Tenant ID (-1 menas 'All tenants')",
 						},
 						"edit": {
 							Type:        schema.TypeBool,
