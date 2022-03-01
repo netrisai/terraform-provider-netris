@@ -84,8 +84,20 @@ func Resource() *schema.Resource {
 			"tenants": {
 				Optional: true,
 				Type:     schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Type:        schema.TypeInt,
+							Required:    true,
+							Description: "Tenant ID",
+						},
+						"edit": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Edit access for tenant",
+						},
+					},
 				},
 				Description: "List of tenants. (if User Role is not used).",
 			},
@@ -140,24 +152,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			return fmt.Errorf("couldn't find permission group '%s'", pgroupName)
 		}
 
-		tenantNames := []string{}
 		tenants := d.Get("tenants").([]interface{})
-		for _, name := range tenants {
-			tenantNames = append(tenantNames, name.(string))
-		}
-
-		netrisTenants, err := findTenatsByNames(tenantNames, clientset)
-		if err != nil {
-			log.Println("[DEBUG]", err)
-			return err
-		}
-
-		for _, tenant := range netrisTenants {
+		for _, t := range tenants {
+			tenant := t.(map[string]interface{})
 			roleTenants = append(roleTenants, userrole.Tenant{
-				ID:          tenant.ID,
-				TenantName:  tenant.Name,
+				ID:          tenant["id"].(int),
 				TenantRead:  true,
-				TenantWrite: true,
+				TenantWrite: tenant["edit"].(bool),
 			})
 		}
 	}
@@ -276,11 +277,16 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	var tenantsList []interface{}
+	var tenantsList []map[string]interface{}
 	for _, tenant := range u.Tenants {
-		if tenant.ID > 0 {
-			tenantsList = append(tenantsList, tenant.Name)
+		t := make(map[string]interface{})
+		id := tenant.ID
+		if id == 0 {
+			id = -1
 		}
+		t["id"] = id
+		t["edit"] = tenant.TenantWrite
+		tenantsList = append(tenantsList, t)
 	}
 	err = d.Set("tenants", tenantsList)
 	if err != nil {
@@ -325,24 +331,13 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			return fmt.Errorf("couldn't find permission group '%s'", pgroupName)
 		}
 
-		tenantNames := []string{}
 		tenants := d.Get("tenants").([]interface{})
-		for _, name := range tenants {
-			tenantNames = append(tenantNames, name.(string))
-		}
-
-		netrisTenants, err := findTenatsByNames(tenantNames, clientset)
-		if err != nil {
-			log.Println("[DEBUG]", err)
-			return err
-		}
-
-		for _, tenant := range netrisTenants {
+		for _, t := range tenants {
+			tenant := t.(map[string]interface{})
 			roleTenants = append(roleTenants, userrole.Tenant{
-				ID:          tenant.ID,
-				TenantName:  tenant.Name,
+				ID:          tenant["id"].(int),
 				TenantRead:  true,
-				TenantWrite: true,
+				TenantWrite: tenant["edit"].(bool),
 			})
 		}
 	}
