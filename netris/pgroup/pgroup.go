@@ -40,6 +40,7 @@ func Resource() *schema.Resource {
 			},
 			"description": {
 				Optional:    true,
+				Default:     "",
 				Type:        schema.TypeString,
 				Description: "Permission Group description",
 			},
