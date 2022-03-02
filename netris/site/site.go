@@ -119,9 +119,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	log.Println("[DEBUG]", string(reply.Data))
 
-	idStruct := struct {
-		ID int `json:"id"`
-	}{}
+	var id int
 
 	data, err := reply.Parse()
 	if err != nil {
@@ -129,18 +127,18 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	err = http.Decode(data.Data, &idStruct)
+	err = http.Decode(data.Data, &id)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
 	}
 
-	log.Println("[DEBUG] ID:", idStruct.ID)
+	log.Println("[DEBUG] ID:", id)
 
 	if reply.StatusCode != 200 {
 		return fmt.Errorf(string(reply.Data))
 	}
-	d.SetId(strconv.Itoa(idStruct.ID))
+	d.SetId(strconv.Itoa(id))
 
 	return nil
 }
