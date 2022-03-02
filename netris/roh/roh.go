@@ -39,14 +39,14 @@ func Resource() *schema.Resource {
 				Description: "Instance name. If type == `hypervisor` the name must be the same as the hypervisor's hostname",
 			},
 			"tenantid": {
-				Required: true,
-				Type:     schema.TypeInt,
-				ForceNew: true,
+				Required:    true,
+				Type:        schema.TypeInt,
+				ForceNew:    true,
 				Description: "ID of tenant. Users of this tenant will be permitted to manage instance",
 			},
 			"siteid": {
-				Required: true,
-				Type:     schema.TypeInt,
+				Required:    true,
+				Type:        schema.TypeInt,
 				Description: "The site ID where the current ROH instance belongs",
 			},
 			"type": {
@@ -54,14 +54,14 @@ func Resource() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validateType,
 				Type:         schema.TypeString,
-				Description: "Possible values: `physical` or `hypervisor` Physical Server, for all servers forming a BGP adjacency directly with the switch fabric. Hypervisor, for using the hypervisor as an interim router. Proxmox is currently the only supported hypervisor.",
+				Description:  "Possible values: `physical` or `hypervisor` Physical Server, for all servers forming a BGP adjacency directly with the switch fabric. Hypervisor, for using the hypervisor as an interim router. Proxmox is currently the only supported hypervisor.",
 			},
 			"routingprofile": {
 				ValidateFunc: validateRProfile,
 				Default:      "inherit",
 				Optional:     true,
 				Type:         schema.TypeString,
-				Description: "Possible values: `inherit`, `default`, `default_agg`, `full_table`. Default value is `inherit`. Detailed documentation about routing profiles is available [here](https://www.netris.ai/docs/en/stable/roh.html#adding-roh-hosts)",
+				Description:  "Possible values: `inherit`, `default`, `default_agg`, `full_table`. Default value is `inherit`. Detailed documentation about routing profiles is available [here](https://www.netris.ai/docs/en/stable/roh.html#adding-roh-hosts)",
 			},
 			"unicastips": {
 				Required:    true,
@@ -413,7 +413,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 
 	_, err := clientset.ROH().GetByID(id)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 	return true, nil
 }

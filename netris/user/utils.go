@@ -17,10 +17,7 @@ limitations under the License.
 package user
 
 import (
-	"fmt"
-
 	"github.com/netrisai/netriswebapi/v1/types/permission"
-	"github.com/netrisai/netriswebapi/v1/types/tenant"
 	"github.com/netrisai/netriswebapi/v1/types/userrole"
 
 	api "github.com/netrisai/netriswebapi/v2"
@@ -52,30 +49,4 @@ func findPgroupByName(name string, clientset *api.Clientset) (*permission.Permis
 	}
 
 	return nil, false
-}
-
-func findTenatsByNames(names []string, clientset *api.Clientset) ([]*tenant.Tenant, error) {
-	tenants, err := clientset.Tenant().Get()
-	if err != nil {
-		return nil, err
-	}
-
-	ts := map[string]int{}
-	for _, name := range names {
-		ts[name] = 1
-	}
-
-	list := []*tenant.Tenant{}
-
-	for _, tenant := range tenants {
-		if _, ok := ts[tenant.Name]; ok {
-			list = append(list, tenant)
-		}
-	}
-
-	if len(names) != len(list) {
-		return nil, fmt.Errorf("invalid tenants")
-	}
-
-	return list, nil
 }

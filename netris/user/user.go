@@ -47,45 +47,57 @@ func Resource() *schema.Resource {
 				Description: "Full Name of the user.",
 			},
 			"email": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "The email address of the user. Also used for system notifications and for password retrieval.",
 			},
 			"emailcc": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
 				Description: "Send copies of email notifications to this address.",
 			},
 			"phone": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
 				Description: "User’s phone number.",
 			},
 			"company": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
 				Description: "Company the user works for. Usually useful for multi-tenant systems where the company provides Netris Controller access to customers.",
 			},
 			"position": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
 				Description: "Position within the company.",
 			},
 			"userrole": {
-				Required: true,
-				Type:     schema.TypeString,
+				Required:    true,
+				Type:        schema.TypeString,
 				Description: "Name of User Role. When using a User Role object to define RBAC (role-based access control), `pgroup` and `tenants` fields will be ignoring.",
 			},
 			"pgroup": {
-				Required: true,
-				Type:     schema.TypeString,
+				Optional:    true,
+				Type:        schema.TypeString,
 				Description: "Name of Permission Group. User permissions for viewing and editing parts of the Netris Controller. (if User Role is not used).",
 			},
 			"tenants": {
 				Optional: true,
 				Type:     schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Type:        schema.TypeInt,
+							Required:    true,
+							Description: "Tenant ID (-1 menas 'All tenants')",
+						},
+						"edit": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     true,
+							Description: "Edit access for tenant",
+						},
+					},
 				},
 				Description: "List of tenants. (if User Role is not used).",
 			},
@@ -140,24 +152,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			return fmt.Errorf("couldn't find permission group '%s'", pgroupName)
 		}
 
-		tenantNames := []string{}
 		tenants := d.Get("tenants").([]interface{})
-		for _, name := range tenants {
-			tenantNames = append(tenantNames, name.(string))
-		}
-
-		netrisTenants, err := findTenatsByNames(tenantNames, clientset)
-		if err != nil {
-			log.Println("[DEBUG]", err)
-			return err
-		}
-
-		for _, tenant := range netrisTenants {
+		for _, t := range tenants {
+			tenant := t.(map[string]interface{})
 			roleTenants = append(roleTenants, userrole.Tenant{
-				ID:          tenant.ID,
-				TenantName:  tenant.Name,
+				ID:          tenant["id"].(int),
 				TenantRead:  true,
-				TenantWrite: true,
+				TenantWrite: tenant["edit"].(bool),
 			})
 		}
 	}
@@ -271,20 +272,27 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("pgroup", u.PermName)
-	if err != nil {
-		return err
-	}
-
-	var tenantsList []interface{}
-	for _, tenant := range u.Tenants {
-		if tenant.ID > 0 {
-			tenantsList = append(tenantsList, tenant.Name)
+	if u.RoleID == 0 {
+		err = d.Set("pgroup", u.PermName)
+		if err != nil {
+			return err
 		}
-	}
-	err = d.Set("tenants", tenantsList)
-	if err != nil {
-		return err
+
+		var tenantsList []map[string]interface{}
+		for _, tenant := range u.Tenants {
+			t := make(map[string]interface{})
+			id := tenant.ID
+			if id == 0 {
+				id = -1
+			}
+			t["id"] = id
+			t["edit"] = tenant.TenantWrite
+			tenantsList = append(tenantsList, t)
+		}
+		err = d.Set("tenants", tenantsList)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -325,24 +333,13 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			return fmt.Errorf("couldn't find permission group '%s'", pgroupName)
 		}
 
-		tenantNames := []string{}
 		tenants := d.Get("tenants").([]interface{})
-		for _, name := range tenants {
-			tenantNames = append(tenantNames, name.(string))
-		}
-
-		netrisTenants, err := findTenatsByNames(tenantNames, clientset)
-		if err != nil {
-			log.Println("[DEBUG]", err)
-			return err
-		}
-
-		for _, tenant := range netrisTenants {
+		for _, t := range tenants {
+			tenant := t.(map[string]interface{})
 			roleTenants = append(roleTenants, userrole.Tenant{
-				ID:          tenant.ID,
-				TenantName:  tenant.Name,
+				ID:          tenant["id"].(int),
 				TenantRead:  true,
-				TenantWrite: true,
+				TenantWrite: tenant["edit"].(bool),
 			})
 		}
 	}
@@ -400,7 +397,6 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	var u *user.User = nil
 
 	users, err := clientset.User().Get()
 	if err != nil {
@@ -409,16 +405,11 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 
 	for _, user := range users {
 		if user.ID == id {
-			u = user
-			break
+			return true, nil
 		}
 	}
 
-	if u == nil {
-		return false, fmt.Errorf("couldn't find user '%s'", d.Get("username").(string))
-	}
-
-	return true, nil
+	return false, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {

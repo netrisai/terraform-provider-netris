@@ -41,7 +41,7 @@ func Resource() *schema.Resource {
 			},
 			"ports": {
 				Required:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "List of ports. Valid values are: single port `22`, range of ports `1024-2048`",
 				Elem: &schema.Schema{
 					ValidateFunc: validatePort,
@@ -68,7 +68,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	name := d.Get("name").(string)
-	portList := d.Get("ports").([]interface{})
+	portList := d.Get("ports").(*schema.Set).List()
 	ports := []string{}
 	for _, port := range portList {
 		ports = append(ports, port.(string))
@@ -147,7 +147,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	name := d.Get("name").(string)
-	portList := d.Get("ports").([]interface{})
+	portList := d.Get("ports").(*schema.Set).List()
 	id, _ := strconv.Atoi(d.Id())
 	ports := []string{}
 	for _, port := range portList {
@@ -210,15 +210,9 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-
-	name := d.Get("name").(string)
 	id, _ := strconv.Atoi(d.Id())
-	var ok bool
-	if _, ok = findPortGroupByID(id, clientset); !ok {
-		return false, fmt.Errorf("coudn't find portgroup '%s'", name)
-	}
-
-	return true, nil
+	_, ok := findPortGroupByID(id, clientset)
+	return ok, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {

@@ -34,49 +34,49 @@ func Resource() *schema.Resource {
 		Description: "Creates and manages Switches",
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "User assigned name of switch.",
 			},
 			"tenantid": {
-				Type:     schema.TypeInt,
-				Required: true,
+				Type:        schema.TypeInt,
+				Required:    true,
 				Description: "ID of tenant. Users of this tenant will be permitted to edit this unit.",
 			},
 			"siteid": {
-				Type:     schema.TypeInt,
-				Required: true,
+				Type:        schema.TypeInt,
+				Required:    true,
 				Description: "The site ID where this switch belongs.",
 			},
 			"description": {
-				Computed: true,
-				Type:     schema.TypeString,
-				Optional: true,
+				Computed:    true,
+				Type:        schema.TypeString,
+				Optional:    true,
 				Description: "Switch description.",
 			},
 			"nos": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "Switch OS. Possible values: `cumulus_linux`, `sonic`, `ubuntu_switch_dev`",
 			},
 			"asnumber": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "Switch AS numbers. Valid value is ASN (example `420000002`) or `auto`. If set `auto` the controller will assign automatically from `System ASN range`",
 			},
 			"profileid": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Type:        schema.TypeInt,
+				Optional:    true,
 				Description: "An inventory profile ID to define global configuration (NTP, DNS, timezone, etc...)",
 			},
 			"mainip": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "A unique IP address which will be used as a loopback address of this unit. Valid value is ip address (example `198.51.100.21`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.",
 			},
 			"mgmtip": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "A unique IP address to be used on out of band management interface. Valid value is ip address (example `192.0.2.21`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.",
 			},
 			"macaddress": {
@@ -85,8 +85,8 @@ func Resource() *schema.Resource {
 				Optional: true,
 			},
 			"portcount": {
-				Type:     schema.TypeInt,
-				Required: true,
+				Type:        schema.TypeInt,
+				Required:    true,
 				Description: "Preliminary port count is used for definition of topology. Possible values: `16`, `32`, `48`, `54`, `56`",
 			},
 		},
@@ -343,7 +343,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	id, _ := strconv.Atoi(d.Id())
 	sw, err := clientset.Inventory().GetByID(id)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 
 	if sw.ID == 0 {

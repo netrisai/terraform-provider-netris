@@ -248,7 +248,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	id, _ := strconv.Atoi(d.Id())
 	sw, err := clientset.Inventory().GetByID(id)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 
 	if sw.ID == 0 {

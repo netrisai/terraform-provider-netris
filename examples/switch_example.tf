@@ -1,14 +1,14 @@
 resource "netris_switch" "my-switch01" {
-  name = "my-switch01"
-  tenantid = data.netris_tenant.admin.id
-  siteid = netris_site.santa-clara.id
+  name        = "my-switch01"
+  tenantid    = data.netris_tenant.admin.id
+  siteid      = netris_site.santa-clara.id
   description = "Switch 01"
-  nos = "cumulus_linux"
-  asnumber = "auto"
-  profileid = netris_inventory_profile.my-profile.id
-  mainip = "auto"
-  mgmtip = "auto"
-  portcount = 16
+  nos         = "cumulus_linux"
+  asnumber    = "auto"
+  profileid   = netris_inventory_profile.my-profile.id
+  mainip      = "auto"
+  mgmtip      = "auto"
+  portcount   = 16
   depends_on = [
     netris_subnet.my-subnet-mgmt,
     netris_subnet.my-subnet-loopback,
@@ -16,16 +16,16 @@ resource "netris_switch" "my-switch01" {
 }
 
 resource "netris_switch" "my-switch02" {
-  name = "my-switch02"
-  tenantid = data.netris_tenant.admin.id
-  siteid = netris_site.santa-clara.id
+  name        = "my-switch02"
+  tenantid    = data.netris_tenant.admin.id
+  siteid      = netris_site.santa-clara.id
   description = "Switch 02"
-  nos = "ubuntu_switch_dev"
-  asnumber = "auto"
-  profileid = netris_inventory_profile.my-profile.id
-  mainip = "auto"
-  mgmtip = "auto"
-  portcount = 16
+  nos         = "ubuntu_switch_dev"
+  asnumber    = "auto"
+  profileid   = netris_inventory_profile.my-profile.id
+  mainip      = "auto"
+  mgmtip      = "auto"
+  portcount   = 16
   depends_on = [
     netris_subnet.my-subnet-mgmt,
     netris_subnet.my-subnet-loopback,

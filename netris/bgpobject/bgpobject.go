@@ -43,11 +43,11 @@ func Resource() *schema.Resource {
 				ValidateFunc: validateType,
 				Required:     true,
 				Type:         schema.TypeString,
-				Description: "BGP Objects type. Possible values: `ipv4`, `ipv6`, `aspath`, `community`, `extended`, `large`. Detailed documentation about objects types is available [here](https://www.netris.ai/docs/en/stable/network-policies.html#bgp-objects)",
+				Description:  "BGP Objects type. Possible values: `ipv4`, `ipv6`, `aspath`, `community`, `extended`, `large`. Detailed documentation about objects types is available [here](https://www.netris.ai/docs/en/stable/network-policies.html#bgp-objects)",
 			},
 			"value": {
-				Required: true,
-				Type:     schema.TypeString,
+				Required:    true,
+				Type:        schema.TypeString,
 				Description: "Object value. For type `ipv4`, `ipv6` value can be multiline",
 			},
 		},
@@ -195,14 +195,10 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-	var ok bool
 	id, _ := strconv.Atoi(d.Id())
-	_, ok = findByID(id, clientset)
-	if !ok {
-		return false, fmt.Errorf("Coudn't find bgp object '%s'", d.Get("name").(string))
-	}
+	_, ok := findByID(id, clientset)
 
-	return true, nil
+	return ok, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {

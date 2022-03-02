@@ -35,18 +35,24 @@ func Resource() *schema.Resource {
 		Description: "Creates and manages User Roles",
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "The name of the user role.",
 			},
+			"description": {
+				Optional:    true,
+				Default:     "",
+				Type:        schema.TypeString,
+				Description: "User Role description",
+			},
 			"pgroup": {
-				Required: true,
-				Type:     schema.TypeString,
+				Required:    true,
+				Type:        schema.TypeString,
 				Description: "The name of existing permission group",
 			},
 			"tenantids": {
 				Optional: true,
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeInt,
 				},
@@ -80,7 +86,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	tenantIds := []int{}
-	tenants := d.Get("tenantids").([]interface{})
+	tenants := d.Get("tenantids").(*schema.Set).List()
 	for _, name := range tenants {
 		tenantIds = append(tenantIds, name.(int))
 	}
@@ -96,6 +102,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	urAdd := &userrole.UserRoleAdd{
 		Name:            name,
+		Description:     d.Get("description").(string),
 		PermissionGroup: *pgrp,
 		Tenants:         roleTenants,
 	}
@@ -172,10 +179,18 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("description", ur.Description)
+	if err != nil {
+		return err
+	}
 
 	tenantsList := []int{}
 	for _, tenant := range ur.Tenants {
-		tenantsList = append(tenantsList, tenant.TenantID)
+		if tenant.TenantID == 0 {
+			tenantsList = append(tenantsList, -1)
+		} else {
+			tenantsList = append(tenantsList, tenant.TenantID)
+		}
 	}
 	err = d.Set("tenantids", tenantsList)
 	if err != nil {
@@ -197,7 +212,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	tenantIds := []int{}
-	tenants := d.Get("tenantids").([]interface{})
+	tenants := d.Get("tenantids").(*schema.Set).List()
 	for _, name := range tenants {
 		tenantIds = append(tenantIds, name.(int))
 	}
@@ -215,6 +230,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	urAdd := &userrole.UserRoleAdd{
 		ID:              id,
 		Name:            name,
+		Description:     d.Get("description").(string),
 		PermissionGroup: *pgrp,
 		Tenants:         roleTenants,
 	}
@@ -257,7 +273,6 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	var ur *userrole.UserRole = nil
 
 	uroles, err := clientset.UserRole().Get()
 	if err != nil {
@@ -266,16 +281,11 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 
 	for _, urole := range uroles {
 		if urole.ID == id {
-			ur = urole
-			break
+			return true, nil
 		}
 	}
 
-	if ur == nil {
-		return false, fmt.Errorf("couldn't find user role '%s'", d.Get("name").(string))
-	}
-
-	return true, nil
+	return false, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {

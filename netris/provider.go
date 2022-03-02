@@ -99,6 +99,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_port":              port.DataResource(),
 			"netris_vnet":              vnet.DataResource(),
 			"netris_inventory_profile": inventoryprofile.DataResource(),
+			"netris_routemap":          routemap.DataResource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
