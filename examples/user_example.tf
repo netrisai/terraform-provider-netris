@@ -1,15 +1,15 @@
 resource "netris_user" "terrraform-user" {
   username = "terraform"
   fullname = "Terraform"
-  email = "terraform@netris.ai"
-  emailcc = "devops@netris.ai"
-  phone = "6504570097"
-  company = "Netris, Inc."
+  email    = "terraform@netris.ai"
+  emailcc  = "devops@netris.ai"
+  phone    = "6504570097"
+  company  = "Netris, Inc."
   position = "DevOps Engineer"
   userrole = ""
-  pgroup = "my-group"
+  pgroup   = "my-group"
   tenants {
-    id = -1
+    id   = -1
     edit = false
   }
   tenants {

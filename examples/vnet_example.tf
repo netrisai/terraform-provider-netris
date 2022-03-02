@@ -1,8 +1,8 @@
 resource "netris_vnet" "my-vnet" {
-  name = "my-vnet"
+  name     = "my-vnet"
   tenantid = data.netris_tenant.admin.id
-  state = "active"
-  sites{
+  state    = "active"
+  sites {
     id = netris_site.santa-clara.id
     gateways {
       prefix = "172.28.51.1/24"
@@ -11,7 +11,7 @@ resource "netris_vnet" "my-vnet" {
       prefix = "2001:db8:acad::fffe/64"
     }
     ports {
-      name = "swp8@my-switch01"
+      name   = "swp8@my-switch01"
       vlanid = 1050
     }
     ports {

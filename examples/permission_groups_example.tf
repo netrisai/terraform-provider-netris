@@ -1,5 +1,5 @@
 resource "netris_permission_group" "my-group" {
-  name = "my-group"
+  name        = "my-group"
   description = "Terraform Test Permission group"
   groups = [
     "services:edit",
