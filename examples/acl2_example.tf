@@ -10,7 +10,6 @@ resource "netris_acltwozero" "terraform-acltwozero" {
     protocol {
       name = "TCP-GROUP"
       protocol = "tcp"
-      port = "0"
       portgroupid = netris_portgroup.my_portgroup.id
     }
     protocol {

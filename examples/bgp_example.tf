@@ -49,8 +49,8 @@ resource "netris_bgp" "my-bgp-isp2" {
    localip = "172.19.35.2/30"
    remoteip = "172.19.35.1/30"
    description = "My ISP2 BGP"
-  #  inboundroutemap = netris_routemap.routemap-in.name
-  #  outboundroutemap = netris_routemap.routemap-out.name
+  #  inboundroutemap = netris_routemap.routemap-in.id
+  #  outboundroutemap = netris_routemap.routemap-out.id
   #  state = "enabled"
   #  multihop = {
   #    neighboraddress = "185.54.21.5"

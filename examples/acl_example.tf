@@ -6,7 +6,7 @@ resource "netris_acl" "my_acl" {
   dstprefix = "203.0.113.0/25"
   comment = "Terraform Test"
   reverse = true
-  established = 0
+  # established = 0
   # icmptype = 1
   # srcportgroup = "portgroup-terraform-test"
   # dstportfrom = 1

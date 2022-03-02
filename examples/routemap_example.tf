@@ -30,7 +30,6 @@ resource "netris_routemap" "routemap-in" {
         }
         action {
             type = "goto"
-            parameter = "community"
             value = "10"
         }
     }
