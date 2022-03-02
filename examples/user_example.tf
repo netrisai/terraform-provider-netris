@@ -10,11 +10,10 @@ resource "netris_user" "terrraform-user" {
   pgroup = "my-group"
   tenants {
     id = -1
-    edit = true
+    edit = false
   }
   tenants {
     id = netris_tenant.my-tenant.id
-    edit = true
   }
   depends_on = [
     netris_tenant.my-tenant,
