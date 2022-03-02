@@ -272,25 +272,27 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("pgroup", u.PermName)
-	if err != nil {
-		return err
-	}
-
-	var tenantsList []map[string]interface{}
-	for _, tenant := range u.Tenants {
-		t := make(map[string]interface{})
-		id := tenant.ID
-		if id == 0 {
-			id = -1
+	if u.RoleID == 0 {
+		err = d.Set("pgroup", u.PermName)
+		if err != nil {
+			return err
 		}
-		t["id"] = id
-		t["edit"] = tenant.TenantWrite
-		tenantsList = append(tenantsList, t)
-	}
-	err = d.Set("tenants", tenantsList)
-	if err != nil {
-		return err
+
+		var tenantsList []map[string]interface{}
+		for _, tenant := range u.Tenants {
+			t := make(map[string]interface{})
+			id := tenant.ID
+			if id == 0 {
+				id = -1
+			}
+			t["id"] = id
+			t["edit"] = tenant.TenantWrite
+			tenantsList = append(tenantsList, t)
+		}
+		err = d.Set("tenants", tenantsList)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
