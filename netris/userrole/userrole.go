@@ -52,7 +52,7 @@ func Resource() *schema.Resource {
 			},
 			"tenantids": {
 				Optional: true,
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeInt,
 				},
@@ -86,7 +86,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	tenantIds := []int{}
-	tenants := d.Get("tenantids").([]interface{})
+	tenants := d.Get("tenantids").(*schema.Set).List()
 	for _, name := range tenants {
 		tenantIds = append(tenantIds, name.(int))
 	}
@@ -186,7 +186,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	tenantsList := []int{}
 	for _, tenant := range ur.Tenants {
-		tenantsList = append(tenantsList, tenant.TenantID)
+		if tenant.TenantID == 0 {
+			tenantsList = append(tenantsList, -1)
+		} else {
+			tenantsList = append(tenantsList, tenant.TenantID)
+		}
 	}
 	err = d.Set("tenantids", tenantsList)
 	if err != nil {
@@ -208,7 +212,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	tenantIds := []int{}
-	tenants := d.Get("tenantids").([]interface{})
+	tenants := d.Get("tenantids").(*schema.Set).List()
 	for _, name := range tenants {
 		tenantIds = append(tenantIds, name.(int))
 	}
