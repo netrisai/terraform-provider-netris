@@ -46,8 +46,8 @@ func DataResource() *schema.Resource {
 func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	id, _ := strconv.Atoi(d.Id())
-	obj, ok := findByID(id, clientset)
+	name := d.Get("name").(string)
+	obj, ok := findByName(name, clientset)
 	if !ok {
 		return fmt.Errorf("Coudn't find routemap '%s'", d.Get("name").(string))
 	}
@@ -63,7 +63,7 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 
 func dataResourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-	id, _ := strconv.Atoi(d.Id())
-	_, ok := findByID(id, clientset)
+	name := d.Get("name").(string)
+	_, ok := findByName(name, clientset)
 	return ok, nil
 }
