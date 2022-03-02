@@ -50,14 +50,14 @@ resource "netris_bgp" "my-bgp" {
 - **defaultoriginate** (Boolean) Originate default route to current neighbor. Default value is `false`.
 - **description** (String) BGP session description
 - **hardware** (String) Defines hardware for Layer-3 and BGP session termination. Valid value is hardware name or `auto` when BGP is terminated on VNet. Default value is `auto`.
-- **inboundroutemap** (String) Reference to route-map resource. Valid value is route-map name.
+- **inboundroutemap** (Number) Reference to route-map resource ID.
 - **localpreference** (Number) BGP session local preference. Default value is `100`.
 - **multihop** (Map of String) Multihop BGP session configurations.
 - **multihop.neighboraddress** (String) IP address of the neighbor when peering with the loopback IP address instead of the interface IP address (aka Multihop).
 - **multihop.updatesource** (String) When Multihop BGP peering is used it allows the operator to choose one of the loopback IP addresses of the SoftGate node as a BGP speaker source IP address.
 - **multihop.hops** (Number) Multihop BGP hops count.
 - **neighboras** (Number) BGP neighbor AS number.
-- **outboundroutemap** (String) Reference to route-map resource. Valid value is route-map name.
+- **outboundroutemap** (String) Reference to route-map resource ID.
 - **portid** (Number) Port ID where BGP neighbor cable is connected. Can't be used together `vnetid`.
 - **prefixinboundmax** (String) BGP session will be interrupted if neighbor advertises more prefixes than defined. Equal to `1000` if BGP session is terminated on hardware type of switch.
 - **prefixlistinbound** (List of String) List of inbound prefix list. Example `["deny 127.0.0.0/8 le 32", "permit 0.0.0.0/0 le 24"]`.

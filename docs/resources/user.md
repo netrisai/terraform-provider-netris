@@ -10,11 +10,15 @@ description: |-
 
 Define a new user in Netris.
 
-~> **Note:** User require `userrole`/`pgroup`/`tenants` to exist prior to resource creation. Use `depends_on` to set an explicit dependency on the `userrole`/`pgroup`/`tenants`.
+~> **Note:** User require `userrole`/`pgroup` to exist prior to resource creation. Use `depends_on` to set an explicit dependency on the `userrole`/`pgroup`/.
 
 ## Example Usages
 
 ```hcl
+data "netris_tenant" "my-tenant" {
+  name = "my-tenant"
+}
+
 resource "netris_user" "terrraform-user" {
   username = "terraform"
   fullname = "Terraform"
@@ -25,10 +29,16 @@ resource "netris_user" "terrraform-user" {
   position = "DevOps Engineer"
   userrole = ""
   pgroup = "my-group"
-  tenants = ["my-tenant"]
+  tenants {
+    id = -1
+    edit = false
+  }
+  tenants {
+    id = data.netris_tenant.my-tenant.id
+    edit = true
+  }
   depends_on = [
     netris_permission_group.my-group,
-    netris_tenant.my-tenant,
   ]
 }
 ```
@@ -51,4 +61,12 @@ resource "netris_user" "terrraform-user" {
 - **fullname** (String) Full Name of the user.
 - **phone** (String) User’s phone number.
 - **position** (String) Position within the company.
-- **tenants** (List of String) List of tenants. (if User Role is not used).
+- **tenants** (Block List) The block of tenants. (if User Role is not used). (see [below for nested schema](#nestedblock--tenants))
+
+<a id="nestedblock--tenants"></a>
+### Nested Schema for `tenants`
+
+Optional:
+
+- **id** (Number) Reference to tenant resource ID. `-1` means `All tenants`
+- **edit** (Boolean) When `true` means Full access when `false` - Read-only. Default value: `true` 

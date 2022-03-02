@@ -57,7 +57,6 @@ resource "netris_routemap" "routemap-in" {
         }
         action {
             type = "goto"
-            parameter = "community"
             value = "10"
         }
     }
@@ -114,11 +113,11 @@ Optional:
 Required:
 
 - **type** (String) Define whether to manipulate a particular BGP attribute or go to another sequence. Possible values: `set`, `goto`, `next`
-- **value** (String) New attribute value
+- **value** (String) New attribute value. Ignoting when type == `next`
 
 Optional:
 
-- **parameter** (String) The attribute to be manipulated. Possible values: `as_path`, `community`, `large_community`, `ipv4_next_hop`, `ipv6_next_hop`, `local_preference`, `med`, `origin`, `route_tag`, `weight`
+- **parameter** (String) The attribute to be manipulated. Only when type == `set` Possible values: `as_path`, `community`, `large_community`, `ipv4_next_hop`, `ipv6_next_hop`, `local_preference`, `med`, `origin`, `route_tag`, `weight`
 
 
 <a id="nestedblock--sequence--match"></a>

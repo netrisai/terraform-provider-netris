@@ -39,4 +39,4 @@ resource "netris_user_role" "terrraform-userrole" {
 
 ### Optional
 
-- **tenantids** (List of Number) List of tenant IDs
+- **tenantids** (List of Number) List of tenant IDs. `-1` means `All tenants`
