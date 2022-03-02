@@ -111,6 +111,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	pAdd := &permission.PermissionGroupAdd{
 		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
 		ExternalACL: externalACl,
 		Hidden:      hiddenList,
 		ReadOnly:    readOnlyList,
@@ -230,6 +231,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	pAdd := &permission.PermissionGroupAdd{
 		ID:          id,
 		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
 		ExternalACL: externalACl,
 		Hidden:      hiddenList,
 		ReadOnly:    readOnlyList,
@@ -238,7 +240,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	js, _ = json.Marshal(pAdd)
 	log.Println("[DEBUG]", string(js))
 
-	reply, err := clientset.Permission().Add(pAdd)
+	reply, err := clientset.Permission().Update(pAdd)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
