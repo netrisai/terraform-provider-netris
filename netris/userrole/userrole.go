@@ -39,6 +39,12 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "The name of the user role.",
 			},
+			"description": {
+				Optional:    true,
+				Default:     "",
+				Type:        schema.TypeString,
+				Description: "User Role description",
+			},
 			"pgroup": {
 				Required:    true,
 				Type:        schema.TypeString,
@@ -96,6 +102,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	urAdd := &userrole.UserRoleAdd{
 		Name:            name,
+		Description:     d.Get("description").(string),
 		PermissionGroup: *pgrp,
 		Tenants:         roleTenants,
 	}
@@ -172,6 +179,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("description", ur.Description)
+	if err != nil {
+		return err
+	}
 
 	tenantsList := []int{}
 	for _, tenant := range ur.Tenants {
@@ -215,6 +226,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	urAdd := &userrole.UserRoleAdd{
 		ID:              id,
 		Name:            name,
+		Description:     d.Get("description").(string),
 		PermissionGroup: *pgrp,
 		Tenants:         roleTenants,
 	}
