@@ -43,9 +43,9 @@ func Resource() *schema.Resource {
 				Description: "The name of the vnet",
 			},
 			"tenantid": {
-				Required: true,
-				Type:     schema.TypeInt,
-				ForceNew: true,
+				Required:    true,
+				Type:        schema.TypeInt,
+				ForceNew:    true,
 				Description: "ID of tenant. Users of this tenant will be permitted to edit this unit.",
 			},
 			"state": {
@@ -53,42 +53,42 @@ func Resource() *schema.Resource {
 				Default:      "active",
 				ValidateFunc: validateState,
 				Type:         schema.TypeString,
-				Description: "V-Net state. Allowed values: `active` or `disabled`. Default value is `active`",
+				Description:  "V-Net state. Allowed values: `active` or `disabled`. Default value is `active`",
 			},
 			"sites": {
-				Required: true,
-				Type:     schema.TypeList,
+				Required:    true,
+				Type:        schema.TypeList,
 				Description: "Block of per site vnet configuration",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
-							Type:     schema.TypeInt,
-							Required: true,
+							Type:        schema.TypeInt,
+							Required:    true,
 							Description: "The site ID. Ports from these sites will be allowed to participate in the V-Net. (Multi-site vnet would require backbone connectivity between sites).",
 						},
 						"ports": {
-							Optional: true,
-							Type:     schema.TypeList,
+							Optional:    true,
+							Type:        schema.TypeSet,
 							Description: "Block of ports",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"name": {
-										Type:     schema.TypeString,
-										Optional: true,
+										Type:        schema.TypeString,
+										Optional:    true,
 										Description: "Switch port name. Example: `swp5@my-sw01`",
 									},
 									"vlanid": {
-										Default:  "1",
-										Type:     schema.TypeString,
-										Optional: true,
+										Default:     "1",
+										Type:        schema.TypeString,
+										Optional:    true,
 										Description: "VLAN tag for current port. If vlanid is not set - means port untagged",
 									},
 								},
 							},
 						},
 						"gateways": {
-							Optional: true,
-							Type:     schema.TypeList,
+							Optional:    true,
+							Type:        schema.TypeList,
 							Description: "Block of gateways",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -96,7 +96,7 @@ func Resource() *schema.Resource {
 										ValidateFunc: validateGateway,
 										Type:         schema.TypeString,
 										Required:     true,
-										Description: "The address will be serving as anycast default gateway for selected subnet. Example: `203.0.113.1/25`",
+										Description:  "The address will be serving as anycast default gateway for selected subnet. Example: `203.0.113.1/25`",
 									},
 									"vlanid": {
 										Type:     schema.TypeString,
@@ -154,7 +154,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 		if p, ok := site["ports"]; ok {
 
-			ports := p.([]interface{})
+			ports := p.(*schema.Set).List()
 			for _, p := range ports {
 				port := p.(map[string]interface{})
 				members = append(members, vnet.VNetAddPort{
@@ -335,7 +335,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		if p, ok := site["ports"]; ok {
 
-			ports := p.([]interface{})
+			ports := p.(*schema.Set).List()
 			for _, p := range ports {
 				port := p.(map[string]interface{})
 				members = append(members, vnet.VNetUpdatePort{
