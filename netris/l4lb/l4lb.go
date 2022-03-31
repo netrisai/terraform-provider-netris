@@ -42,15 +42,15 @@ func Resource() *schema.Resource {
 				Description: "The name of the resource",
 			},
 			"tenantid": {
-				Optional: true,
-				Type:     schema.TypeInt,
-				ForceNew: true,
+				Optional:    true,
+				Type:        schema.TypeInt,
+				ForceNew:    true,
 				Description: "ID of tenant. Users of this tenant will be permitted to edit this unit.",
 			},
 			"siteid": {
-				Optional: true,
-				Type:     schema.TypeInt,
-				ForceNew: true,
+				Optional:    true,
+				Type:        schema.TypeInt,
+				ForceNew:    true,
 				Description: "The site ID. Resources defined in the selected site will be permitted to be used as backed entries for this L4 Load Balancer service.",
 			},
 			"state": {
@@ -58,21 +58,21 @@ func Resource() *schema.Resource {
 				Default:      "active",
 				ValidateFunc: validateState,
 				Type:         schema.TypeString,
-				Description: "Administrative status. Possible values: `active` or `disable`. Default value is `active`",
+				Description:  "Administrative status. Possible values: `active` or `disable`. Default value is `active`",
 			},
 			"protocol": {
-				Optional: true,
-				Type:     schema.TypeString,
+				Optional:    true,
+				Type:        schema.TypeString,
 				Description: "Protocol. Possible values: `tcp` or `udp`",
 			},
 			"frontend": {
-				Optional: true,
-				Type:     schema.TypeString,
+				Optional:    true,
+				Type:        schema.TypeString,
 				Description: "L4LB frontend IP. If not specified, will be assigned automatically from subnets with relevant purpose.",
 			},
 			"port": {
-				Optional: true,
-				Type:     schema.TypeInt,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "L4LB frontend port to be exposed",
 			},
 			"backend": {
@@ -501,7 +501,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 		}
 	}
 
-	return true, nil
+	return false, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
