@@ -192,6 +192,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	profileID := d.Get("profileid").(int)
 
+	id, _ := strconv.Atoi(d.Id())
+	sw, err := clientset.Inventory().GetByID(id)
+	if err != nil {
+		return err
+	}
+
 	softgateUpdate := &inventory.HWSoftgateUpdate{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
@@ -200,13 +206,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Profile:     inventory.IDName{ID: profileID},
 		MainAddress: d.Get("mainip").(string),
 		MgmtAddress: d.Get("mgmtip").(string),
-		Links:       []inventory.HWLink{},
+		Links:       sw.Links,
 	}
 
 	js, _ := json.Marshal(softgateUpdate)
 	log.Println("[DEBUG]", string(js))
 
-	id, _ := strconv.Atoi(d.Id())
 	reply, err := clientset.Inventory().UpdateSoftgate(id, softgateUpdate)
 	if err != nil {
 		log.Println("[DEBUG]", err)
