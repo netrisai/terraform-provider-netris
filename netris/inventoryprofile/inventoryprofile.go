@@ -46,7 +46,7 @@ func Resource() *schema.Resource {
 				Description: "Inventory profile description",
 			},
 			"ipv4ssh": {
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeList,
 				Description: "List of IPv4 subnets allowed to ssh. Example `[\"10.0.10.0/24\", \"172.16.16.16\"]`",
 				Elem: &schema.Schema{
@@ -65,7 +65,7 @@ func Resource() *schema.Resource {
 			},
 			"timezone": {
 				ValidateFunc: validateTimeZone,
-				Required:     true,
+				Optional:     true,
 				Type:         schema.TypeString,
 				Description:  "Devices using this inventory profile will adjust their system time to the selected timezone. Valid value is a name from the TZ [database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).",
 			},
