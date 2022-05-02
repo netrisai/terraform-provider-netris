@@ -134,7 +134,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	tenantID := d.Get("tenantid").(int)
 
 	for _, p := range ports {
-		if p.Port == name && p.Tenant.ID == tenantID && p.Switch.ID == switchID {
+		if p.Port == name && p.Switch.ID == switchID {
 			hwPort = p
 			break
 		}
