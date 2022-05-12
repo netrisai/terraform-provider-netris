@@ -83,7 +83,7 @@ func Resource() *schema.Resource {
 			},
 			"ports": {
 				Required:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "List of physical switch ports",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -118,7 +118,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	rohType := d.Get("type").(string)
-	portList := d.Get("ports").([]interface{})
+	portList := d.Get("ports").(*schema.Set).List()
 	ports := []roh.IDName{}
 	for _, port := range portList {
 		ports = append(ports, roh.IDName{Name: port.(string)})
@@ -308,7 +308,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	rohType := d.Get("type").(string)
-	portList := d.Get("ports").([]interface{})
+	portList := d.Get("ports").(*schema.Set).List()
 	ports := []roh.IDName{}
 	for _, port := range portList {
 		ports = append(ports, roh.IDName{Name: port.(string)})
