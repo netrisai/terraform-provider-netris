@@ -207,7 +207,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	roh, err := clientset.ROH().GetByID(id)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	d.SetId(strconv.Itoa(roh.ID))
