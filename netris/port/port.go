@@ -285,7 +285,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	id, _ := strconv.Atoi(d.Id())
 	hwPort, err := clientset.Port().GetByID(id)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	if hwPort == nil {
