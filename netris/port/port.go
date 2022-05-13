@@ -34,23 +34,23 @@ func Resource() *schema.Resource {
 		Description: "Manages Switch Ports",
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "Port's exact name",
 			},
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
 				Description: "Port desired description",
 			},
 			"switchid": {
-				Type:     schema.TypeInt,
-				Required: true,
+				Type:        schema.TypeInt,
+				Required:    true,
 				Description: "The switch ID to whom this port belongs",
 			},
 			"tenantid": {
-				Type:     schema.TypeInt,
-				Required: true,
+				Type:        schema.TypeInt,
+				Required:    true,
 				Description: "ID of tenant. Users of this tenant will be permitted to manage port",
 			},
 			"breakout": {
@@ -58,12 +58,12 @@ func Resource() *schema.Resource {
 				ValidateFunc: validateBreakout,
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description: "Toggle breakout. Possible values: `off`, `4x10`, `4x25`, `4x100`, `manual`. Default value is `off`",
+				Description:  "Toggle breakout. Possible values: `off`, `4x10`, `4x25`, `4x100`, `manual`. Default value is `off`",
 			},
 			"mtu": {
-				Default:  9000,
-				Optional: true,
-				Type:     schema.TypeInt,
+				Default:     9000,
+				Optional:    true,
+				Type:        schema.TypeInt,
 				Description: "MTU must be integer between 68 and 9216. Default value is `9000`",
 			},
 			"autoneg": {
@@ -71,33 +71,32 @@ func Resource() *schema.Resource {
 				ValidateFunc: validateAutoneg,
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description: "Toggle auto negotiation. Possible values: `default`, `on`, `off`. Default value is `default`",
+				Description:  "Toggle auto negotiation. Possible values: `default`, `on`, `off`. Default value is `default`",
 			},
 			"speed": {
 				Default:      "auto",
 				ValidateFunc: validateSpeed,
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description: "Toggle interface speed, make sure that current switch supports the configured speed. Possibe values: `auto`, `1g`, `10g`, `25g`, `40g`, `50g`, `100g`, `200g`, `400g`. Default value is `auto`",
+				Description:  "Toggle interface speed, make sure that current switch supports the configured speed. Possibe values: `auto`, `1g`, `10g`, `25g`, `40g`, `50g`, `100g`, `200g`, `400g`. Default value is `auto`",
 			},
 			"extension": {
-				Optional: true,
-				Type:     schema.TypeMap,
-				Description: "Port extension configurations.",
+				Optional:     true,
+				Type:         schema.TypeMap,
+				Description:  "Port extension configurations.",
 				ValidateFunc: validateExtension,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"extensionname": {
-							Type:     schema.TypeString,
-							Required: true,
+							Type:        schema.TypeString,
+							Required:    true,
 							Description: "Name for new extension.",
 						},
 						"vlanrange": {
 							ValidateFunc: validatePort,
 							Type:         schema.TypeString,
 							Required:     true,
-							Description: "VLAN ID range for new extension port. Example: `10-15`",
-
+							Description:  "VLAN ID range for new extension port. Example: `10-15`",
 						},
 					},
 				},
