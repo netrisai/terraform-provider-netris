@@ -147,7 +147,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	id, _ := strconv.Atoi(d.Id())
 	sw, err := clientset.Inventory().GetByID(id)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	d.SetId(strconv.Itoa(sw.ID))
@@ -195,7 +195,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	id, _ := strconv.Atoi(d.Id())
 	sw, err := clientset.Inventory().GetByID(id)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	softgateUpdate := &inventory.HWSoftgateUpdate{
