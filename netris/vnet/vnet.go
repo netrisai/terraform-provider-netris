@@ -223,7 +223,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	id, _ := strconv.Atoi(d.Id())
 	vnet, err := clientset.VNet().GetByID(id)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	d.SetId(strconv.Itoa(vnet.ID))
@@ -404,7 +404,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 		return true, nil
 	}
 
-	return true, nil
+	return false, nil
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
