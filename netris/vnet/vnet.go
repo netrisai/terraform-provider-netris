@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/netrisai/netriswebapi/http"
 	"github.com/netrisai/netriswebapi/v2/types/ipam"
@@ -32,6 +34,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
+
+var re = regexp.MustCompile(`\w+\[slaves: (?P<port>(\w|,)+)\]`)
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
@@ -82,6 +86,13 @@ func Resource() *schema.Resource {
 										Type:        schema.TypeString,
 										Optional:    true,
 										Description: "VLAN tag for current port. If vlanid is not set - means port untagged",
+									},
+									"lacp": {
+										ValidateFunc: validateLACP,
+										Default:      "off",
+										Type:         schema.TypeString,
+										Optional:     true,
+										Description:  "LAG mode. Possible values are 'on', 'off'",
 									},
 								},
 							},
@@ -160,7 +171,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 				members = append(members, vnet.VNetAddPort{
 					Name:  port["name"].(string),
 					Vlan:  port["vlanid"].(string),
-					Lacp:  "off",
+					Lacp:  port["lacp"].(string),
 					State: "active",
 				})
 			}
@@ -247,16 +258,52 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	hostsList := make(map[int][]*ipam.Host)
 
+	sitesT := d.Get("sites").([]interface{})
+	var sitesList []map[string]interface{}
+	for _, site := range sitesT {
+		sitesList = append(sitesList, site.(map[string]interface{}))
+	}
+
+	tPorts := make(map[string]struct{})
+
+	for _, site := range sitesList {
+		if p, ok := site["ports"]; ok {
+			ports := p.(*schema.Set).List()
+			for _, p := range ports {
+				port := p.(map[string]interface{})
+				tPorts[port["name"].(string)] = struct{}{}
+			}
+		}
+	}
+
 	var sites []map[string]interface{}
 	for _, site := range vnet.Sites {
 		s := make(map[string]interface{})
 		portList := make([]interface{}, 0)
 		for _, port := range vnet.Ports {
 			if port.Site.ID == site.ID {
-				m := make(map[string]interface{})
-				m["name"] = fmt.Sprintf("%s@%s", port.Port, port.SwitchName)
-				m["vlanid"] = port.Vlan
-				portList = append(portList, m)
+				if port.Lacp == "on" {
+					sub := re.SubexpNames()
+					valueMatch := re.FindStringSubmatch(port.Port)
+					v := regParser(valueMatch, sub)
+					portNames := strings.Split(v["port"], ",")
+					for _, p := range portNames {
+						name := fmt.Sprintf("%s@%s", p, port.SwitchName)
+						if _, ok := tPorts[name]; ok {
+							m := make(map[string]interface{})
+							m["name"] = name
+							m["vlanid"] = port.Vlan
+							m["lacp"] = port.Lacp
+							portList = append(portList, m)
+						}
+					}
+				} else {
+					m := make(map[string]interface{})
+					m["name"] = fmt.Sprintf("%s@%s", port.Port, port.SwitchName)
+					m["vlanid"] = port.Vlan
+					m["lacp"] = port.Lacp
+					portList = append(portList, m)
+				}
 			}
 		}
 		gatewayList := make([]interface{}, 0)
@@ -314,9 +361,27 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		sitesList = append(sitesList, site.(map[string]interface{}))
 	}
 
+	id, _ := strconv.Atoi(d.Id())
+	v, err := clientset.VNet().GetByID(id)
+	if err != nil {
+		return nil
+	}
+
 	siteIDs := []vnet.VNetUpdateSite{}
 	members := []vnet.VNetUpdatePort{}
 	gatewayList := []vnet.VNetUpdateGateway{}
+	apiPorts := make(map[string]int)
+	for _, p := range v.Ports {
+		if p.Lacp == "on" {
+			sub := re.SubexpNames()
+			valueMatch := re.FindStringSubmatch(p.Port)
+			v := regParser(valueMatch, sub)
+			portNames := strings.Split(v["port"], ",")
+			for _, port := range portNames {
+				apiPorts[fmt.Sprintf("%s@%s", port, p.SwitchName)] = p.ID
+			}
+		}
+	}
 
 	for _, site := range sitesList {
 		if siteID, ok := site["id"]; ok {
@@ -338,12 +403,21 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			ports := p.(*schema.Set).List()
 			for _, p := range ports {
 				port := p.(map[string]interface{})
-				members = append(members, vnet.VNetUpdatePort{
-					Name:  port["name"].(string),
-					Vlan:  port["vlanid"].(string),
-					Lacp:  "off",
-					State: "active",
-				})
+				if portID, ok := apiPorts[port["name"].(string)]; ok {
+					members = append(members, vnet.VNetUpdatePort{
+						ID:    portID,
+						Vlan:  port["vlanid"].(string),
+						Lacp:  port["lacp"].(string),
+						State: "active",
+					})
+				} else {
+					members = append(members, vnet.VNetUpdatePort{
+						Name:  port["name"].(string),
+						Vlan:  port["vlanid"].(string),
+						Lacp:  port["lacp"].(string),
+						State: "active",
+					})
+				}
 			}
 		}
 	}
@@ -360,7 +434,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	js, _ := json.Marshal(vnetUpdate)
 	log.Println("[DEBUG]", string(js))
 
-	id, _ := strconv.Atoi(d.Id())
 	reply, err := clientset.VNet().Update(id, vnetUpdate)
 	if err != nil {
 		log.Println("[DEBUG]", err)
@@ -420,4 +493,16 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	}
 
 	return []*schema.ResourceData{d}, nil
+}
+
+func regParser(valueMatch []string, subexpNames []string) map[string]string {
+	result := make(map[string]string)
+	if len(subexpNames) == len(valueMatch) {
+		for i, name := range subexpNames {
+			if name != "" {
+				result[name] = valueMatch[i]
+			}
+		}
+	}
+	return result
 }
