@@ -92,7 +92,7 @@ func Resource() *schema.Resource {
 										Default:      "off",
 										Type:         schema.TypeString,
 										Optional:     true,
-										Description:  "LAG mode. Possible values are 'on', 'off'",
+										Description:  "LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`.",
 									},
 								},
 							},

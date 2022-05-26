@@ -42,6 +42,7 @@ resource "netris_vnet" "my-vnet" {
     }
     ports {
       name = "swp7@my-sw02"
+      lacp = "on"
     }
   }
   depends_on = [
@@ -93,3 +94,4 @@ Optional:
 
 - **name** (String) Switch port name. Example: `swp5@my-sw01`
 - **vlanid** (String) VLAN tag for current port. If vlanid is not set - means port untagged
+- **lacp** (String) LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`.

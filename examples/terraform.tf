@@ -2,7 +2,7 @@ terraform {
   required_providers {
     netris = {
       source  = "netrisai/netris"
-      version = ">= 1.0.1"
+      version = ">= 1.0.3"
     }
   }
   required_version = ">= 0.13"
