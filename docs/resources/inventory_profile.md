@@ -35,16 +35,16 @@ resource "netris_inventory_profile" "my-profile" {
 ### Required
 
 - **name** (String) The name of inventory profile
-- **timezone** (String) Devices using this inventory profile will adjust their system time to the selected timezone. Valid value is a name from the TZ [database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
+- **ipv4ssh** (List of String) List of IPv4 subnets allowed to ssh. Example `["10.0.10.0/24", "172.16.16.16"]`
 
 ### Optional
 
 - **customrule** (Block List) Custom Rules configuration block. User defined rules to allow certain traffic. (see [below for nested schema](#nestedblock--customrule))
 - **description** (String) Inventory profile description
 - **dnsservers** (List of String) List of IP addresses of DNS servers. Example `["1.1.1.1", "8.8.8.8"]`
-- **ipv4ssh** (List of String) List of IPv4 subnets allowed to ssh. Example `["10.0.10.0/24", "172.16.16.16"]`
 - **ipv6ssh** (List of String) List of IPv6 subnets allowed to ssh. Example `["2001:DB8::/32"]`
 - **ntpservers** (List of String) List of domain names or IP addresses of NTP servers. Example `["0.pool.ntp.org", "132.163.96.5"]`
+- **timezone** (String) Devices using this inventory profile will adjust their system time to the selected timezone. Valid value is a name from the TZ [database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
 
 <a id="nestedblock--customrule"></a>
 ### Nested Schema for `customrule`

@@ -16,6 +16,7 @@ resource "netris_vnet" "my-vnet" {
     }
     ports {
       name = "swp8@my-switch02"
+      lacp = "on"
     }
   }
   depends_on = [

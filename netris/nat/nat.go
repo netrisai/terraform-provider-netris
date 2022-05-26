@@ -217,7 +217,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	id, _ := strconv.Atoi(d.Id())
 	nat, err := clientset.NAT().GetByID(id)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	d.SetId(strconv.Itoa(nat.ID))
@@ -367,7 +367,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	id, _ := strconv.Atoi(d.Id())
 	nat, err := clientset.NAT().GetByID(id)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 
 	if nat == nil {

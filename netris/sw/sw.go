@@ -193,7 +193,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	id, _ := strconv.Atoi(d.Id())
 	sw, err := clientset.Inventory().GetByID(id)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	d.SetId(strconv.Itoa(sw.ID))
@@ -272,6 +272,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	profileID := d.Get("profileid").(int)
 
+	id, _ := strconv.Atoi(d.Id())
+	sw, err := clientset.Inventory().GetByID(id)
+	if err != nil {
+		return nil
+	}
+
 	var asnAny interface{} = d.Get("asnumber").(string)
 	asn := asnAny.(string)
 	if !(asn == "auto" || asn == "") {
@@ -295,13 +301,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		MacAddress:  d.Get("macaddress").(string),
 		PortCount:   d.Get("portcount").(int),
 		Type:        "switch",
-		Links:       []inventory.HWLink{},
+		Links:       sw.Links,
 	}
 
 	js, _ := json.Marshal(swUpdate)
 	log.Println("[DEBUG]", string(js))
 
-	id, _ := strconv.Atoi(d.Id())
 	reply, err := clientset.Inventory().UpdateSwitch(id, swUpdate)
 	if err != nil {
 		log.Println("[DEBUG]", err)

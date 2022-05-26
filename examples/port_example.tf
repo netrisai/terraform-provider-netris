@@ -1,6 +1,6 @@
-resource "netris_port" "swp8_sw01" {
-  name        = "swp8"
-  description = "swp8 my-vnet"
+resource "netris_port" "swp9_sw01" {
+  name        = "swp9"
+  description = "my port swp9"
   switchid    = netris_switch.my-switch01.id
   tenantid    = data.netris_tenant.admin.id
   # breakout = "4x10"
@@ -13,9 +13,9 @@ resource "netris_port" "swp8_sw01" {
   # }
 }
 
-resource "netris_port" "swp8_sw02" {
-  name        = "swp8"
-  description = "swp8 my-vnet"
+resource "netris_port" "swp9_sw02" {
+  name        = "swp9"
+  description = "my port swp9"
   switchid    = netris_switch.my-switch02.id
   tenantid    = data.netris_tenant.admin.id
   # breakout = "4x10"
