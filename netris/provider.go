@@ -31,6 +31,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/l4lb"
 	"github.com/netrisai/terraform-provider-netris/netris/link"
 	"github.com/netrisai/terraform-provider-netris/netris/nat"
+	"github.com/netrisai/terraform-provider-netris/netris/networkinterface"
 	"github.com/netrisai/terraform-provider-netris/netris/pgroup"
 	"github.com/netrisai/terraform-provider-netris/netris/port"
 	"github.com/netrisai/terraform-provider-netris/netris/portgroup"
@@ -89,6 +90,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_link":              link.Resource(),
 			"netris_nat":               nat.Resource(),
 			"netris_port":              port.Resource(),
+			"netris_network_interface": networkinterface.Resource(),
 			"netris_route":             route.Resource(),
 			"netris_acltwozero":        acl2.Resource(),
 		},
@@ -97,6 +99,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_bgp_object":        bgpobject.DataResource(),
 			"netris_tenant":            tenant.DataResource(),
 			"netris_port":              port.DataResource(),
+			"netris_network_interface": networkinterface.DataResource(),
 			"netris_vnet":              vnet.DataResource(),
 			"netris_inventory_profile": inventoryprofile.DataResource(),
 			"netris_routemap":          routemap.DataResource(),
