@@ -15,7 +15,7 @@ data "netris_site" "santa-clara" {
   name = "Santa Clara"
 }
 
-data "netris_port" "swp5_sw1" {
+data "netris_network_interface" "swp5_sw1" {
   name = "swp5@sw1"
   depends_on = [netris_switch.sw1]
 }
@@ -25,7 +25,7 @@ resource "netris_bgp" "my-bgp" {
   siteid = data.netris_site.santa-clara.id
   hardware = "softgate1"
   neighboras = 23456
-  portid = data.netris_port.swp5_sw1.id
+  portid = data.netris_network_interface.swp5_sw1.id
   localip = "192.0.0.2/30"
   remoteip = "192.0.0.1/30"
   depends_on = [netris_softgate.softgate1]
