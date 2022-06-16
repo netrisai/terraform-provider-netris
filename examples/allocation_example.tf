@@ -18,13 +18,13 @@ resource "netris_allocation" "my-allocation-common" {
 
 resource "netris_allocation" "my-allocation-roh" {
   name     = "my-allocation-roh"
-  prefix   = "10.171.56.0/24"
+  prefix   = "100.71.56.0/24"
   tenantid = data.netris_tenant.admin.id
 }
 
 resource "netris_allocation" "my-allocation-vnet" {
   name     = "my-allocation-vnet"
-  prefix   = "172.28.51.0/24"
+  prefix   = "198.18.51.0/24"
   tenantid = data.netris_tenant.admin.id
 }
 
