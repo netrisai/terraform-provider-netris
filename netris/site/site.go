@@ -73,7 +73,8 @@ func Resource() *schema.Resource {
 			},
 			"switchfabric": {
 				ValidateFunc: validateSwitchFabric,
-				Required:     true,
+				Default:      "netris",
+				Optional:     true,
 				Type:         schema.TypeString,
 				Description:  "Possible values: `equinix_metal`, `dot1q_trunk`, `netris`.",
 			},
