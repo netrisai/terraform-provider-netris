@@ -104,3 +104,43 @@ func valEquinixVlanRange(s string) error {
 	}
 	return nil
 }
+
+func validateEquinixLocation(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if _, ok := locationsMap[v]; !ok {
+		keys := make([]string, 0, len(locationsMap))
+		for k := range locationsMap {
+			keys = append(keys, k)
+		}
+		errs = append(errs, fmt.Errorf("Invalid equinixlocation, Possible Values are (%s)", strings.Join(keys, ", ")))
+		return warns, errs
+	}
+	if err := valVlanRange(v); err != nil {
+		errs = append(errs, err)
+		return warns, errs
+	}
+	return warns, errs
+}
+
+var locationsMap = map[string]struct{}{
+	"se": {},
+	"dc": {},
+	"at": {},
+	"hk": {},
+	"am": {},
+	"ny": {},
+	"ty": {},
+	"sl": {},
+	"md": {},
+	"sp": {},
+	"fr": {},
+	"sy": {},
+	"ld": {},
+	"sg": {},
+	"pa": {},
+	"tr": {},
+	"sv": {},
+	"la": {},
+	"ch": {},
+	"da": {},
+}

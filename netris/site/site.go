@@ -95,9 +95,10 @@ func Resource() *schema.Resource {
 				Description: "Equinix project API Key.",
 			},
 			"equinixlocation": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "Equinix project location.",
+				ValidateFunc: validateEquinixLocation,
+				Optional:     true,
+				Type:         schema.TypeString,
+				Description:  "Equinix project location. Possible values:`se`, `dc`, `at`, `hk`, `am`, `ny`, `ty`, `sl`, `md`, `sp`, `fr`, `sy`, `ld`, `sg`, `pa`, `tr`, `sv`, `la`, `ch`, `da`",
 			},
 		},
 		Create: resourceCreate,
