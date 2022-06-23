@@ -79,6 +79,7 @@ func Resource() *schema.Resource {
 				Description:  "Possible values: `equinix_metal`, `dot1q_trunk`, `netris`.",
 			},
 			"vlanrange": {
+				Computed:     true,
 				ValidateFunc: validateVlanRange,
 				Optional:     true,
 				Type:         schema.TypeString,
@@ -138,8 +139,14 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if fabric == "dot1q_trunk" {
+		if vlanRange == "" {
+			vlanRange = "2-4094"
+		}
 		siteW.VLANRange = vlanRange
 	} else if fabric == "equinix_metal" {
+		if vlanRange == "" {
+			vlanRange = "2-3999"
+		}
 		if err := valEquinixVlanRange(vlanRange); err != nil {
 			return err
 		}
@@ -284,8 +291,14 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if fabric == "dot1q_trunk" {
+		if vlanRange == "" {
+			vlanRange = "2-4094"
+		}
 		siteW.VLANRange = vlanRange
 	} else if fabric == "equinix_metal" {
+		if vlanRange == "" {
+			vlanRange = "2-3999"
+		}
 		if err := valEquinixVlanRange(vlanRange); err != nil {
 			return err
 		}
