@@ -18,6 +18,8 @@ package site
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 func validateRoutingProfile(val interface{}, key string) (warns []string, errs []error) {
@@ -45,4 +47,60 @@ func validateACLPolicy(val interface{}, key string) (warns []string, errs []erro
 		return warns, errs
 	}
 	return warns, errs
+}
+
+func validateSwitchFabric(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if !(v == "equinix_metal" || v == "dot1q_trunk" || v == "netris") {
+		errs = append(errs, fmt.Errorf("Switch fabric available values are (equinix_metal, dot1q_trunk, netris)"))
+		return warns, errs
+	}
+	return warns, errs
+}
+
+func validateVlanRange(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if err := valVlanRange(v); err != nil {
+		errs = append(errs, err)
+		return warns, errs
+	}
+	return warns, errs
+}
+
+func valVlanRange(vlan string) error {
+	rg := strings.Split(vlan, "-")
+	if len(rg) == 2 {
+		p1, _ := strconv.Atoi(rg[0])
+		err1 := valPort(p1)
+		if err1 != nil {
+			return err1
+		}
+		p2, _ := strconv.Atoi(rg[1])
+		err2 := valPort(p2)
+		if err2 != nil {
+			return err2
+		}
+
+		if p1 >= p2 {
+			return fmt.Errorf("Invalid vlan range")
+		}
+	}
+	return nil
+}
+
+func valPort(vlan int) error {
+	if !(vlan >= 2 && vlan <= 4094) {
+		return fmt.Errorf("Port should be in range 2-4094")
+	}
+
+	return nil
+}
+
+func valEquinixVlanRange(s string) error {
+	vlanSplited := strings.Split(s, "-")
+	lastVlan := vlanSplited[len(vlanSplited)-1]
+	if id, _ := strconv.Atoi(lastVlan); id > 3999 {
+		return fmt.Errorf("Invalid vlan range %s", s)
+	}
+	return nil
 }
