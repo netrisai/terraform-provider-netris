@@ -39,12 +39,12 @@ resource "netris_route" "route-terraform-test" {
 
 ### Required
 
-- **description** (String) Description of route
-- **nexthop** (String) Traffic destined to the Prefix will be routed towards the Next-Hop. Note that static routes will be injected only on units that have the Next-Hop as a connected network
+- **nexthop** (String) Traffic destined to the Prefix will be routed towards the Next-Hop. Note that static routes will be injected only on units that have the Next-Hop as a connected network. Also can be set as "null0" which will create a static route toward Null0 interface.
 - **prefix** (String) Route destination to match
 - **siteid** (Number) The site ID where the current route belongs
 
 ### Optional
 
+- **description** (String) Description of route
 - **hwids** (List of Number) Hardware ID where to apply this route. It is typically used for Null routes. If not set, Netris will automatically decide where to apply
 - **state** (String) Administrative state of the route. Possible values: `enabled` or `disabled`. Default value is `enabled`

@@ -10,11 +10,11 @@ resource "netris_vnet" "my-vnet" {
     gateways {
       prefix = "2001:db8:acad::fffe/64"
     }
-    ports {
+    interface {
       name   = "swp8@my-switch01"
       vlanid = 1050
     }
-    ports {
+    interface {
       name = "swp8@my-switch02"
       lacp = "on"
     }

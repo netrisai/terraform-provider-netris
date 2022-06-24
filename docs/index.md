@@ -198,7 +198,7 @@ resource "netris_vnet" "my-vnet" {
     gateways {
       prefix = "203.0.113.1/25"
     }
-    ports {
+    interface {
       name = "swp5@my-switch"
       vlanid = 1050
     }
