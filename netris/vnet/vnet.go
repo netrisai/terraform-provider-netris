@@ -322,33 +322,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		sitesList = append(sitesList, site.(map[string]interface{}))
 	}
 
-	tSites := d.Get("sites").([]interface{})
-
-	var tSitesList []map[string]interface{}
-	for _, site := range tSites {
-		tSitesList = append(tSitesList, site.(map[string]interface{}))
-	}
-
 	portVlanIDMap := make(map[string]string)
-
-	for _, site := range sitesList {
-		if p, ok := site["interface"]; ok {
-			ports := p.(*schema.Set).List()
-			if len(ports) > 0 {
-				for _, p := range ports {
-					port := p.(map[string]interface{})
-					portVlanIDMap[port["name"].(string)] = port["vlanid"].(string)
-				}
-			} else if p, ok := site["ports"]; ok {
-				ports := p.(*schema.Set).List()
-				for _, p := range ports {
-					port := p.(map[string]interface{})
-					portVlanIDMap[port["name"].(string)] = port["vlanid"].(string)
-				}
-			}
-
-		}
-	}
 
 	tPorts := make(map[string]struct{})
 	interfaces := false
@@ -357,16 +331,18 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 			ports := p.(*schema.Set).List()
 			if len(ports) > 0 {
 				interfaces = true
-			}
-			for _, p := range ports {
-				port := p.(map[string]interface{})
-				tPorts[port["name"].(string)] = struct{}{}
-			}
-		} else if p, ok := site["ports"]; ok {
-			ports := p.(*schema.Set).List()
-			for _, p := range ports {
-				port := p.(map[string]interface{})
-				tPorts[port["name"].(string)] = struct{}{}
+				for _, p := range ports {
+					port := p.(map[string]interface{})
+					portVlanIDMap[port["name"].(string)] = port["vlanid"].(string)
+					tPorts[port["name"].(string)] = struct{}{}
+				}
+			} else if p, ok := site["ports"]; ok {
+				ports := p.(*schema.Set).List()
+				for _, p := range ports {
+					port := p.(map[string]interface{})
+					portVlanIDMap[port["name"].(string)] = port["vlanid"].(string)
+					tPorts[port["name"].(string)] = struct{}{}
+				}
 			}
 		}
 	}
@@ -385,13 +361,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 					for _, p := range portNames {
 						name := fmt.Sprintf("%s@%s", p, port.SwitchName)
 						if _, ok := tPorts[name]; ok {
-
 							if vl, ok := portVlanIDMap[name]; ok {
 								if vl == "1" {
 									port.Vlan = "1"
 								}
 							}
-
 							m := make(map[string]interface{})
 							m["name"] = name
 							m["vlanid"] = port.Vlan
