@@ -59,32 +59,52 @@ resource "netris_vnet" "my-vnet" {
 
 ### Required
 
-- **name** (String) The name of the vnet
-- **sites** (Block List, Min: 1) Block of per site vnet configuration (see [below for nested schema](#nestedblock--sites))
-- **tenantid** (Number) ID of tenant. Users of this tenant will be permitted to edit this unit.
+- `name` (String) The name of the vnet
+- `sites` (Block List, Min: 1) Block of per site vnet configuration (see [below for nested schema](#nestedblock--sites))
+- `tenantid` (Number) ID of tenant. Users of this tenant will be permitted to edit this unit.
 
 ### Optional
 
-- **state** (String) V-Net state. Allowed values: `active` or `disabled`. Default value is `active`
+- `state` (String) V-Net state. Allowed values: `active` or `disabled`. Default value is `active`
+- `vlanid` (String) VLAN ID
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--sites"></a>
 ### Nested Schema for `sites`
 
 Required:
 
-- **id** (Number) The site ID. Ports from these sites will be allowed to participate in the V-Net. (Multi-site vnet would require backbone connectivity between sites).
+- `id` (Number) The site ID. Ports from these sites will be allowed to participate in the V-Net. (Multi-site vnet would require backbone connectivity between sites).
 
 Optional:
 
-- **gateways** (Block List) Block of gateways (see [below for nested schema](#nestedblock--sites--gateways))
-- **ports** (Block List) Block of ports (see [below for nested schema](#nestedblock--sites--ports))
+- `gateways` (Block List) Block of gateways (see [below for nested schema](#nestedblock--sites--gateways))
+- `interface` (Block Set) Block of interfaces (see [below for nested schema](#nestedblock--sites--interface))
+- `ports` (Block Set) Block of ports (see [below for nested schema](#nestedblock--sites--ports))
 
 <a id="nestedblock--sites--gateways"></a>
 ### Nested Schema for `sites.gateways`
 
 Required:
 
-- **prefix** (String) The address will be serving as anycast default gateway for selected subnet. Example: `203.0.113.1/25`
+- `prefix` (String) The address will be serving as anycast default gateway for selected subnet. Example: `203.0.113.1/25`
+
+Optional:
+
+- `vlanid` (String)
+
+
+<a id="nestedblock--sites--interface"></a>
+### Nested Schema for `sites.interface`
+
+Optional:
+
+- `lacp` (String) LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`.
+- `name` (String) Switch port name. Example: `swp5@my-sw01`
+- `vlanid` (String) VLAN tag for current port. If vlanid is not set - means port untagged
 
 
 <a id="nestedblock--sites--ports"></a>
@@ -92,6 +112,8 @@ Required:
 
 Optional:
 
-- **name** (String) Switch port name. Example: `swp5@my-sw01`
-- **vlanid** (String) VLAN tag for current port. If vlanid is not set - means port untagged
-- **lacp** (String) LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`.
+- `lacp` (String) LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`.
+- `name` (String) Switch port name. Example: `swp5@my-sw01`
+- `vlanid` (String) VLAN tag for current port. If vlanid is not set - means port untagged
+
+
