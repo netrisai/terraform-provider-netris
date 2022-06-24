@@ -34,7 +34,7 @@ func Resource() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"description": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				Description: "Description of route",
 			},
 			"prefix": {

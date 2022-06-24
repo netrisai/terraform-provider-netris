@@ -56,7 +56,7 @@ resource "netris_subnet" "my-subnet-nat" {
 
 resource "netris_subnet" "my-subnet-roh" {
   name     = "my-subnet-roh"
-  prefix   = "10.171.56.0/24"
+  prefix   = "100.71.56.0/24"
   tenantid = data.netris_tenant.admin.id
   purpose  = "common"
   siteids  = [netris_site.santa-clara.id]
@@ -67,7 +67,7 @@ resource "netris_subnet" "my-subnet-roh" {
 
 resource "netris_subnet" "my-subnet-vnet" {
   name     = "my-subnet-vnet"
-  prefix   = "172.28.51.0/24"
+  prefix   = "198.18.51.0/24"
   tenantid = data.netris_tenant.admin.id
   purpose  = "common"
   siteids  = [netris_site.santa-clara.id]

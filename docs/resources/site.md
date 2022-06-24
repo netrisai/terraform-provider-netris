@@ -36,3 +36,11 @@ resource "netris_site" "santa-clara" {
 - **rohroutingprofile** (String) ROH Routing profile defines set of routing prefixes to be advertised to ROH instances. Possible values: `default`, `default_agg`, `full`. Default route only - Will advertise 0.0.0.0/0 + loopback address of physically connected switch. Default + Aggregate - Will add prefixes of defined subnets + `Default` profile. Full - Will advertise all prefixes available in the routing table of the connected switch
 - **sitemesh** (String) Site to site VPN mode. Site mesh available values are: `disabled`, `hub`, `spoke`, `dspoke`
 - **vmasn** (Number) ASN for ROH (Routing on the Host) virtual compute instances, should be unique within the scope of a site, can be same for different sites
+
+### Optional
+
+- **switchfabric** (String) Type of switch fabric. Possible values: `netris`, `equinix_metal`, `dot1q_trunk`. Default value is `netris`. 
+- **vlanrange** (String) Range of VLAN IDs allowed for use at this site. Ignoring when switchfabric == `netris`. Default value is `2-3999` when switchfabric == `equinix_metal`, and `2-4094` when switchfabric == `dot1q_trunk`.
+- **equinixprojectid** (String) Equinix Metal Project ID. Only when switchfabric == `equinix_metal`.
+- **equinixprojectapikey** (String) Equinix Project API key with Read/Write permissions. Only when switchfabric == `equinix_metal`.
+- **equinixlocation** (String) Equinix Location. Only when switchfabric == `equinix_metal`. Possible values: `ny`, `ty`, `sg`, `tr`, `la`, `se`, `dc`, `hk`, `sv`, `sy`, `pa`, `ch`, `at`, `sp`, `fr`, `ld`, `da`, `am`, `sl`, `md`.

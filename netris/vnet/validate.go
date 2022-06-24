@@ -19,12 +19,25 @@ package vnet
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 )
 
 func validateState(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
 	if !(v == "active" || v == "disabled") {
 		errs = append(errs, fmt.Errorf("'%s' must be active or disabled, got: %s", key, v))
+	}
+	return warns, errs
+}
+
+func validateVlanID(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if v == "auto" {
+	} else {
+		vlan, _ := strconv.Atoi(v)
+		if !(vlan >= 2 && vlan <= 3999) {
+			errs = append(errs, fmt.Errorf("Port should be in range 2-3999"))
+		}
 	}
 	return warns, errs
 }

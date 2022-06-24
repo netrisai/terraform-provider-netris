@@ -1,9 +1,9 @@
-data "netris_port" "swp14_sw1" {
+data "netris_network_interface" "swp14_sw1" {
   name       = "swp14@my-switch01"
   depends_on = [netris_switch.my-switch01]
 }
 
-data "netris_port" "swp14_sw2" {
+data "netris_network_interface" "swp14_sw2" {
   name       = "swp14@my-switch02"
   depends_on = [netris_switch.my-switch02]
 }
@@ -13,7 +13,7 @@ resource "netris_bgp" "my-bgp-isp1" {
   siteid           = netris_site.santa-clara.id
   hardware         = "my-softgate01"
   neighboras       = 23456
-  portid           = data.netris_port.swp14_sw1.id
+  portid           = data.netris_network_interface.swp14_sw1.id
   vlanid           = 3000
   localip          = "172.19.25.2/30"
   remoteip         = "172.19.25.1/30"
@@ -45,7 +45,7 @@ resource "netris_bgp" "my-bgp-isp2" {
   siteid      = netris_site.santa-clara.id
   hardware    = "my-softgate02"
   neighboras  = 64600
-  portid      = data.netris_port.swp14_sw2.id
+  portid      = data.netris_network_interface.swp14_sw2.id
   localip     = "172.19.35.2/30"
   remoteip    = "172.19.35.1/30"
   description = "My ISP2 BGP"

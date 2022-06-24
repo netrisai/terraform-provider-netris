@@ -19,8 +19,8 @@ resource "netris_acl" "my_acl2" {
   name      = "my-acl2"
   action    = "permit"
   proto     = "tcp"
-  srcprefix = "172.28.51.0/24"
-  dstprefix = "10.171.56.0/24"
+  srcprefix = "198.18.51.0/24"
+  dstprefix = "100.71.56.0/24"
   comment   = "Terraform Test 2"
   # reverse = true
   established = 1

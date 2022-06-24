@@ -1,7 +1,7 @@
 resource "netris_inventory_profile" "my-profile" {
   name        = "my-profile"
   description = "My First Inventory Profile"
-  ipv4ssh     = ["10.171.56.0/24", "203.0.113.0/24"]
+  ipv4ssh     = ["100.71.56.0/24", "203.0.113.0/24"]
   ipv6ssh     = ["2001:db8:acad::/64"]
   timezone    = "America/Los_Angeles"
   ntpservers  = ["0.pool.ntp.org", "132.163.96.5"]

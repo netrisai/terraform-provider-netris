@@ -21,7 +21,7 @@ resource "netris_acltwozero" "terraform-acltwozero" {
   subscribers {
     instanceids = [netris_roh.my_roh.id]
     prefix {
-      prefix  = "172.28.51.0/24"
+      prefix  = "198.18.51.0/24"
       comment = "vnet-prefix"
     }
   }

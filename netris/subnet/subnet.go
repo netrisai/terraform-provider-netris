@@ -40,24 +40,24 @@ func Resource() *schema.Resource {
 				Description: "Unique name for current subnet.",
 			},
 			"prefix": {
-				ForceNew: true,
-				Required: true,
-				Type:     schema.TypeString,
+				ForceNew:    true,
+				Required:    true,
+				Type:        schema.TypeString,
 				Description: "Unique prefix for subnet, must not overlap with other subnets.",
 			},
 			"tenantid": {
-				Required: true,
-				Type:     schema.TypeInt,
+				Required:    true,
+				Type:        schema.TypeInt,
 				Description: "ID of tenant. Users of this tenant will be permitted to manage the subnet.",
 			},
 			"purpose": {
-				Required: true,
-				Type:     schema.TypeString,
+				Required:    true,
+				Type:        schema.TypeString,
 				Description: "Describes which kind of service will be able to use this subnet. Possible values: `common`, `loopback`, `management`, `load-balancer`, `nat`, `inactive`",
 			},
 			"defaultgateway": {
-				Optional: true,
-				Type:     schema.TypeString,
+				Optional:    true,
+				Type:        schema.TypeString,
 				Description: "Use when purpose is set to `management`.",
 			},
 			"siteids": {
@@ -108,6 +108,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Purpose:        purpose,
 		Sites:          sites,
 		DefaultGateway: defaultgw,
+		Tags:           []string{},
 	}
 
 	js, _ := json.Marshal(subnetAdd)
@@ -220,6 +221,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Purpose:        purpose,
 		Sites:          sites,
 		DefaultGateway: defaultgw,
+		Tags:           []string{},
 	}
 
 	js, _ := json.Marshal(subnetUpdate)

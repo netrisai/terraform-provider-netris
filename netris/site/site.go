@@ -71,6 +71,36 @@ func Resource() *schema.Resource {
 				Type:         schema.TypeString,
 				Description:  "Possible values: `permit` or `deny`. Deny - Layer-3 packet forwarding is denied by default. ACLs are required to permit necessary traffic flows. Deny ACLs will be applied before Permit ACLs. Permit - Layer-3 packet forwarding is allowed by default. ACLs are required to deny unwanted traffic flows. Permit ACLs will be applied before Deny ACLs.",
 			},
+			"switchfabric": {
+				ValidateFunc: validateSwitchFabric,
+				Default:      "netris",
+				Optional:     true,
+				Type:         schema.TypeString,
+				Description:  "Possible values: `equinix_metal`, `dot1q_trunk`, `netris`.",
+			},
+			"vlanrange": {
+				Computed:     true,
+				ValidateFunc: validateVlanRange,
+				Optional:     true,
+				Type:         schema.TypeString,
+				Description:  "VLAN range.",
+			},
+			"equinixprojectid": {
+				Optional:    true,
+				Type:        schema.TypeString,
+				Description: "Equinix project ID.",
+			},
+			"equinixprojectapikey": {
+				Optional:    true,
+				Type:        schema.TypeString,
+				Description: "Equinix project API Key.",
+			},
+			"equinixlocation": {
+				ValidateFunc: validateEquinixLocation,
+				Optional:     true,
+				Type:         schema.TypeString,
+				Description:  "Equinix project location. Possible values:`se`, `dc`, `at`, `hk`, `am`, `ny`, `ty`, `sl`, `md`, `sp`, `fr`, `sy`, `ld`, `sg`, `pa`, `tr`, `sv`, `la`, `ch`, `da`",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -94,6 +124,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	publicasn := d.Get("publicasn").(int)
 	rohasn := d.Get("rohasn").(int)
 	vmasn := d.Get("vmasn").(int)
+	fabric := d.Get("switchfabric").(string)
+	vlanRange := d.Get("vlanrange").(string)
 
 	siteW := &site.SiteAdd{
 		Name:                name,
@@ -103,6 +135,25 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		RoutingProfileID:    routingProfiles[d.Get("rohroutingprofile").(string)],
 		VPN:                 d.Get("sitemesh").(string),
 		ACLPolicy:           d.Get("acldefaultpolicy").(string),
+		SwitchFabric:        fabric,
+	}
+
+	if fabric == "dot1q_trunk" {
+		if vlanRange == "" {
+			vlanRange = "2-4094"
+		}
+		siteW.VLANRange = vlanRange
+	} else if fabric == "equinix_metal" {
+		if vlanRange == "" {
+			vlanRange = "2-3999"
+		}
+		if err := valEquinixVlanRange(vlanRange); err != nil {
+			return err
+		}
+		siteW.VLANRange = vlanRange
+		siteW.EquinixProjectID = d.Get("equinixprojectid").(string)
+		siteW.EquinixProjectAPIKey = d.Get("equinixprojectapikey").(string)
+		siteW.EquinixLocation = d.Get("equinixlocation").(string)
 	}
 
 	js, _ := json.Marshal(siteW)
@@ -192,6 +243,26 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("switchfabric", site.SwitchFabric)
+	if err != nil {
+		return err
+	}
+	err = d.Set("vlanrange", site.VLANRange)
+	if err != nil {
+		return err
+	}
+	err = d.Set("equinixprojectid", site.EquinixProjectID)
+	if err != nil {
+		return err
+	}
+	err = d.Set("equinixprojectapikey", site.EquinixProjectAPIKey)
+	if err != nil {
+		return err
+	}
+	err = d.Set("equinixlocation", site.EquinixLocation)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -203,6 +274,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	publicasn := d.Get("publicasn").(int)
 	rohasn := d.Get("rohasn").(int)
 	vmasn := d.Get("vmasn").(int)
+	fabric := d.Get("switchfabric").(string)
+	vlanRange := d.Get("vlanrange").(string)
+
 	id, _ := strconv.Atoi(d.Id())
 	siteW := &site.SiteAdd{
 		ID:                  id,
@@ -213,6 +287,25 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		RoutingProfileID:    routingProfiles[d.Get("rohroutingprofile").(string)],
 		VPN:                 d.Get("sitemesh").(string),
 		ACLPolicy:           d.Get("acldefaultpolicy").(string),
+		SwitchFabric:        fabric,
+	}
+
+	if fabric == "dot1q_trunk" {
+		if vlanRange == "" {
+			vlanRange = "2-4094"
+		}
+		siteW.VLANRange = vlanRange
+	} else if fabric == "equinix_metal" {
+		if vlanRange == "" {
+			vlanRange = "2-3999"
+		}
+		if err := valEquinixVlanRange(vlanRange); err != nil {
+			return err
+		}
+		siteW.VLANRange = vlanRange
+		siteW.EquinixProjectID = d.Get("equinixprojectid").(string)
+		siteW.EquinixProjectAPIKey = d.Get("equinixprojectapikey").(string)
+		siteW.EquinixLocation = d.Get("equinixlocation").(string)
 	}
 
 	js, _ := json.Marshal(siteW)

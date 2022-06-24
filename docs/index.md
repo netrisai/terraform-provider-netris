@@ -198,7 +198,7 @@ resource "netris_vnet" "my-vnet" {
     gateways {
       prefix = "203.0.113.1/25"
     }
-    ports {
+    interface {
       name = "swp5@my-switch"
       vlanid = 1050
     }
@@ -209,7 +209,7 @@ resource "netris_vnet" "my-vnet" {
   ]
 }
 
-data "netris_port" "swp10_my_switch"{
+data "netris_network_interface" "swp10_my_switch"{
   name = "swp10@my-switch"
   depends_on = [netris_switch.my-switch]
 }
@@ -219,7 +219,7 @@ resource "netris_bgp" "my-bgp" {
   siteid = netris_site.santa-clara.id
   hardware = "my-softgate"
   neighboras = 23456
-  portid = data.netris_port.swp10_my_switch.id
+  portid = data.netris_network_interface.swp10_my_switch.id
   vlanid = 3000
   localip = "172.16.0.2/30"
   remoteip = "172.16.0.1/30"

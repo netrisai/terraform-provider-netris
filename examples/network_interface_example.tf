@@ -1,7 +1,7 @@
-resource "netris_port" "swp9_sw01" {
+resource "netris_network_interface" "swp9_sw01" {
   name        = "swp9"
   description = "my port swp9"
-  switchid    = netris_switch.my-switch01.id
+  nodeid      = netris_switch.my-switch01.id
   tenantid    = data.netris_tenant.admin.id
   # breakout = "4x10"
   mtu     = 9050
@@ -13,10 +13,10 @@ resource "netris_port" "swp9_sw01" {
   # }
 }
 
-resource "netris_port" "swp9_sw02" {
+resource "netris_network_interface" "swp9_sw02" {
   name        = "swp9"
   description = "my port swp9"
-  switchid    = netris_switch.my-switch02.id
+  nodeid      = netris_switch.my-switch02.id
   tenantid    = data.netris_tenant.admin.id
   # breakout = "4x10"
   mtu     = 9050

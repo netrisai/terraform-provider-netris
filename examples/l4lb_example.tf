@@ -6,7 +6,7 @@ resource "netris_l4lb" "my_l4lb" {
   protocol = "tcp"
   frontend = "203.0.113.150"
   port     = 8443
-  backend  = ["172.28.51.100:443", "172.28.51.101:443"]
+  backend  = ["198.18.51.100:443", "198.18.51.101:443"]
   check = {
     type        = "http"
     timeout     = 3000

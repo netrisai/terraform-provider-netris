@@ -5,16 +5,16 @@ resource "netris_vnet" "my-vnet" {
   sites {
     id = netris_site.santa-clara.id
     gateways {
-      prefix = "172.28.51.1/24"
+      prefix = "198.18.51.1/24"
     }
     gateways {
       prefix = "2001:db8:acad::fffe/64"
     }
-    ports {
+    interface {
       name   = "swp8@my-switch01"
       vlanid = 1050
     }
-    ports {
+    interface {
       name = "swp8@my-switch02"
       lacp = "on"
     }

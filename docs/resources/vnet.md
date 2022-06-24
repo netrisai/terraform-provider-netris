@@ -8,7 +8,7 @@ description: |-
 
 # netris_vnet
 
-V-Net is a virtual networking service that provide a Layer-2 (unrouted) or Layer-3 (routed) virtual network segments on switch ports anywhere on the switch fabric. V-NETs can be created and managed by a single tenant (single team) or they can be created and managed collaboratively by multiple tenants (different teams inside and/or outside the organization). Netris automatically configures a VXLAN with an EVPN control plane over an unnumbered BGP Layer-3 underlay network and organize the high availability for the default gateway behind the scenes.
+V-Net is a virtual networking service that provide a Layer-2 (unrouted) or Layer-3 (routed) virtual network segments on network interfaces anywhere on the switch fabric. V-NETs can be created and managed by a single tenant (single team) or they can be created and managed collaboratively by multiple tenants (different teams inside and/or outside the organization). Netris automatically configures a VXLAN with an EVPN control plane over an unnumbered BGP Layer-3 underlay network and organize the high availability for the default gateway behind the scenes.
 
 ~> **Note:** Vnet require subnets and hardware to exist prior to resource creation. Use `depends_on` to set an explicit dependency on the subnets and hardware.
 
@@ -27,6 +27,7 @@ data "netris_tenant" "admin" {
 resource "netris_vnet" "my-vnet" {
   name = "my-vnet"
   tenantid = data.netris_tenant.admin.id
+  # vlanid = "auto"
   state = "active"
   sites{
     id = data.netris_site.santa-clara.id
@@ -36,11 +37,11 @@ resource "netris_vnet" "my-vnet" {
     gateways {
       prefix = "2001:db8:acad::fffe/64"
     }
-    ports {
+    interface {
       name = "swp5@my-sw01"
       vlanid = 1050
     }
-    ports {
+    interface {
       name = "swp7@my-sw02"
       lacp = "on"
     }
@@ -66,18 +67,19 @@ resource "netris_vnet" "my-vnet" {
 ### Optional
 
 - **state** (String) V-Net state. Allowed values: `active` or `disabled`. Default value is `active`
+- **vlanid** (String) VLAN tag for all network interfaces of the vnet. Also can be `auto` for non-netris Switch Fabrics.
 
 <a id="nestedblock--sites"></a>
 ### Nested Schema for `sites`
 
 Required:
 
-- **id** (Number) The site ID. Ports from these sites will be allowed to participate in the V-Net. (Multi-site vnet would require backbone connectivity between sites).
+- **id** (Number) The site ID. Network interfaces from these sites will be allowed to participate in the V-Net. (Multi-site vnet would require backbone connectivity between sites).
 
 Optional:
 
 - **gateways** (Block List) Block of gateways (see [below for nested schema](#nestedblock--sites--gateways))
-- **ports** (Block List) Block of ports (see [below for nested schema](#nestedblock--sites--ports))
+- **interface** (Block List) Block for network interface (see [below for nested schema](#nestedblock--sites--interface))
 
 <a id="nestedblock--sites--gateways"></a>
 ### Nested Schema for `sites.gateways`
@@ -87,11 +89,11 @@ Required:
 - **prefix** (String) The address will be serving as anycast default gateway for selected subnet. Example: `203.0.113.1/25`
 
 
-<a id="nestedblock--sites--ports"></a>
-### Nested Schema for `sites.ports`
+<a id="nestedblock--sites--interface"></a>
+### Nested Schema for `sites.interface`
 
 Optional:
 
-- **name** (String) Switch port name. Example: `swp5@my-sw01`
-- **vlanid** (String) VLAN tag for current port. If vlanid is not set - means port untagged
-- **lacp** (String) LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`.
+- **name** (String) Network interface name. Example: `swp5@my-sw01`
+- **vlanid** (String) VLAN tag for the current interface. If `interface.vlanid` is not set the VLAN tag will be inherited from the main `vlanid`, if the main `vlanid` is also not set - means untagged. (Only for Netris Switch Fabric)
+- **lacp** (String) LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`. (Only for Netris Switch Fabric)
