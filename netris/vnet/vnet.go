@@ -457,7 +457,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	siteIDs := []vnet.VNetUpdateSite{}
 	members := []vnet.VNetUpdatePort{}
 	gatewayList := []vnet.VNetUpdateGateway{}
-	apiPorts := make(map[string]int)
+	apiPorts := make(map[string]vnet.VNetDetailedPort)
 	for _, p := range v.Ports {
 		if p.Lacp == "on" {
 			sub := re.SubexpNames()
@@ -465,11 +465,14 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			v := regParser(valueMatch, sub)
 			portNames := strings.Split(v["port"], ",")
 			for _, port := range portNames {
-				apiPorts[fmt.Sprintf("%s@%s", port, p.SwitchName)] = p.ID
+				apiPorts[fmt.Sprintf("%s@%s", port, p.SwitchName)] = p
 			}
+		} else {
+			apiPorts[fmt.Sprintf("%s@%s", p.Port, p.SwitchName)] = p
 		}
 	}
 
+	existingVlanForAuto := ""
 	for _, site := range sitesList {
 		if siteID, ok := site["id"]; ok {
 			siteIDs = append(siteIDs, vnet.VNetUpdateSite{ID: siteID.(int)})
@@ -495,9 +498,14 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 						vID = v
 					}
 					if portID, ok := apiPorts[port["name"].(string)]; ok {
+						vl := vID
+						if vlanid == "auto" {
+							vl = portID.Vlan
+							existingVlanForAuto = portID.Vlan
+						}
 						members = append(members, vnet.VNetUpdatePort{
-							ID:    portID,
-							Vlan:  vID,
+							ID:    portID.ID,
+							Vlan:  vl,
 							Lacp:  port["lacp"].(string),
 							State: "active",
 						})
@@ -515,13 +523,18 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 				for _, p := range ports {
 					port := p.(map[string]interface{})
 					vID := vlanid
-					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
+					if v := port["vlanid"].(string); v != "1" || vlanid == "" || vlanid == "auto" {
 						vID = v
 					}
 					if portID, ok := apiPorts[port["name"].(string)]; ok {
+						vl := vID
+						if vlanid == "auto" {
+							vl = portID.Vlan
+							existingVlanForAuto = portID.Vlan
+						}
 						members = append(members, vnet.VNetUpdatePort{
-							ID:    portID,
-							Vlan:  vID,
+							ID:    portID.ID,
+							Vlan:  vl,
 							Lacp:  port["lacp"].(string),
 							State: "active",
 						})
@@ -536,6 +549,16 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 				}
 			}
 		}
+	}
+
+	log.Println("[DEBUG] ExistingVlanForAuto", existingVlanForAuto)
+	if existingVlanForAuto != "" {
+		newMembers := []vnet.VNetUpdatePort{}
+		for _, m := range members {
+			m.Vlan = existingVlanForAuto
+			newMembers = append(newMembers, m)
+		}
+		members = newMembers
 	}
 
 	vnetUpdate := &vnet.VNetUpdate{
