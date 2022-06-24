@@ -204,7 +204,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 				for _, p := range ports {
 					port := p.(map[string]interface{})
 					vID := vlanid
-					if v := port["vlanid"].(string); v != "1" {
+					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
 					}
 					members = append(members, vnet.VNetAddPort{
@@ -219,7 +219,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 				for _, p := range ports {
 					port := p.(map[string]interface{})
 					vID := vlanid
-					if v := port["vlanid"].(string); v != "1" {
+					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
 					}
 					members = append(members, vnet.VNetAddPort{
@@ -491,7 +491,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 				for _, p := range ports {
 					port := p.(map[string]interface{})
 					vID := vlanid
-					if v := port["vlanid"].(string); v != "1" {
+					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
 					}
 					if portID, ok := apiPorts[port["name"].(string)]; ok {
@@ -515,7 +515,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 				for _, p := range ports {
 					port := p.(map[string]interface{})
 					vID := vlanid
-					if v := port["vlanid"].(string); v != "1" {
+					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
 					}
 					if portID, ok := apiPorts[port["name"].(string)]; ok {
