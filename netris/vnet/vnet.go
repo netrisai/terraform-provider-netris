@@ -35,7 +35,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-var re = regexp.MustCompile(`\w+\[slaves: (?P<port>(\w|,)+)\]`)
+var re = regexp.MustCompile(`(?P<basePort>[a-zA-Z0-9]+)\[slaves: (?P<port>(\w|,)+)\]`)
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
@@ -358,6 +358,22 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 					portNames := strings.Split(v["port"], ",")
 					for _, p := range portNames {
 						name := fmt.Sprintf("%s@%s", p, port.SwitchName)
+						if _, ok := tPorts[name]; ok {
+							if vl, ok := portVlanIDMap[name]; ok {
+								if vl == "1" {
+									port.Vlan = "1"
+								}
+							}
+							m := make(map[string]interface{})
+							m["name"] = name
+							m["vlanid"] = port.Vlan
+							m["lacp"] = port.Lacp
+							portList = append(portList, m)
+						}
+					}
+					basePort := v["basePort"]
+					if strings.HasPrefix(basePort, "agg") {
+						name := fmt.Sprintf("%s@%s", basePort, port.SwitchName)
 						if _, ok := tPorts[name]; ok {
 							if vl, ok := portVlanIDMap[name]; ok {
 								if vl == "1" {
