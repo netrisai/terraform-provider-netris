@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"github.com/netrisai/netriswebapi/http"
-	"github.com/netrisai/netriswebapi/v1/types/l4lb"
+	"github.com/netrisai/netriswebapi/v2/types/l4lb"
 
 	api "github.com/netrisai/netriswebapi/v2"
 
@@ -436,7 +436,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	id, _ := strconv.Atoi(d.Id())
 	l4lbUpdate := &l4lb.LoadBalancerUpdate{
-		ID:          id,
 		Name:        d.Get("name").(string),
 		TenantID:    d.Get("tenantid").(int),
 		SiteID:      d.Get("siteid").(int),
@@ -457,7 +456,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	js, _ := json.Marshal(l4lbUpdate)
 	log.Println("[DEBUG]", string(js))
 
-	reply, err := clientset.L4LB().Update(l4lbUpdate)
+	reply, err := clientset.L4LB().Update(id, l4lbUpdate)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
