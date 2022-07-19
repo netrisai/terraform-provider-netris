@@ -280,23 +280,14 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	id, _ := strconv.Atoi(d.Id())
 	var l4lb *l4lb.LoadBalancer
 
-	l4lbs, err := clientset.L4LB().Get()
-	if err != nil {
-		return nil
-	}
-	for _, lb := range l4lbs {
-		if lb.ID == id {
-			l4lb = lb
-			break
-		}
-	}
+	l4lb, _ = clientset.L4LB().GetByID(id)
 
 	if !(l4lb != nil && l4lb.ID > 0) {
 		return fmt.Errorf("Coudn't find l4lb with id '%d'", id)
 	}
 
 	d.SetId(strconv.Itoa(l4lb.ID))
-	err = d.Set("name", l4lb.Name)
+	err := d.Set("name", l4lb.Name)
 	if err != nil {
 		return err
 	}
@@ -490,14 +481,9 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	l4lbs, err := clientset.L4LB().Get()
-	if err != nil {
-		return false, err
-	}
-	for _, lb := range l4lbs {
-		if lb.ID == id {
-			return true, nil
-		}
+	var lb *l4lb.LoadBalancer
+	if lb, _ = clientset.L4LB().GetByID(id); lb != nil && lb.ID > 0 {
+		return true, nil
 	}
 
 	return false, nil
