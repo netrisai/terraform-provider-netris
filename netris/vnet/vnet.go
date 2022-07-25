@@ -447,6 +447,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		sites = append(sites, s)
 	}
 
+	if vnet.Vlan > 0 {
+		err = d.Set("vlanid", strconv.Itoa(vnet.Vlan))
+		if err != nil {
+			return err
+		}
+	}
+
 	err = d.Set("sites", sites)
 	if err != nil {
 		return err
@@ -585,6 +592,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		State:        d.Get("state").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
+		Vlan:         vlanid,
 	}
 
 	js, _ := json.Marshal(vnetUpdate)
