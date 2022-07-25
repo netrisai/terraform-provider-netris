@@ -242,6 +242,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		State:        d.Get("state").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
+		Vlan:         vlanid,
 	}
 
 	js, _ := json.Marshal(vnetAdd)
