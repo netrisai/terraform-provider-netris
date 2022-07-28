@@ -26,8 +26,8 @@ import (
 
 func validateState(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
-	if !(v == "active" || v == "disabled") {
-		errs = append(errs, fmt.Errorf("'%s' must be active or disabled, got: %s", key, v))
+	if !(v == "active" || v == "disable") {
+		errs = append(errs, fmt.Errorf("'%s' must be active or disable, got: %s", key, v))
 	}
 	return warns, errs
 }
