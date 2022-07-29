@@ -447,7 +447,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		sites = append(sites, s)
 	}
 
-	if vnet.Vlan > 0 {
+	if vnet.Vlan > 0 && d.Get("vlanid").(string) != "auto" {
 		err = d.Set("vlanid", strconv.Itoa(vnet.Vlan))
 		if err != nil {
 			return err
