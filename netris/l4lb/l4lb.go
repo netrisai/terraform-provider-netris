@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"github.com/netrisai/netriswebapi/http"
-	"github.com/netrisai/netriswebapi/v1/types/l4lb"
+	"github.com/netrisai/netriswebapi/v2/types/l4lb"
 
 	api "github.com/netrisai/netriswebapi/v2"
 
@@ -280,23 +280,14 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	id, _ := strconv.Atoi(d.Id())
 	var l4lb *l4lb.LoadBalancer
 
-	l4lbs, err := clientset.L4LB().Get()
-	if err != nil {
-		return nil
-	}
-	for _, lb := range l4lbs {
-		if lb.ID == id {
-			l4lb = lb
-			break
-		}
-	}
+	l4lb, _ = clientset.L4LB().GetByID(id)
 
 	if !(l4lb != nil && l4lb.ID > 0) {
 		return fmt.Errorf("Coudn't find l4lb with id '%d'", id)
 	}
 
 	d.SetId(strconv.Itoa(l4lb.ID))
-	err = d.Set("name", l4lb.Name)
+	err := d.Set("name", l4lb.Name)
 	if err != nil {
 		return err
 	}
@@ -436,7 +427,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	id, _ := strconv.Atoi(d.Id())
 	l4lbUpdate := &l4lb.LoadBalancerUpdate{
-		ID:          id,
 		Name:        d.Get("name").(string),
 		TenantID:    d.Get("tenantid").(int),
 		SiteID:      d.Get("siteid").(int),
@@ -457,7 +447,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	js, _ := json.Marshal(l4lbUpdate)
 	log.Println("[DEBUG]", string(js))
 
-	reply, err := clientset.L4LB().Update(l4lbUpdate)
+	reply, err := clientset.L4LB().Update(id, l4lbUpdate)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -491,14 +481,9 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	l4lbs, err := clientset.L4LB().Get()
-	if err != nil {
-		return false, err
-	}
-	for _, lb := range l4lbs {
-		if lb.ID == id {
-			return true, nil
-		}
+	var lb *l4lb.LoadBalancer
+	if lb, _ = clientset.L4LB().GetByID(id); lb != nil && lb.ID > 0 {
+		return true, nil
 	}
 
 	return false, nil

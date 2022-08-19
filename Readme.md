@@ -20,6 +20,14 @@ Using the provider
 
 See the [Netris Provider documentation](https://registry.terraform.io/providers/netrisai/netris/latest/docs) to get started using the Netris provider.
 
+Compatibility with Netris-Controller
+------------------------------------
+  | Provider version | Controller version |
+  | -----------------| -------------------|
+  | `v1.X`           | `v3.0.X`           |
+  | `v2.X`           | `v3.1.X`           |
+
+
 Manual Build and Install
 ------------
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.17+ is *required*).

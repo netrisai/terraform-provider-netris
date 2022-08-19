@@ -7,7 +7,7 @@ resource "netris_roh" "my_roh" {
   unicastips     = ["100.71.56.50/24"]
   anycastips     = []
   ports          = ["swp3@my-switch01", "swp3@my-switch02"]
-  depends_on     = [netris_subnet.my-subnet-roh, netris_switch.my-switch01, netris_switch.my-switch01]
+  depends_on     = [netris_subnet.my-subnet-roh, netris_switch.my-switch01, netris_switch.my-switch02]
 }
 
 resource "netris_roh" "my_roh_anycast" {
@@ -19,5 +19,5 @@ resource "netris_roh" "my_roh_anycast" {
   unicastips     = ["100.71.56.61/24"]
   anycastips     = ["100.71.56.60/24"]
   ports          = ["swp2@my-switch01", "swp2@my-switch02"]
-  depends_on     = [netris_subnet.my-subnet-roh, netris_switch.my-switch01, netris_switch.my-switch01]
+  depends_on     = [netris_subnet.my-subnet-roh, netris_switch.my-switch01, netris_switch.my-switch02]
 }

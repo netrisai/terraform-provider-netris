@@ -132,7 +132,7 @@ func Resource() *schema.Resource {
 						},
 						"gateways": {
 							Optional:    true,
-							Type:        schema.TypeList,
+							Type:        schema.TypeSet,
 							Description: "Block of gateways",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -188,7 +188,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			siteIDs = append(siteIDs, vnet.VNetAddSite{ID: siteID.(int)})
 		}
 		if gws, ok := site["gateways"]; ok {
-			gateways := gws.([]interface{})
+			gateways := gws.(*schema.Set).List()
 
 			for _, gw := range gateways {
 				gateway := gw.(map[string]interface{})
@@ -242,6 +242,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		State:        d.Get("state").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
+		Vlan:         vlanid,
 	}
 
 	js, _ := json.Marshal(vnetAdd)
@@ -446,6 +447,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		sites = append(sites, s)
 	}
 
+	if vnet.Vlan > 0 && d.Get("vlanid").(string) != "auto" {
+		err = d.Set("vlanid", strconv.Itoa(vnet.Vlan))
+		if err != nil {
+			return err
+		}
+	}
+
 	err = d.Set("sites", sites)
 	if err != nil {
 		return err
@@ -494,7 +502,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			siteIDs = append(siteIDs, vnet.VNetUpdateSite{ID: siteID.(int)})
 		}
 		if gws, ok := site["gateways"]; ok {
-			gateways := gws.([]interface{})
+			gateways := gws.(*schema.Set).List()
 
 			for _, gw := range gateways {
 				gateway := gw.(map[string]interface{})
@@ -584,6 +592,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		State:        d.Get("state").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
+		Vlan:         vlanid,
 	}
 
 	js, _ := json.Marshal(vnetUpdate)
