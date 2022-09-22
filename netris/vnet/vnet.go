@@ -146,6 +146,29 @@ func Resource() *schema.Resource {
 										Type:     schema.TypeString,
 										Optional: true,
 									},
+									"dhcp": {
+										ValidateFunc: validateDHCP,
+										Type:         schema.TypeString,
+										Default:      "disabled",
+										Optional:     true,
+									},
+									"dhcpoptionsetid": {
+										Type:     schema.TypeInt,
+										Optional: true,
+										Computed: true,
+									},
+									"dhcpstartip": {
+										ValidateFunc: validateGateway,
+										Type:         schema.TypeString,
+										Optional:     true,
+										Computed:     true,
+									},
+									"dhcpendip": {
+										ValidateFunc: validateGateway,
+										Type:         schema.TypeString,
+										Optional:     true,
+										Computed:     true,
+									},
 								},
 							},
 						},
@@ -192,10 +215,22 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 			for _, gw := range gateways {
 				gateway := gw.(map[string]interface{})
-				gatewayList = append(gatewayList, vnet.VNetAddGateway{
+				gwAdd := vnet.VNetAddGateway{
 					Prefix: gateway["prefix"].(string),
 					Vlan:   gateway["vlanid"].(string),
-				})
+				}
+				if dhcp := gateway["dhcp"].(string); dhcp == "enabled" {
+					gwAdd.DHCPEnabled = true
+					gwAdd.DHCPLeaseCount = 2
+					if gateway["dhcpstartip"].(string) != "" {
+						gwAdd.DHCP = &vnet.VNetGatewayDHCP{
+							OptionSet: vnet.IDName{ID: gateway["dhcpoptionsetid"].(int)},
+							Start:     gateway["dhcpstartip"].(string),
+							End:       gateway["dhcpendip"].(string),
+						}
+					}
+				}
+				gatewayList = append(gatewayList, gwAdd)
 			}
 		}
 		if p, ok := site["interface"]; ok {
@@ -325,7 +360,16 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	tPorts := make(map[string]struct{})
 	interfaces := false
+	gatewayMap := make(map[string]map[string]interface{})
+
 	for _, site := range sitesList {
+		if gws, ok := site["gateways"]; ok {
+			gateways := gws.(*schema.Set).List()
+			for _, g := range gateways {
+				gw := g.(map[string]interface{})
+				gatewayMap[gw["prefix"].(string)] = gw
+			}
+		}
 		if p, ok := site["interface"]; ok {
 			ports := p.(*schema.Set).List()
 			if len(ports) > 0 {
@@ -430,9 +474,18 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				}
 			}
 			if siteID == site.ID {
-				m := make(map[string]interface{})
+				m := gatewayMap[gateway.Prefix]
 				m["prefix"] = gateway.Prefix
 				m["vlanid"] = gateway.Vlan
+				m["dhcp"] = "disabled"
+				if gateway.DHCPEnabled {
+					m["dhcp"] = "enabled"
+					if m["dhcpstartip"].(string) != "" {
+						m["dhcpoptionsetid"] = gateway.DHCP.OptionSet.ID
+						m["dhcpstartip"] = gateway.DHCP.Start
+						m["dhcpendip"] = gateway.DHCP.End
+					}
+				}
 				gatewayList = append(gatewayList, m)
 			}
 		}
@@ -506,10 +559,22 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 			for _, gw := range gateways {
 				gateway := gw.(map[string]interface{})
-				gatewayList = append(gatewayList, vnet.VNetUpdateGateway{
+				gwUpdate := vnet.VNetUpdateGateway{
 					Prefix: gateway["prefix"].(string),
 					Vlan:   gateway["vlanid"].(string),
-				})
+				}
+				if dhcp := gateway["dhcp"].(string); dhcp == "enabled" {
+					gwUpdate.DHCPEnabled = true
+					gwUpdate.DHCPLeaseCount = 2
+					if gateway["dhcpstartip"].(string) != "" {
+						gwUpdate.DHCP = &vnet.VNetGatewayDHCP{
+							OptionSet: vnet.IDName{ID: gateway["dhcpoptionsetid"].(int)},
+							Start:     gateway["dhcpstartip"].(string),
+							End:       gateway["dhcpendip"].(string),
+						}
+					}
+				}
+				gatewayList = append(gatewayList, gwUpdate)
 			}
 		}
 		if p, ok := site["interface"]; ok {

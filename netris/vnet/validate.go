@@ -58,3 +58,11 @@ func validateGateway(val interface{}, key string) (warns []string, errs []error)
 	}
 	return warns, errs
 }
+
+func validateDHCP(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if !(v == "enabled" || v == "disabled") {
+		errs = append(errs, fmt.Errorf("'%s' must be enabled or disabled, got: %s", key, v))
+	}
+	return warns, errs
+}

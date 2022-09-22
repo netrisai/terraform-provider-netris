@@ -24,8 +24,8 @@ Compatibility with Netris-Controller
 ------------------------------------
   | Provider version | Controller version |
   | -----------------| -------------------|
-  | `v1.X`           | `v3.0.X`           |
-  | `v2.X`           | `v3.1.X`           |
+  | `v1.X`           | `v3.0`             |
+  | `v2.X`           | `v3.1+`            |
 
 
 Manual Build and Install

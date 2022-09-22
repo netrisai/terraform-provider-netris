@@ -348,6 +348,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Port:               bgp.IDName{ID: portID},
 		State:              state,
 		Weight:             d.Get("weight").(int),
+		Tags:               []string{},
 	}
 
 	js, _ := json.Marshal(bgpAdd)
@@ -679,6 +680,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Port:               bgp.IDName{ID: portID},
 		State:              state,
 		Weight:             d.Get("weight").(int),
+		Tags:               []string{},
 	}
 
 	js, _ := json.Marshal(bgpUpdate)

@@ -33,6 +33,7 @@ resource "netris_vnet" "my-vnet" {
     id = data.netris_site.santa-clara.id
     gateways {
       prefix = "203.0.113.1/25"
+      dhcp   = "enabled"
     }
     gateways {
       prefix = "2001:db8:acad::fffe/64"
@@ -87,6 +88,14 @@ Optional:
 Required:
 
 - **prefix** (String) The address will be serving as anycast default gateway for selected subnet. Example: `203.0.113.1/25`
+
+
+Optional:
+
+- **dhcp** (String) Enable DHCP server. Allowed values: `enabled` or `disabled`. Default value is `disabled`. (Only for IPv4 Gateway)
+- **dhcpoptionsetid** (Number) The ID of DHCP Options Set. If not set, the Default DHCP Options Set will be chosen. (Only for IPv4 Gateway)
+- **dhcpstartip** (String) DHCP range start IP. If not set the controller will assign automatically. (Only for IPv4 Gateway)
+- **dhcpendip** (String) DHCP range end IP. If not set the controller will assign automatically. (Only for IPv4 Gateway)
 
 
 <a id="nestedblock--sites--interface"></a>
