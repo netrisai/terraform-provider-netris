@@ -5,11 +5,8 @@ resource "netris_vnet" "my-vnet" {
   sites {
     id = netris_site.santa-clara.id
     gateways {
-      prefix          = "198.18.51.1/24"
-      dhcp            = "enabled"
-      dhcpoptionsetid = 1
-      dhcpstartip     = "198.18.51.2"
-      dhcpendip       = "198.18.51.254"
+      prefix = "198.18.51.1/24"
+      # dhcp   = "enabled"
     }
     gateways {
       prefix = "2001:db8:acad::fffe/64"
