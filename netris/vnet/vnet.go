@@ -222,10 +222,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 				if dhcp := gateway["dhcp"].(string); dhcp == "enabled" {
 					gwAdd.DHCPEnabled = true
 					gwAdd.DHCPLeaseCount = 2
-					gwAdd.DHCP = vnet.VNetGatewayDHCP{
-						OptionSet: vnet.IDName{ID: gateway["dhcpoptionsetid"].(int)},
-						Start:     gateway["dhcpstartip"].(string),
-						End:       gateway["dhcpendip"].(string),
+					if gateway["dhcpstartip"].(string) != "" {
+						gwAdd.DHCP = &vnet.VNetGatewayDHCP{
+							OptionSet: vnet.IDName{ID: gateway["dhcpoptionsetid"].(int)},
+							Start:     gateway["dhcpstartip"].(string),
+							End:       gateway["dhcpendip"].(string),
+						}
 					}
 				}
 				gatewayList = append(gatewayList, gwAdd)
@@ -478,9 +480,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				m["dhcp"] = "disabled"
 				if gateway.DHCPEnabled {
 					m["dhcp"] = "enabled"
-					m["dhcpoptionsetid"] = gateway.DHCP.OptionSet.ID
-					m["dhcpstartip"] = gateway.DHCP.Start
-					m["dhcpendip"] = gateway.DHCP.End
+					if m["dhcpstartip"].(string) != "" {
+						m["dhcpoptionsetid"] = gateway.DHCP.OptionSet.ID
+						m["dhcpstartip"] = gateway.DHCP.Start
+						m["dhcpendip"] = gateway.DHCP.End
+					}
 				}
 				gatewayList = append(gatewayList, m)
 			}
@@ -562,10 +566,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 				if dhcp := gateway["dhcp"].(string); dhcp == "enabled" {
 					gwUpdate.DHCPEnabled = true
 					gwUpdate.DHCPLeaseCount = 2
-					gwUpdate.DHCP = vnet.VNetGatewayDHCP{
-						OptionSet: vnet.IDName{ID: gateway["dhcpoptionsetid"].(int)},
-						Start:     gateway["dhcpstartip"].(string),
-						End:       gateway["dhcpendip"].(string),
+					if gateway["dhcpstartip"].(string) != "" {
+						gwUpdate.DHCP = &vnet.VNetGatewayDHCP{
+							OptionSet: vnet.IDName{ID: gateway["dhcpoptionsetid"].(int)},
+							Start:     gateway["dhcpstartip"].(string),
+							End:       gateway["dhcpendip"].(string),
+						}
 					}
 				}
 				gatewayList = append(gatewayList, gwUpdate)
