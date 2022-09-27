@@ -27,6 +27,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/bgp"
 	"github.com/netrisai/terraform-provider-netris/netris/bgpobject"
 	"github.com/netrisai/terraform-provider-netris/netris/controller"
+	"github.com/netrisai/terraform-provider-netris/netris/dhcpoptionset"
 	"github.com/netrisai/terraform-provider-netris/netris/inventoryprofile"
 	"github.com/netrisai/terraform-provider-netris/netris/l4lb"
 	"github.com/netrisai/terraform-provider-netris/netris/link"
@@ -93,6 +94,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_network_interface": networkinterface.Resource(),
 			"netris_route":             route.Resource(),
 			"netris_acltwozero":        acl2.Resource(),
+			"netris_dhcp_option_set":   dhcpoptionset.Resource(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"netris_site":              site.DataResource(),
