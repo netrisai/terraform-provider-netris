@@ -384,7 +384,16 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-	// clientset := m.(*api.Clientset)
+	clientset := m.(*api.Clientset)
+
+	items, _ := clientset.DHCP().Get()
+	name := d.Id()
+	for _, item := range items {
+		if item.Name == name {
+			d.SetId(strconv.Itoa(item.ID))
+			return []*schema.ResourceData{d}, nil
+		}
+	}
 
 	return []*schema.ResourceData{d}, nil
 }
