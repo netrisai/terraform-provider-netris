@@ -131,7 +131,7 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if VNet == nil {
-		return fmt.Errorf("Coudn;t find vnet %s", name)
+		return fmt.Errorf("coudn't find vnet %s", name)
 	}
 
 	vnet, err := clientset.VNet().GetByID(VNet.ID)
