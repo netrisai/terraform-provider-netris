@@ -10,7 +10,7 @@ resource "netris_dhcp_option_set" "dhcp_option_set" {
     value = "ipxe.efi"
   }
   customoption {
-    code  = "239"
+    code  = 239
     type  = "string"
     value = "http://192.0.2.55/script.sh"
   }
