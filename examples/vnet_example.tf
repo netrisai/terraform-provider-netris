@@ -2,6 +2,7 @@ resource "netris_vnet" "my-vnet" {
   name     = "my-vnet"
   tenantid = data.netris_tenant.admin.id
   state    = "active"
+  # tags  = ["foo", "bar"]
   sites {
     id = netris_site.santa-clara.id
     gateways {

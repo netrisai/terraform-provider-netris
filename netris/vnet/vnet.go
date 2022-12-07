@@ -175,6 +175,14 @@ func Resource() *schema.Resource {
 					},
 				},
 			},
+			"tags": {
+				Computed: true,
+				Optional: true,
+				Type:     schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -205,6 +213,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	siteIDs := []vnet.VNetAddSite{}
 	members := []vnet.VNetAddPort{}
 	gatewayList := []vnet.VNetAddGateway{}
+
+	tagsList := d.Get("tags").(*schema.Set).List()
+	tags := []string{}
+	for _, tag := range tagsList {
+		tags = append(tags, tag.(string))
+	}
 
 	for _, site := range sitesList {
 		if siteID, ok := site["id"]; ok {
@@ -278,6 +292,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Gateways:     gatewayList,
 		Ports:        members,
 		Vlan:         vlanid,
+		Tags:         tags,
 	}
 
 	js, _ := json.Marshal(vnetAdd)
@@ -511,6 +526,12 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+
+	err = d.Set("tags", vnet.Tags)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -529,6 +550,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	v, err := clientset.VNet().GetByID(id)
 	if err != nil {
 		return nil
+	}
+
+	tagsList := d.Get("tags").(*schema.Set).List()
+	tags := []string{}
+	for _, tag := range tagsList {
+		tags = append(tags, tag.(string))
 	}
 
 	siteIDs := []vnet.VNetUpdateSite{}
@@ -658,6 +685,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Gateways:     gatewayList,
 		Ports:        members,
 		Vlan:         vlanid,
+		Tags:         tags,
 	}
 
 	js, _ := json.Marshal(vnetUpdate)
