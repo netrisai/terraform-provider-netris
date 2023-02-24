@@ -6,9 +6,18 @@ resource "netris_site" "santa-clara" {
   rohroutingprofile = "default"
   sitemesh          = "hub"
   acldefaultpolicy  = "permit"
-  # switchfabric         = "equinix_metal"
-  # # vlanrange            = "2-3999"
-  # equinixprojectid     = "xxxx"
-  # equinixprojectapikey = "yyyy"
-  # equinixlocation      = "sv"
+  # switchfabric      = "equinix_metal"
+  # # vlanrange         = "2-3999"
+  # switchfabricproviders {
+  #   equinixmetal {
+  #     projectid     = "yyyy"
+  #     projectapikey = "xxxx"
+  #     location      = "sv"
+  #   }
+  #   phoenixnapbmc {
+  #     clientid     = "yyyy"
+  #     clientsecret = "xxxx"
+  #     location     = "phx"
+  #   }
+  # }
 }
