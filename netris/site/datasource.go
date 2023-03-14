@@ -20,8 +20,8 @@ import (
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/netrisai/netriswebapi/v1/types/site"
 	api "github.com/netrisai/netriswebapi/v2"
+	"github.com/netrisai/netriswebapi/v2/types/site"
 )
 
 func DataResource() *schema.Resource {

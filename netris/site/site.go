@@ -23,7 +23,7 @@ import (
 	"strconv"
 
 	"github.com/netrisai/netriswebapi/http"
-	"github.com/netrisai/netriswebapi/v1/types/site"
+	"github.com/netrisai/netriswebapi/v2/types/site"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	api "github.com/netrisai/netriswebapi/v2"
@@ -76,7 +76,7 @@ func Resource() *schema.Resource {
 				Default:      "netris",
 				Optional:     true,
 				Type:         schema.TypeString,
-				Description:  "Possible values: `equinix_metal`, `dot1q_trunk`, `netris`.",
+				Description:  "Possible values: `equinix_metal`, `phoenixnap_bmc`, `dot1q_trunk`, `netris`.",
 			},
 			"vlanrange": {
 				Computed:     true,
@@ -85,21 +85,56 @@ func Resource() *schema.Resource {
 				Type:         schema.TypeString,
 				Description:  "VLAN range.",
 			},
-			"equinixprojectid": {
+			"switchfabricproviders": {
 				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "Equinix project ID.",
-			},
-			"equinixprojectapikey": {
-				Optional:    true,
-				Type:        schema.TypeString,
-				Description: "Equinix project API Key.",
-			},
-			"equinixlocation": {
-				ValidateFunc: validateEquinixLocation,
-				Optional:     true,
-				Type:         schema.TypeString,
-				Description:  "Equinix project location. Possible values:`se`, `dc`, `at`, `hk`, `am`, `ny`, `ty`, `sl`, `md`, `sp`, `fr`, `sy`, `ld`, `sg`, `pa`, `tr`, `sv`, `la`, `ch`, `da`",
+				Type:        schema.TypeSet,
+				Description: "",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"equinixmetal": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"projectid": {
+										Required: true,
+										Type:     schema.TypeString,
+									},
+									"projectapikey": {
+										Required: true,
+										Type:     schema.TypeString,
+									},
+									"location": {
+										ValidateFunc: validateEquinixLocation,
+										Required:     true,
+										Type:         schema.TypeString,
+									},
+								},
+							},
+						},
+						"phoenixnapbmc": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"clientid": {
+										Required: true,
+										Type:     schema.TypeString,
+									},
+									"clientsecret": {
+										Required: true,
+										Type:     schema.TypeString,
+									},
+									"location": {
+										ValidateFunc: validatephoenixLocation,
+										Required:     true,
+										Type:         schema.TypeString,
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 		Create: resourceCreate,
@@ -127,22 +162,31 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	fabric := d.Get("switchfabric").(string)
 	vlanRange := d.Get("vlanrange").(string)
 
-	siteW := &site.SiteAdd{
-		Name:                name,
-		PublicASN:           publicasn,
-		PhysicalInstanceASN: rohasn,
-		VirtualInstanceASN:  vmasn,
-		RoutingProfileID:    routingProfiles[d.Get("rohroutingprofile").(string)],
-		VPN:                 d.Get("sitemesh").(string),
-		ACLPolicy:           d.Get("acldefaultpolicy").(string),
-		SwitchFabric:        fabric,
+	siteW := &site.Site{
+		Name: name,
+
+		PublicAsn:    publicasn,
+		RohAsn:       rohasn,
+		VMAsn:        vmasn,
+		RohProfile:   site.RohProfile{ID: routingProfiles[d.Get("rohroutingprofile").(string)]},
+		SiteMesh:     site.IDName{Value: d.Get("sitemesh").(string)},
+		AclPolicy:    d.Get("acldefaultpolicy").(string),
+		SwitchFabric: fabric,
+	}
+
+	providersList := d.Get("switchfabricproviders").(*schema.Set).List()
+	provider := map[string]interface{}{}
+	if len(providersList) > 0 {
+		if len(providersList) > 1 {
+			return fmt.Errorf("please specify only one switchfabricproviders")
+		}
+		provider = providersList[0].(map[string]interface{})
 	}
 
 	if fabric == "dot1q_trunk" {
 		if vlanRange == "" {
 			vlanRange = "2-4094"
 		}
-		siteW.VLANRange = vlanRange
 	} else if fabric == "equinix_metal" {
 		if vlanRange == "" {
 			vlanRange = "2-3999"
@@ -150,11 +194,57 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		if err := valEquinixVlanRange(vlanRange); err != nil {
 			return err
 		}
-		siteW.VLANRange = vlanRange
-		siteW.EquinixProjectID = d.Get("equinixprojectid").(string)
-		siteW.EquinixProjectAPIKey = d.Get("equinixprojectapikey").(string)
-		siteW.EquinixLocation = d.Get("equinixlocation").(string)
+
+		detailsmissing := true
+
+		if _, ok := provider["equinixmetal"]; ok {
+			l := provider["equinixmetal"].(*schema.Set).List()
+			if len(l) > 0 {
+				detailsmissing = false
+				equinixmetal := l[0].(map[string]interface{})
+				siteW.SwitchFabricProviders = site.SwitchFabricProviders{
+					EquinixMetal: site.EquinixMetal{
+						ProjectID:     equinixmetal["projectid"].(string),
+						ProjectAPIKey: equinixmetal["projectapikey"].(string),
+						Location:      equinixmetal["location"].(string),
+					},
+				}
+			}
+		}
+		if detailsmissing {
+			return fmt.Errorf("please provide equinixmetal details")
+		}
+	} else if fabric == "phoenixnap_bmc" {
+		if vlanRange == "" {
+			vlanRange = "2-4094"
+		}
+
+		if err := valPhoenixVlanRange(vlanRange); err != nil {
+			return err
+		}
+
+		detailsmissing := true
+
+		if _, ok := provider["phoenixnapbmc"]; ok {
+			l := provider["phoenixnapbmc"].(*schema.Set).List()
+			if len(l) > 0 {
+				detailsmissing = false
+				equinixmetal := l[0].(map[string]interface{})
+				siteW.SwitchFabricProviders = site.SwitchFabricProviders{
+					PhoenixNapBmc: site.PhoenixNapBmc{
+						ClientID:     equinixmetal["clientid"].(string),
+						ClientSecret: equinixmetal["clientsecret"].(string),
+						Location:     equinixmetal["location"].(string),
+					},
+				}
+			}
+		}
+		if detailsmissing {
+			return fmt.Errorf("please provide phoenixnapbmc details")
+		}
 	}
+
+	siteW.VlanRange = vlanRange
 
 	js, _ := json.Marshal(siteW)
 	log.Println("[DEBUG]", string(js))
@@ -170,7 +260,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	log.Println("[DEBUG]", string(reply.Data))
 
-	var id int
+	idStruct := struct {
+		ID int `json:"id"`
+	}{}
 
 	data, err := reply.Parse()
 	if err != nil {
@@ -178,18 +270,18 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	err = http.Decode(data.Data, &id)
+	err = http.Decode(data.Data, &idStruct)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
 	}
 
-	log.Println("[DEBUG] ID:", id)
+	log.Println("[DEBUG] ID:", idStruct.ID)
 
 	if reply.StatusCode != 200 {
 		return fmt.Errorf(string(reply.Data))
 	}
-	d.SetId(strconv.Itoa(id))
+	d.SetId(strconv.Itoa(idStruct.ID))
 
 	return nil
 }
@@ -219,27 +311,27 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("publicasn", site.PublicASN)
+	err = d.Set("publicasn", site.PublicAsn)
 	if err != nil {
 		return err
 	}
-	err = d.Set("rohasn", site.PhysicalInstanceAsn)
+	err = d.Set("rohasn", site.RohAsn)
 	if err != nil {
 		return err
 	}
-	err = d.Set("vmasn", site.VirtualInstanceASN)
+	err = d.Set("vmasn", site.VMAsn)
 	if err != nil {
 		return err
 	}
-	err = d.Set("rohroutingprofile", site.RoutingProfilTag)
+	err = d.Set("rohroutingprofile", site.RohProfile.Value)
 	if err != nil {
 		return err
 	}
-	err = d.Set("sitemesh", site.VPN)
+	err = d.Set("sitemesh", site.SiteMesh.Value)
 	if err != nil {
 		return err
 	}
-	err = d.Set("acldefaultpolicy", site.ACLPolicy)
+	err = d.Set("acldefaultpolicy", site.AclPolicy)
 	if err != nil {
 		return err
 	}
@@ -247,19 +339,36 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("vlanrange", site.VLANRange)
+	err = d.Set("vlanrange", site.VlanRange)
 	if err != nil {
 		return err
 	}
-	err = d.Set("equinixprojectid", site.EquinixProjectID)
-	if err != nil {
-		return err
+
+	providers := []map[string]interface{}{}
+
+	if site.SwitchFabric == "equinix_metal" {
+		provider := make(map[string]interface{})
+		equinixmetal := []map[string]interface{}{}
+		p := make(map[string]interface{})
+		p["projectid"] = site.SwitchFabricProviders.EquinixMetal.ProjectID
+		p["projectapikey"] = site.SwitchFabricProviders.EquinixMetal.ProjectAPIKey
+		p["location"] = site.SwitchFabricProviders.EquinixMetal.Location
+		equinixmetal = append(equinixmetal, p)
+		provider["equinixmetal"] = equinixmetal
+		providers = append(providers, provider)
+	} else if site.SwitchFabric == "phoenixnap_bmc" {
+		provider := make(map[string]interface{})
+		phoenixnapbmc := []map[string]interface{}{}
+		p := make(map[string]interface{})
+		p["clientid"] = site.SwitchFabricProviders.PhoenixNapBmc.ClientID
+		p["clientsecret"] = site.SwitchFabricProviders.PhoenixNapBmc.ClientSecret
+		p["location"] = site.SwitchFabricProviders.PhoenixNapBmc.Location
+		phoenixnapbmc = append(phoenixnapbmc, p)
+		provider["phoenixnapbmc"] = phoenixnapbmc
+		providers = append(providers, provider)
 	}
-	err = d.Set("equinixprojectapikey", site.EquinixProjectAPIKey)
-	if err != nil {
-		return err
-	}
-	err = d.Set("equinixlocation", site.EquinixLocation)
+
+	err = d.Set("switchfabricproviders", providers)
 	if err != nil {
 		return err
 	}
@@ -277,24 +386,31 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	fabric := d.Get("switchfabric").(string)
 	vlanRange := d.Get("vlanrange").(string)
 
-	id, _ := strconv.Atoi(d.Id())
-	siteW := &site.SiteAdd{
-		ID:                  id,
-		Name:                name,
-		PublicASN:           publicasn,
-		PhysicalInstanceASN: rohasn,
-		VirtualInstanceASN:  vmasn,
-		RoutingProfileID:    routingProfiles[d.Get("rohroutingprofile").(string)],
-		VPN:                 d.Get("sitemesh").(string),
-		ACLPolicy:           d.Get("acldefaultpolicy").(string),
-		SwitchFabric:        fabric,
+	siteW := &site.Site{
+		Name: name,
+
+		PublicAsn:    publicasn,
+		RohAsn:       rohasn,
+		VMAsn:        vmasn,
+		RohProfile:   site.RohProfile{ID: routingProfiles[d.Get("rohroutingprofile").(string)]},
+		SiteMesh:     site.IDName{Value: d.Get("sitemesh").(string)},
+		AclPolicy:    d.Get("acldefaultpolicy").(string),
+		SwitchFabric: fabric,
+	}
+
+	providersList := d.Get("switchfabricproviders").(*schema.Set).List()
+	provider := map[string]interface{}{}
+	if len(providersList) > 0 {
+		if len(providersList) > 1 {
+			return fmt.Errorf("please specify only one switchfabricproviders")
+		}
+		provider = providersList[0].(map[string]interface{})
 	}
 
 	if fabric == "dot1q_trunk" {
 		if vlanRange == "" {
 			vlanRange = "2-4094"
 		}
-		siteW.VLANRange = vlanRange
 	} else if fabric == "equinix_metal" {
 		if vlanRange == "" {
 			vlanRange = "2-3999"
@@ -302,16 +418,64 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		if err := valEquinixVlanRange(vlanRange); err != nil {
 			return err
 		}
-		siteW.VLANRange = vlanRange
-		siteW.EquinixProjectID = d.Get("equinixprojectid").(string)
-		siteW.EquinixProjectAPIKey = d.Get("equinixprojectapikey").(string)
-		siteW.EquinixLocation = d.Get("equinixlocation").(string)
+
+		detailsmissing := true
+
+		if _, ok := provider["equinixmetal"]; ok {
+			l := provider["equinixmetal"].(*schema.Set).List()
+			if len(l) > 0 {
+				detailsmissing = false
+				equinixmetal := l[0].(map[string]interface{})
+				siteW.SwitchFabricProviders = site.SwitchFabricProviders{
+					EquinixMetal: site.EquinixMetal{
+						ProjectID:     equinixmetal["projectid"].(string),
+						ProjectAPIKey: equinixmetal["projectapikey"].(string),
+						Location:      equinixmetal["location"].(string),
+					},
+				}
+			}
+		}
+		if detailsmissing {
+			return fmt.Errorf("please provide equinixmetal details")
+		}
+	} else if fabric == "phoenixnap_bmc" {
+		if vlanRange == "" {
+			vlanRange = "2-4094"
+		}
+
+		if err := valPhoenixVlanRange(vlanRange); err != nil {
+			return err
+		}
+
+		detailsmissing := true
+
+		if _, ok := provider["phoenixnapbmc"]; ok {
+			l := provider["phoenixnapbmc"].(*schema.Set).List()
+			if len(l) > 0 {
+				detailsmissing = false
+				equinixmetal := l[0].(map[string]interface{})
+				siteW.SwitchFabricProviders = site.SwitchFabricProviders{
+					PhoenixNapBmc: site.PhoenixNapBmc{
+						ClientID:     equinixmetal["clientid"].(string),
+						ClientSecret: equinixmetal["clientsecret"].(string),
+						Location:     equinixmetal["location"].(string),
+					},
+				}
+			}
+		}
+		if detailsmissing {
+			return fmt.Errorf("please provide phoenixnapbmc details")
+		}
 	}
+
+	siteW.VlanRange = vlanRange
 
 	js, _ := json.Marshal(siteW)
 	log.Println("[DEBUG]", string(js))
 
-	reply, err := clientset.Site().Update(siteW)
+	id, _ := strconv.Atoi(d.Id())
+
+	reply, err := clientset.Site().Update(id, siteW)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
