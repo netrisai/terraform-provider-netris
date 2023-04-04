@@ -168,7 +168,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		PublicAsn:    publicasn,
 		RohAsn:       rohasn,
 		VMAsn:        vmasn,
-		RohProfile:   site.RohProfile{ID: routingProfiles[d.Get("rohroutingprofile").(string)]},
+		RohProfile:   &site.RohProfile{ID: routingProfiles[d.Get("rohroutingprofile").(string)]},
 		SiteMesh:     site.IDName{Value: d.Get("sitemesh").(string)},
 		AclPolicy:    d.Get("acldefaultpolicy").(string),
 		SwitchFabric: fabric,
@@ -202,8 +202,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			if len(l) > 0 {
 				detailsmissing = false
 				equinixmetal := l[0].(map[string]interface{})
-				siteW.SwitchFabricProviders = site.SwitchFabricProviders{
-					EquinixMetal: site.EquinixMetal{
+				siteW.SwitchFabricProviders = &site.SwitchFabricProviders{
+					EquinixMetal: &site.EquinixMetal{
 						ProjectID:     equinixmetal["projectid"].(string),
 						ProjectAPIKey: equinixmetal["projectapikey"].(string),
 						Location:      equinixmetal["location"].(string),
@@ -230,8 +230,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			if len(l) > 0 {
 				detailsmissing = false
 				equinixmetal := l[0].(map[string]interface{})
-				siteW.SwitchFabricProviders = site.SwitchFabricProviders{
-					PhoenixNapBmc: site.PhoenixNapBmc{
+				siteW.SwitchFabricProviders = &site.SwitchFabricProviders{
+					PhoenixNapBmc: &site.PhoenixNapBmc{
 						ClientID:     equinixmetal["clientid"].(string),
 						ClientSecret: equinixmetal["clientsecret"].(string),
 						Location:     equinixmetal["location"].(string),
@@ -323,9 +323,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("rohroutingprofile", site.RohProfile.Value)
-	if err != nil {
-		return err
+	if site.RohProfile != nil {
+		err = d.Set("rohroutingprofile", site.RohProfile.Value)
+		if err != nil {
+			return err
+		}
 	}
 	err = d.Set("sitemesh", site.SiteMesh.Value)
 	if err != nil {
@@ -346,7 +348,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	providers := []map[string]interface{}{}
 
-	if site.SwitchFabric == "equinix_metal" {
+	if site.SwitchFabric == "equinix_metal" && site.SwitchFabricProviders != nil && site.SwitchFabricProviders.EquinixMetal != nil {
 		provider := make(map[string]interface{})
 		equinixmetal := []map[string]interface{}{}
 		p := make(map[string]interface{})
@@ -356,7 +358,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		equinixmetal = append(equinixmetal, p)
 		provider["equinixmetal"] = equinixmetal
 		providers = append(providers, provider)
-	} else if site.SwitchFabric == "phoenixnap_bmc" {
+	} else if site.SwitchFabric == "phoenixnap_bmc" && site.SwitchFabricProviders != nil && site.SwitchFabricProviders.PhoenixNapBmc != nil {
 		provider := make(map[string]interface{})
 		phoenixnapbmc := []map[string]interface{}{}
 		p := make(map[string]interface{})
@@ -392,7 +394,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		PublicAsn:    publicasn,
 		RohAsn:       rohasn,
 		VMAsn:        vmasn,
-		RohProfile:   site.RohProfile{ID: routingProfiles[d.Get("rohroutingprofile").(string)]},
+		RohProfile:   &site.RohProfile{ID: routingProfiles[d.Get("rohroutingprofile").(string)]},
 		SiteMesh:     site.IDName{Value: d.Get("sitemesh").(string)},
 		AclPolicy:    d.Get("acldefaultpolicy").(string),
 		SwitchFabric: fabric,
@@ -426,8 +428,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			if len(l) > 0 {
 				detailsmissing = false
 				equinixmetal := l[0].(map[string]interface{})
-				siteW.SwitchFabricProviders = site.SwitchFabricProviders{
-					EquinixMetal: site.EquinixMetal{
+				siteW.SwitchFabricProviders = &site.SwitchFabricProviders{
+					EquinixMetal: &site.EquinixMetal{
 						ProjectID:     equinixmetal["projectid"].(string),
 						ProjectAPIKey: equinixmetal["projectapikey"].(string),
 						Location:      equinixmetal["location"].(string),
@@ -454,8 +456,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			if len(l) > 0 {
 				detailsmissing = false
 				equinixmetal := l[0].(map[string]interface{})
-				siteW.SwitchFabricProviders = site.SwitchFabricProviders{
-					PhoenixNapBmc: site.PhoenixNapBmc{
+				siteW.SwitchFabricProviders = &site.SwitchFabricProviders{
+					PhoenixNapBmc: &site.PhoenixNapBmc{
 						ClientID:     equinixmetal["clientid"].(string),
 						ClientSecret: equinixmetal["clientsecret"].(string),
 						Location:     equinixmetal["location"].(string),
