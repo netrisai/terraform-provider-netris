@@ -68,6 +68,7 @@ resource "netris_vnet" "my-vnet" {
 ### Optional
 
 - **state** (String) V-Net state. Allowed values: `active` or `disabled`. Default value is `active`
+- **tags** (List of String) List of tags. Example `["foo", "bar"]`
 - **vlanid** (String) VLAN tag for all network interfaces of the vnet. Also can be `auto` for non-netris Switch Fabrics.
 
 <a id="nestedblock--sites"></a>

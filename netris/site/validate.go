@@ -51,8 +51,8 @@ func validateACLPolicy(val interface{}, key string) (warns []string, errs []erro
 
 func validateSwitchFabric(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
-	if !(v == "equinix_metal" || v == "dot1q_trunk" || v == "netris") {
-		errs = append(errs, fmt.Errorf("Switch fabric available values are (equinix_metal, dot1q_trunk, netris)"))
+	if !(v == "equinix_metal" || v == "dot1q_trunk" || v == "netris" || v == "phoenixnap_bmc") {
+		errs = append(errs, fmt.Errorf("Switch fabric available values are (equinix_metal, phoenixnap_bmc, dot1q_trunk, netris)"))
 		return warns, errs
 	}
 	return warns, errs
@@ -105,11 +105,20 @@ func valEquinixVlanRange(s string) error {
 	return nil
 }
 
+func valPhoenixVlanRange(s string) error {
+	vlanSplited := strings.Split(s, "-")
+	lastVlan := vlanSplited[len(vlanSplited)-1]
+	if id, _ := strconv.Atoi(lastVlan); id > 4094 {
+		return fmt.Errorf("invalid vlan range %s", s)
+	}
+	return nil
+}
+
 func validateEquinixLocation(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
-	if _, ok := locationsMap[v]; !ok {
-		keys := make([]string, 0, len(locationsMap))
-		for k := range locationsMap {
+	if _, ok := equinixLocationsMap[v]; !ok {
+		keys := make([]string, 0, len(equinixLocationsMap))
+		for k := range equinixLocationsMap {
 			keys = append(keys, k)
 		}
 		errs = append(errs, fmt.Errorf("Invalid equinixlocation, Possible Values are (%s)", strings.Join(keys, ", ")))
@@ -122,7 +131,24 @@ func validateEquinixLocation(val interface{}, key string) (warns []string, errs 
 	return warns, errs
 }
 
-var locationsMap = map[string]struct{}{
+func validatephoenixLocation(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if _, ok := phoenixLocationsMap[v]; !ok {
+		keys := make([]string, 0, len(phoenixLocationsMap))
+		for k := range phoenixLocationsMap {
+			keys = append(keys, k)
+		}
+		errs = append(errs, fmt.Errorf("Invalid phoenixlocation, Possible Values are (%s)", strings.Join(keys, ", ")))
+		return warns, errs
+	}
+	if err := valVlanRange(v); err != nil {
+		errs = append(errs, err)
+		return warns, errs
+	}
+	return warns, errs
+}
+
+var equinixLocationsMap = map[string]struct{}{
 	"se": {},
 	"dc": {},
 	"at": {},
@@ -143,4 +169,14 @@ var locationsMap = map[string]struct{}{
 	"la": {},
 	"ch": {},
 	"da": {},
+}
+
+var phoenixLocationsMap = map[string]struct{}{
+	"phx": {},
+	"chi": {},
+	"aus": {},
+	"sgp": {},
+	"ash": {},
+	"sea": {},
+	"nld": {},
 }
