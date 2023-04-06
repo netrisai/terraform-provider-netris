@@ -216,7 +216,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	} else if fabric == "phoenixnap_bmc" {
 		if vlanRange == "" {
-			vlanRange = "2-4094"
+			vlanRange = "3000-4094"
 		}
 
 		if err := valPhoenixVlanRange(vlanRange); err != nil {
@@ -442,7 +442,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 	} else if fabric == "phoenixnap_bmc" {
 		if vlanRange == "" {
-			vlanRange = "2-4094"
+			vlanRange = "3000-4094"
 		}
 
 		if err := valPhoenixVlanRange(vlanRange); err != nil {
