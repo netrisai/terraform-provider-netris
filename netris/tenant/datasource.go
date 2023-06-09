@@ -34,9 +34,9 @@ func DataResource() *schema.Resource {
 				Description: "The name of the tenant",
 			},
 			"description": {
-				Optional: true,
-				Type:     schema.TypeString,
-				ForceNew: true,
+				Optional:    true,
+				Type:        schema.TypeString,
+				ForceNew:    true,
 				Description: "Tenant's description",
 			},
 		},
