@@ -56,19 +56,16 @@ func Resource() *schema.Resource {
 				Description: "BGP neighbor AS number.",
 			},
 			"portid": {
-				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeInt,
 				Description: "Port ID where BGP neighbor cable is connected. Can't be used together `vnetid`.",
 			},
 			"vnetid": {
-				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeInt,
 				Description: "Existing VNet service ID to terminate E-BGP on. Can't be used together `portid`.",
 			},
 			"vlanid": {
-				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeInt,
 				Description: "VLAN ID for tagging BGP neighbor facing ethernet frames. Valid values should be in range 2-4094.",
@@ -212,12 +209,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	var (
-		vlanID    = 1
+		vlanID    = -1
 		state     = "enabled"
 		ipVersion = "ipv6"
 		hwID      = 0
 		portID    = 0
 		vnetID    = 0
+		untagged  = false
 	)
 
 	originate := "disabled"
@@ -261,6 +259,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	if transportVlanID >= 1 {
 		vlanID = transportVlanID
+	}
+
+	if vlanID == -1 {
+		untagged = true
 	}
 
 	localIPString := d.Get("localip").(string)
@@ -349,6 +351,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		State:              state,
 		Weight:             d.Get("weight").(int),
 		Tags:               []string{},
+		Untagged:           untagged,
 	}
 
 	js, _ := json.Marshal(bgpAdd)
@@ -542,12 +545,13 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	var (
-		vlanID    = 1
+		vlanID    = -1
 		state     = "enabled"
 		ipVersion = "ipv6"
 		hwID      = 0
 		portID    = 0
 		vnetID    = 0
+		untagged  = false
 	)
 
 	originate := "disabled"
@@ -591,6 +595,10 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	if transportVlanID >= 1 {
 		vlanID = transportVlanID
+	}
+
+	if vlanID == -1 {
+		untagged = true
 	}
 
 	localIPString := d.Get("localip").(string)
@@ -681,6 +689,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		State:              state,
 		Weight:             d.Get("weight").(int),
 		Tags:               []string{},
+		Untagged:           untagged,
 	}
 
 	js, _ := json.Marshal(bgpUpdate)
