@@ -152,7 +152,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			if getType(matchItem["type"].(string)) == "object" {
 				match.EbgpObject = matchItem["objectid"].(int)
 			} else if getType(matchItem["type"].(string)) == "string" {
-				match.Value = matchItem["value"].(string)
+				val := matchItem["value"].(string)
+				match.Value = &val
 			}
 			matches = append(matches, match)
 		}
@@ -296,7 +297,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			if getType(matchItem["type"].(string)) == "object" {
 				match.EbgpObject = matchItem["objectid"].(int)
 			} else if getType(matchItem["type"].(string)) == "string" {
-				match.Value = matchItem["value"].(string)
+				val := matchItem["value"].(string)
+				match.Value = &val
 			}
 			matches = append(matches, match)
 		}
