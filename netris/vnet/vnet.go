@@ -551,6 +551,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	sites := d.Get("sites").([]interface{})
 	vlanid := d.Get("vlanid").(string)
+	vnetTypeOne := false
 
 	var sitesList []map[string]interface{}
 	for _, site := range sites {
@@ -623,6 +624,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 					vID := vlanid
 					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
+						vnetTypeOne = true
 					}
 					if portID, ok := apiPorts[port["name"].(string)]; ok {
 						vl := vID
@@ -650,8 +652,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 				for _, p := range ports {
 					port := p.(map[string]interface{})
 					vID := vlanid
-					if v := port["vlanid"].(string); v != "1" || vlanid == "" || vlanid == "auto" {
+					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
+						vnetTypeOne = true
 					}
 					if portID, ok := apiPorts[port["name"].(string)]; ok {
 						vl := vID
@@ -688,6 +691,14 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		members = newMembers
 	}
 
+	var vlanidInterface any
+
+	if vnetTypeOne {
+		vlanidInterface = 0
+	} else {
+		vlanidInterface = vlanid
+	}
+
 	vnetUpdate := &vnet.VNetUpdate{
 		Name:         d.Get("name").(string),
 		GuestTenants: []vnet.VNetUpdateGuestTenant{},
@@ -695,7 +706,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		State:        d.Get("state").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
-		Vlan:         vlanid,
+		Vlan:         vlanidInterface,
 		Tags:         tags,
 	}
 
