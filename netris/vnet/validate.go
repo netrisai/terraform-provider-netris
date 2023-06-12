@@ -36,7 +36,7 @@ func validateVlanID(val interface{}, key string) (warns []string, errs []error) 
 	} else {
 		vlan, _ := strconv.Atoi(v)
 		if !(vlan >= 2 && vlan <= 4094) {
-			errs = append(errs, fmt.Errorf("port should be in range 2-3999"))
+			errs = append(errs, fmt.Errorf("port should be in range 2-4094"))
 		}
 	}
 	return warns, errs

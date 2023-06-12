@@ -204,6 +204,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	sites := d.Get("sites").([]interface{})
 	vlanid := d.Get("vlanid").(string)
+	vnetTypeOne := false
 
 	var sitesList []map[string]interface{}
 	for _, site := range sites {
@@ -255,6 +256,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 					vID := vlanid
 					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
+						vnetTypeOne = true
 					}
 					members = append(members, vnet.VNetAddPort{
 						Name:  port["name"].(string),
@@ -270,6 +272,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 					vID := vlanid
 					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
+						vnetTypeOne = true
 					}
 					members = append(members, vnet.VNetAddPort{
 						Name:  port["name"].(string),
@@ -283,6 +286,14 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	var vlanidInterface any
+
+	if vnetTypeOne {
+		vlanidInterface = 0
+	} else {
+		vlanidInterface = vlanid
+	}
+
 	vnetAdd := &vnet.VNetAdd{
 		Name:         d.Get("name").(string),
 		Tenant:       vnet.VNetAddTenant{ID: d.Get("tenantid").(int)},
@@ -291,7 +302,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		State:        d.Get("state").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
-		Vlan:         vlanid,
+		Vlan:         vlanidInterface,
 		Tags:         tags,
 	}
 
