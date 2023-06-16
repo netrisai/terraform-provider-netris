@@ -21,9 +21,7 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/netrisai/netriswebapi/http"
 	"github.com/netrisai/netriswebapi/v2/types/ipam"
@@ -34,8 +32,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
-
-var re = regexp.MustCompile(`(?P<basePort>[a-zA-Z0-9]+)\[slaves: (?P<port>(\w|,)+)\]`)
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
@@ -93,10 +89,16 @@ func Resource() *schema.Resource {
 										Optional:    true,
 										Description: "VLAN tag for current port. If vlanid is not set - means port untagged",
 									},
+									"untagged": {
+										Type:        schema.TypeString,
+										Optional:    true,
+										Description: "Only when global 'vlanid' is specified",
+									},
 									"lacp": {
 										ValidateFunc: validateLACP,
 										Default:      "off",
 										Type:         schema.TypeString,
+										Deprecated: "You no longer need to specify this option. Create a V-Net with global VlanID, and Netris will automatically establish a Link Aggregation Group (LAG) using EVPN Multihoming.",
 										Optional:     true,
 										Description:  "LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`.",
 									},
@@ -120,10 +122,16 @@ func Resource() *schema.Resource {
 										Optional:    true,
 										Description: "VLAN tag for current port. If vlanid is not set - means port untagged",
 									},
+									"untagged": {
+										Type:        schema.TypeString,
+										Optional:    true,
+										Description: "Only when global 'vlanid' is specified",
+									},
 									"lacp": {
 										ValidateFunc: validateLACP,
 										Default:      "off",
 										Type:         schema.TypeString,
+										Deprecated: "You no longer need to specify this option. Create a V-Net with global VlanID, and Netris will automatically establish a Link Aggregation Group (LAG) using EVPN Multihoming.",
 										Optional:     true,
 										Description:  "LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`.",
 									},
@@ -253,15 +261,25 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			if len(ports) > 0 {
 				for _, p := range ports {
 					port := p.(map[string]interface{})
+					accessMode := false
+					if port["untagged"].(string) == "yes" {
+						accessMode = true
+					}
 					vID := vlanid
 					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
 						vnetTypeOne = true
+						if vID == "1" {
+							accessMode = true
+						}
+					}
+					if vlanid != "" && port["untagged"].(string) != "no"{
+						accessMode = true
 					}
 					members = append(members, vnet.VNetAddPort{
+						AccessMode: accessMode,
 						Name:  port["name"].(string),
 						Vlan:  vID,
-						Lacp:  port["lacp"].(string),
 						State: "active",
 					})
 				}
@@ -269,15 +287,25 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 				ports := p.(*schema.Set).List()
 				for _, p := range ports {
 					port := p.(map[string]interface{})
+					accessMode := false
+					if port["untagged"].(string) == "yes" {
+						accessMode = true
+					}
 					vID := vlanid
 					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
 						vnetTypeOne = true
+						if vID == "1" {
+							accessMode = true
+						}
+					}
+					if vlanid != "" && port["untagged"].(string) != "no"{
+						accessMode = true
 					}
 					members = append(members, vnet.VNetAddPort{
+						AccessMode: accessMode,
 						Name:  port["name"].(string),
 						Vlan:  vID,
-						Lacp:  port["lacp"].(string),
 						State: "active",
 					})
 				}
@@ -350,21 +378,21 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	vnet, err := clientset.VNet().GetByID(id)
+	vnetresp, err := clientset.VNet().GetByID(id)
 	if err != nil {
 		return nil
 	}
 
-	d.SetId(strconv.Itoa(vnet.ID))
-	err = d.Set("name", vnet.Name)
+	d.SetId(strconv.Itoa(vnetresp.ID))
+	err = d.Set("name", vnetresp.Name)
 	if err != nil {
 		return err
 	}
-	err = d.Set("tenantid", vnet.Tenant.ID)
+	err = d.Set("tenantid", vnetresp.Tenant.ID)
 	if err != nil {
 		return err
 	}
-	err = d.Set("state", vnet.State)
+	err = d.Set("state", vnetresp.State)
 	if err != nil {
 		return err
 	}
@@ -382,9 +410,9 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		sitesList = append(sitesList, site.(map[string]interface{}))
 	}
 
-	portVlanIDMap := make(map[string]string)
+	tportVlanIDMap := make(map[string]string)
 
-	tPorts := make(map[string]struct{})
+	tPorts := make(map[string]map[string]interface{})
 	interfaces := false
 	gatewayMap := make(map[string]map[string]interface{})
 
@@ -402,79 +430,48 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				interfaces = true
 				for _, p := range ports {
 					port := p.(map[string]interface{})
-					portVlanIDMap[port["name"].(string)] = port["vlanid"].(string)
-					tPorts[port["name"].(string)] = struct{}{}
+					tportVlanIDMap[port["name"].(string)] = port["vlanid"].(string)
+					tPorts[port["name"].(string)] = port
 				}
 			} else if p, ok := site["ports"]; ok {
 				ports := p.(*schema.Set).List()
 				for _, p := range ports {
 					port := p.(map[string]interface{})
-					portVlanIDMap[port["name"].(string)] = port["vlanid"].(string)
-					tPorts[port["name"].(string)] = struct{}{}
+					tportVlanIDMap[port["name"].(string)] = port["vlanid"].(string)
+					tPorts[port["name"].(string)] = port
 				}
 			}
 		}
 	}
 
 	var sites []map[string]interface{}
-	for _, site := range vnet.Sites {
+	for _, site := range vnetresp.Sites {
 		s := make(map[string]interface{})
 		portList := make([]interface{}, 0)
-		for _, port := range vnet.Ports {
+		for _, port := range vnetresp.Ports {
 			if port.Site.ID == site.ID {
-				if port.Lacp == "on" {
-					sub := re.SubexpNames()
-					valueMatch := re.FindStringSubmatch(port.Port)
-					v := regParser(valueMatch, sub)
-					portNames := strings.Split(v["port"], ",")
-					for _, p := range portNames {
-						name := fmt.Sprintf("%s@%s", p, port.SwitchName)
-						if _, ok := tPorts[name]; ok {
-							if vl, ok := portVlanIDMap[name]; ok {
-								if vl == "1" {
-									port.Vlan = "1"
-								}
-							}
-							m := make(map[string]interface{})
-							m["name"] = name
-							m["vlanid"] = port.Vlan
-							m["lacp"] = port.Lacp
-							portList = append(portList, m)
-						}
+				m := make(map[string]interface{})
+				name := fmt.Sprintf("%s@%s", port.Port, port.SwitchName)
+				if vlanFromTf, ok := tportVlanIDMap[name]; ok {
+					if vlanFromTf == "1" && vnetresp.Vlan != 0 && d.Get("vlanid").(string) != "" {
+						port.Vlan = "1"
 					}
-					basePort := v["basePort"]
-					if strings.HasPrefix(basePort, "agg") {
-						name := fmt.Sprintf("%s@%s", basePort, port.SwitchName)
-						if _, ok := tPorts[name]; ok {
-							if vl, ok := portVlanIDMap[name]; ok {
-								if vl == "1" {
-									port.Vlan = "1"
-								}
-							}
-							m := make(map[string]interface{})
-							m["name"] = name
-							m["vlanid"] = port.Vlan
-							m["lacp"] = port.Lacp
-							portList = append(portList, m)
-						}
-					}
-				} else {
-					m := make(map[string]interface{})
-					name := fmt.Sprintf("%s@%s", port.Port, port.SwitchName)
-					if vl, ok := portVlanIDMap[name]; ok {
-						if vl == "1" {
-							port.Vlan = "1"
-						}
-					}
-					m["name"] = name
-					m["vlanid"] = port.Vlan
-					m["lacp"] = port.Lacp
-					portList = append(portList, m)
 				}
+				m["name"] = name
+				m["vlanid"] = port.Vlan
+				m["lacp"] = "off"
+				if tPortUntagged := tPorts[name]["untagged"]; tPortUntagged != "" {
+					if port.Untagged {
+						m["untagged"] = "yes"
+					} else {
+						m["untagged"] = "no"
+					}
+				}
+				portList = append(portList, m)
 			}
 		}
 		gatewayList := make([]interface{}, 0)
-		for _, gateway := range vnet.Gateways {
+		for _, gateway := range vnetresp.Gateways {
 			siteID := 0
 			ip, ipNet, err := net.ParseCIDR(gateway.Prefix)
 			if err != nil {
@@ -526,8 +523,8 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		sites = append(sites, s)
 	}
 
-	if vnet.Vlan > 0 && d.Get("vlanid").(string) != "auto" {
-		err = d.Set("vlanid", strconv.Itoa(vnet.Vlan))
+	if vnetresp.Vlan > 0 && d.Get("vlanid").(string) != "auto" {
+		err = d.Set("vlanid", strconv.Itoa(vnetresp.Vlan))
 		if err != nil {
 			return err
 		}
@@ -538,7 +535,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	err = d.Set("tags", vnet.Tags)
+	err = d.Set("tags", vnetresp.Tags)
 	if err != nil {
 		return err
 	}
@@ -575,17 +572,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	gatewayList := []vnet.VNetUpdateGateway{}
 	apiPorts := make(map[string]vnet.VNetDetailedPort)
 	for _, p := range v.Ports {
-		if p.Lacp == "on" {
-			sub := re.SubexpNames()
-			valueMatch := re.FindStringSubmatch(p.Port)
-			v := regParser(valueMatch, sub)
-			portNames := strings.Split(v["port"], ",")
-			for _, port := range portNames {
-				apiPorts[fmt.Sprintf("%s@%s", port, p.SwitchName)] = p
-			}
-		} else {
-			apiPorts[fmt.Sprintf("%s@%s", p.Port, p.SwitchName)] = p
-		}
+		apiPorts[fmt.Sprintf("%s@%s", p.Port, p.SwitchName)] = p
 	}
 
 	existingVlanForAuto := ""
@@ -621,10 +608,20 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			if len(ports) > 0 {
 				for _, p := range ports {
 					port := p.(map[string]interface{})
+					accessMode := false
+					if port["untagged"].(string) == "yes" {
+						accessMode = true
+					}
 					vID := vlanid
 					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
 						vnetTypeOne = true
+						if vID == "1" {
+							accessMode = true
+						}
+					}
+					if vlanid != "" && port["untagged"].(string) != "no"{
+						accessMode = true
 					}
 					if portID, ok := apiPorts[port["name"].(string)]; ok {
 						vl := vID
@@ -633,16 +630,16 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 							existingVlanForAuto = portID.Vlan
 						}
 						members = append(members, vnet.VNetUpdatePort{
+							AccessMode: accessMode,
 							ID:    portID.ID,
 							Vlan:  vl,
-							Lacp:  port["lacp"].(string),
 							State: "active",
 						})
 					} else {
 						members = append(members, vnet.VNetUpdatePort{
+							AccessMode: accessMode,
 							Name:  port["name"].(string),
 							Vlan:  vID,
-							Lacp:  port["lacp"].(string),
 							State: "active",
 						})
 					}
@@ -651,10 +648,20 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 				ports := p.(*schema.Set).List()
 				for _, p := range ports {
 					port := p.(map[string]interface{})
+					accessMode := false
+					if port["untagged"].(string) == "yes" {
+						accessMode = true
+					}
 					vID := vlanid
 					if v := port["vlanid"].(string); v != "1" || vlanid == "" {
 						vID = v
 						vnetTypeOne = true
+						if vID == "1" {
+							accessMode = true
+						}
+					}
+					if vlanid != "" && port["untagged"].(string) != "no"{
+						accessMode = true
 					}
 					if portID, ok := apiPorts[port["name"].(string)]; ok {
 						vl := vID
@@ -663,16 +670,16 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 							existingVlanForAuto = portID.Vlan
 						}
 						members = append(members, vnet.VNetUpdatePort{
+							AccessMode: accessMode,
 							ID:    portID.ID,
 							Vlan:  vl,
-							Lacp:  port["lacp"].(string),
 							State: "active",
 						})
 					} else {
 						members = append(members, vnet.VNetUpdatePort{
+							AccessMode: accessMode,
 							Name:  port["name"].(string),
 							Vlan:  vID,
-							Lacp:  port["lacp"].(string),
 							State: "active",
 						})
 					}
@@ -772,16 +779,4 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	}
 
 	return []*schema.ResourceData{d}, nil
-}
-
-func regParser(valueMatch []string, subexpNames []string) map[string]string {
-	result := make(map[string]string)
-	if len(subexpNames) == len(valueMatch) {
-		for i, name := range subexpNames {
-			if name != "" {
-				result[name] = valueMatch[i]
-			}
-		}
-	}
-	return result
 }
