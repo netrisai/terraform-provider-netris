@@ -98,7 +98,7 @@ func Resource() *schema.Resource {
 										ValidateFunc: validateLACP,
 										Default:      "off",
 										Type:         schema.TypeString,
-										Deprecated: "You no longer need to specify this option. Create a V-Net with global VlanID, and Netris will automatically establish a Link Aggregation Group (LAG) using EVPN Multihoming.",
+										Deprecated:   "You no longer need to specify this option. Create a V-Net with global VlanID, and Netris will automatically establish a Link Aggregation Group (LAG) using EVPN Multihoming.",
 										Optional:     true,
 										Description:  "LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`.",
 									},
@@ -131,7 +131,7 @@ func Resource() *schema.Resource {
 										ValidateFunc: validateLACP,
 										Default:      "off",
 										Type:         schema.TypeString,
-										Deprecated: "You no longer need to specify this option. Create a V-Net with global VlanID, and Netris will automatically establish a Link Aggregation Group (LAG) using EVPN Multihoming.",
+										Deprecated:   "You no longer need to specify this option. Create a V-Net with global VlanID, and Netris will automatically establish a Link Aggregation Group (LAG) using EVPN Multihoming.",
 										Optional:     true,
 										Description:  "LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`.",
 									},
@@ -273,14 +273,14 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 							accessMode = true
 						}
 					}
-					if vlanid != "" && port["untagged"].(string) != "no"{
+					if vlanid != "" && port["untagged"].(string) != "no" {
 						accessMode = true
 					}
 					members = append(members, vnet.VNetAddPort{
 						AccessMode: accessMode,
-						Name:  port["name"].(string),
-						Vlan:  vID,
-						State: "active",
+						Name:       port["name"].(string),
+						Vlan:       vID,
+						State:      "active",
 					})
 				}
 			} else if p, ok := site["ports"]; ok {
@@ -299,14 +299,14 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 							accessMode = true
 						}
 					}
-					if vlanid != "" && port["untagged"].(string) != "no"{
+					if vlanid != "" && port["untagged"].(string) != "no" {
 						accessMode = true
 					}
 					members = append(members, vnet.VNetAddPort{
 						AccessMode: accessMode,
-						Name:  port["name"].(string),
-						Vlan:  vID,
-						State: "active",
+						Name:       port["name"].(string),
+						Vlan:       vID,
+						State:      "active",
 					})
 				}
 			}
@@ -620,7 +620,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 							accessMode = true
 						}
 					}
-					if vlanid != "" && port["untagged"].(string) != "no"{
+					if vlanid != "" && port["untagged"].(string) != "no" {
 						accessMode = true
 					}
 					if portID, ok := apiPorts[port["name"].(string)]; ok {
@@ -631,16 +631,16 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 						}
 						members = append(members, vnet.VNetUpdatePort{
 							AccessMode: accessMode,
-							ID:    portID.ID,
-							Vlan:  vl,
-							State: "active",
+							ID:         portID.ID,
+							Vlan:       vl,
+							State:      "active",
 						})
 					} else {
 						members = append(members, vnet.VNetUpdatePort{
 							AccessMode: accessMode,
-							Name:  port["name"].(string),
-							Vlan:  vID,
-							State: "active",
+							Name:       port["name"].(string),
+							Vlan:       vID,
+							State:      "active",
 						})
 					}
 				}
@@ -660,7 +660,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 							accessMode = true
 						}
 					}
-					if vlanid != "" && port["untagged"].(string) != "no"{
+					if vlanid != "" && port["untagged"].(string) != "no" {
 						accessMode = true
 					}
 					if portID, ok := apiPorts[port["name"].(string)]; ok {
@@ -671,16 +671,16 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 						}
 						members = append(members, vnet.VNetUpdatePort{
 							AccessMode: accessMode,
-							ID:    portID.ID,
-							Vlan:  vl,
-							State: "active",
+							ID:         portID.ID,
+							Vlan:       vl,
+							State:      "active",
 						})
 					} else {
 						members = append(members, vnet.VNetUpdatePort{
 							AccessMode: accessMode,
-							Name:  port["name"].(string),
-							Vlan:  vID,
-							State: "active",
+							Name:       port["name"].(string),
+							Vlan:       vID,
+							State:      "active",
 						})
 					}
 				}
