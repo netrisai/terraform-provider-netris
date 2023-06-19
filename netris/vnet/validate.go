@@ -62,7 +62,15 @@ func validateGateway(val interface{}, key string) (warns []string, errs []error)
 func validateDHCP(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
 	if !(v == "enabled" || v == "disabled") {
-		errs = append(errs, fmt.Errorf("'%s' must be enabled or disabled, got: %s", key, v))
+		errs = append(errs, fmt.Errorf("'%s' must be enabled or disabled, got - %s", key, v))
+	}
+	return warns, errs
+}
+
+func validateUntagged(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if !(v == "yes" || v == "no") {
+		errs = append(errs, fmt.Errorf("'%s' must be either 'yes' or 'no', got - %s", key, v))
 	}
 	return warns, errs
 }

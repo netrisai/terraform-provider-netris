@@ -93,6 +93,7 @@ func Resource() *schema.Resource {
 										Type:        schema.TypeString,
 										Optional:    true,
 										Description: "Only when global 'vlanid' is specified",
+										ValidateFunc: validateUntagged,
 									},
 									"lacp": {
 										ValidateFunc: validateLACP,
@@ -126,6 +127,7 @@ func Resource() *schema.Resource {
 										Type:        schema.TypeString,
 										Optional:    true,
 										Description: "Only when global 'vlanid' is specified",
+										ValidateFunc: validateUntagged,
 									},
 									"lacp": {
 										ValidateFunc: validateLACP,
