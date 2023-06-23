@@ -47,6 +47,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/user"
 	"github.com/netrisai/terraform-provider-netris/netris/userrole"
 	"github.com/netrisai/terraform-provider-netris/netris/vnet"
+	"github.com/netrisai/terraform-provider-netris/netris/vpc"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -95,6 +96,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_route":             route.Resource(),
 			"netris_acltwozero":        acl2.Resource(),
 			"netris_dhcp_option_set":   dhcpoptionset.Resource(),
+			"netris_vpc":               vpc.Resource(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"netris_site":              site.DataResource(),

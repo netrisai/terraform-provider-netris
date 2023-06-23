@@ -90,9 +90,9 @@ func Resource() *schema.Resource {
 										Description: "VLAN tag for current port. If vlanid is not set - means port untagged",
 									},
 									"untagged": {
-										Type:        schema.TypeString,
-										Optional:    true,
-										Description: "Only when global 'vlanid' is specified",
+										Type:         schema.TypeString,
+										Optional:     true,
+										Description:  "Only when global 'vlanid' is specified",
 										ValidateFunc: validateUntagged,
 									},
 									"lacp": {
@@ -124,9 +124,9 @@ func Resource() *schema.Resource {
 										Description: "VLAN tag for current port. If vlanid is not set - means port untagged",
 									},
 									"untagged": {
-										Type:        schema.TypeString,
-										Optional:    true,
-										Description: "Only when global 'vlanid' is specified",
+										Type:         schema.TypeString,
+										Optional:     true,
+										Description:  "Only when global 'vlanid' is specified",
 										ValidateFunc: validateUntagged,
 									},
 									"lacp": {
