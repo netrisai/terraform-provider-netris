@@ -7,7 +7,7 @@ resource "netris_acl" "my_acl" {
   comment   = "Terraform Test"
   reverse   = true
   # established = 0
-  # icmptype = 1
+  # icmptype = 0
   # srcportgroup = "portgroup-terraform-test"
   # dstportfrom = 1
   # dstportto = 100
@@ -24,7 +24,7 @@ resource "netris_acl" "my_acl2" {
   comment   = "Terraform Test 2"
   # reverse = true
   established = 1
-  # icmptype = 1
+  # icmptype = 0
   srcportgroup = "my_portgroup"
   dstportfrom  = 1
   dstportto    = 65535

@@ -60,7 +60,7 @@ func validateEstablished(val interface{}, key string) (warns []string, errs []er
 
 func validateICMP(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(int)
-	if !(v >= 1 && v <= 37) {
+	if !(v >= 0 && v <= 36) {
 		errs = append(errs, fmt.Errorf("ICMP type should be in range 1-37 according to RFC 1700"))
 		return warns, errs
 	}
