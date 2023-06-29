@@ -3,7 +3,7 @@ HOSTNAME=registry.terraform.io
 NAMESPACE=netrisai
 NAME=netris
 BINARY=terraform-provider-${NAME}
-VERSION=2.2.1
+VERSION=2.2.2
 OS_ARCH=darwin_arm64
 WORKDIRECTORY=examples
 
