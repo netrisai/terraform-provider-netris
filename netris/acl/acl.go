@@ -59,7 +59,7 @@ func Resource() *schema.Resource {
 			},
 			"icmptype": {
 				ValidateFunc: validateICMP,
-				Default:      1,
+				Default:      0,
 				Optional:     true,
 				Type:         schema.TypeInt,
 				Description:  "Custom IPv4 ICMP code. Valid values should be in range 1-37 according to RFC 1700. Default value is `1`",
