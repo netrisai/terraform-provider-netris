@@ -16,8 +16,6 @@ limitations under the License.
 
 package pgroup
 
-import "fmt"
-
 type mapping struct {
 	m map[string]map[string]string
 }
@@ -72,16 +70,6 @@ var mappings = &mapping{
 
 func (m *mapping) getMap() map[string]map[string]string {
 	return m.m
-}
-
-func (m *mapping) getReversedMap() map[string]string {
-	rm := make(map[string]string)
-	for key, keys := range m.m {
-		for subkey, val := range keys {
-			rm[val] = fmt.Sprintf("%s.%s", key, subkey)
-		}
-	}
-	return rm
 }
 
 var sectionNames = []string{
