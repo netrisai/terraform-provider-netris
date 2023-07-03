@@ -58,7 +58,6 @@ func Resource() *schema.Resource {
 				},
 			},
 			"tags": {
-				Computed: true,
 				Optional: true,
 				Type:     schema.TypeSet,
 				Elem: &schema.Schema{
@@ -82,10 +81,19 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 }
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
+	log.Println("[DEBUG] vpcCreate")
 	clientset := m.(*api.Clientset)
 
 	guestTenantIdsList := d.Get("guesttenantid").(*schema.Set).List()
 	log.Println("[DEBUG] guestTenantIdsList", guestTenantIdsList)
+	guestTenants := []vpc.GuestTenant{}
+
+	for _, eachGuestTenant := range guestTenantIdsList {
+		gTenant := eachGuestTenant.(map[string]interface{})
+		guestTenants = append(guestTenants, vpc.GuestTenant{
+			ID: gTenant["id"].(int),
+		})
+	}
 
 	tagsList := d.Get("tags").(*schema.Set).List()
 	tags := []string{}
@@ -96,7 +104,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	vpcAdd := &vpc.VPCw{
 		Name:        d.Get("name").(string),
 		AdminTenant: vpc.AdminTenant{ID: d.Get("tenantid").(int)},
-		GuestTenant: []vpc.GuestTenant{},
+		GuestTenant: guestTenants,
 		Tags:        tags,
 	}
 
@@ -141,6 +149,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
+	log.Println("[DEBUG] vpcRead")
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
@@ -159,7 +168,17 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("guesttenantid", apiVPC.GuestTenant)
+
+	log.Println("[DEBUG] vpcRead apiVPC.GuestTenant", apiVPC.GuestTenant)
+
+	var gTenantsList []map[string]interface{}
+	for _, gTenant := range apiVPC.GuestTenant {
+		gt := make(map[string]interface{})
+		gt["id"] = gTenant.ID
+		gTenantsList = append(gTenantsList, gt)
+	}
+
+	err = d.Set("guesttenantid", gTenantsList)
 	if err != nil {
 		return err
 	}
@@ -172,12 +191,21 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
+	log.Println("[DEBUG] vpcUpdate")
 	clientset := m.(*api.Clientset)
 
 	vpcID, _ := strconv.Atoi(d.Id())
 
-	guestTenantIdsList := d.Get("switchfabricproviders").(*schema.Set).List()
+	guestTenantIdsList := d.Get("guesttenantid").(*schema.Set).List()
 	log.Println("[DEBUG] guestTenantIdsList", guestTenantIdsList)
+	guestTenants := []vpc.GuestTenant{}
+
+	for _, eachGuestTenant := range guestTenantIdsList {
+		gTenant := eachGuestTenant.(map[string]interface{})
+		guestTenants = append(guestTenants, vpc.GuestTenant{
+			ID: gTenant["id"].(int),
+		})
+	}
 
 	tagsList := d.Get("tags").(*schema.Set).List()
 	tags := []string{}
@@ -188,7 +216,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	vpcUpdate := &vpc.VPCw{
 		Name:        d.Get("name").(string),
 		AdminTenant: vpc.AdminTenant{ID: d.Get("tenantid").(int)},
-		GuestTenant: []vpc.GuestTenant{},
+		GuestTenant: guestTenants,
 		Tags:        tags,
 	}
 
@@ -235,7 +263,10 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	item, _ := clientset.VPC().GetByID(id)
+	item, err := clientset.VPC().GetByID(id)
+	if err != nil {
+		log.Println("[DEBUG] vpcExist response err:", err)
+	}
 
 	if item == nil {
 		return false, nil
