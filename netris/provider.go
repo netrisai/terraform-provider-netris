@@ -108,6 +108,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_inventory_profile": inventoryprofile.DataResource(),
 			"netris_routemap":          routemap.DataResource(),
 			"netris_dhcp_option_set":   dhcpoptionset.DataResource(),
+			"netris_vpc":               vpc.DataResource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
