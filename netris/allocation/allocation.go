@@ -50,6 +50,12 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeInt,
 				Description: "ID of tenant. Users of this tenant will be permitted to manage subnets under this allocation.",
 			},
+			"vpcid": {
+				ForceNew:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
+				Description: "ID of VPC. If not specified, the allocation will be created in the VPC marked as a default.",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -67,16 +73,22 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 }
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
+	log.Println("[DEBUG] allocation resourceCreate")
 	clientset := m.(*api.Clientset)
 
 	name := d.Get("name").(string)
 	prefix := d.Get("prefix").(string)
 	tenant := d.Get("tenantid").(int)
+	vpcid := d.Get("vpcid").(int)
 
 	allAdd := &ipam.Allocation{
 		Name:   name,
 		Prefix: prefix,
 		Tenant: ipam.IDName{ID: tenant},
+	}
+
+	if vpcid > 0 {
+		allAdd.Vpc = &ipam.IDName{ID: vpcid}
 	}
 
 	js, _ := json.Marshal(allAdd)
@@ -121,6 +133,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
+	log.Println("[DEBUG] allocation resourceRead")
 	clientset := m.(*api.Clientset)
 
 	ipams, err := clientset.IPAM().Get()
@@ -129,6 +142,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 	id, _ := strconv.Atoi(d.Id())
 	ipam := getByID(ipams, id)
+	currentVpcId := d.Get("vpcid").(int)
 	if ipam == nil {
 		return nil
 	}
@@ -146,10 +160,17 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	if currentVpcId > 0 {
+		err = d.Set("vpcid", ipam.Vpc.ID)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
+	log.Println("[DEBUG] allocation resourceUpdate")
 	clientset := m.(*api.Clientset)
 
 	name := d.Get("name").(string)
@@ -184,6 +205,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
+	log.Println("[DEBUG] allocation resourceDelete")
 	clientset := m.(*api.Clientset)
 	id, _ := strconv.Atoi(d.Id())
 	reply, err := clientset.IPAM().Delete("allocation", id)
@@ -200,9 +222,16 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
+	log.Println("[DEBUG] allocation resourceExists")
 	clientset := m.(*api.Clientset)
-
-	ipams, err := clientset.IPAM().Get()
+	currentVpcId := d.Get("vpcid").(int)
+	var ipams []*ipam.IPAM
+	var err error
+	if currentVpcId > 0 {
+		ipams, err = clientset.IPAM().GetByVPC(currentVpcId)
+	} else {
+		ipams, err = clientset.IPAM().Get()
+	}
 	if err != nil {
 		return false, err
 	}
@@ -215,6 +244,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 }
 
 func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	log.Println("[DEBUG] allocation resourceImport")
 	clientset := m.(*api.Clientset)
 
 	ipams, err := clientset.IPAM().Get()
@@ -224,7 +254,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	prefix := d.Id()
 	ipam := getByPrefix(ipams, prefix)
 	if ipam == nil {
-		return []*schema.ResourceData{d}, fmt.Errorf("Allocation '%s' not found", prefix)
+		return []*schema.ResourceData{d}, fmt.Errorf("allocation '%s' not found", prefix)
 	}
 
 	d.SetId(strconv.Itoa(ipam.ID))
