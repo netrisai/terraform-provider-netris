@@ -313,7 +313,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	prefix := d.Id()
 	ipam := GetByPrefix(ipams, prefix)
 	if ipam == nil {
-		return []*schema.ResourceData{d}, fmt.Errorf("Allocation '%s' not found", prefix)
+		return []*schema.ResourceData{d}, fmt.Errorf("allocation '%s' not found", prefix)
 	}
 
 	d.SetId(strconv.Itoa(ipam.ID))
