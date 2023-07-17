@@ -189,6 +189,12 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"vpcid": {
+				ForceNew:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
+				Description: "ID of VPC. If not specified, the BGP will be created in the VPC marked as a default.",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -222,6 +228,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	localPreference := 100
 
 	siteID := d.Get("siteid").(int)
+	vpcid := d.Get("vpcid").(int)
 
 	if d.Get("defaultoriginate").(bool) {
 		originate = "enabled"
@@ -354,6 +361,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Untagged:           untagged,
 	}
 
+
+	if vpcid > 0 {
+		bgpAdd.Vpc = &bgp.IDName{ID: vpcid}
+	}
+
 	js, _ := json.Marshal(bgpAdd)
 	log.Println("[DEBUG] bgpAdd", string(js))
 
@@ -412,6 +424,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if bgp == nil {
 		return nil
 	}
+	currentVpcId := d.Get("vpcid").(int)
 
 	d.SetId(strconv.Itoa(bgp.ID))
 	err = d.Set("name", bgp.Name)
@@ -536,6 +549,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	err = d.Set("sendbgpcommunity", strings.Split(bgp.Community, ","))
 	if err != nil {
 		return err
+	}
+
+	if currentVpcId > 0 {
+		err = d.Set("vpcid", bgp.Vpc.ID)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
