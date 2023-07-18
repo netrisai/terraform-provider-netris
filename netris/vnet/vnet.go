@@ -193,6 +193,12 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"vpcid": {
+				ForceNew:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
+				Description: "ID of VPC. If not specified, the V-Net will be created in the VPC marked as a default.",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -226,6 +232,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	gatewayList := []vnet.VNetAddGateway{}
 
 	tagsList := d.Get("tags").(*schema.Set).List()
+	vpcid := d.Get("vpcid").(int)
 	tags := []string{}
 	for _, tag := range tagsList {
 		tags = append(tags, tag.(string))
@@ -336,6 +343,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Tags:         tags,
 	}
 
+	if vpcid > 0 {
+		vnetAdd.Vpc = &vnet.IDName{ID: vpcid}
+	}
+
 	js, _ := json.Marshal(vnetAdd)
 	log.Println("[DEBUG]", string(js))
 
@@ -384,6 +395,8 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return nil
 	}
+
+	currentVpcId := d.Get("vpcid").(int)
 
 	d.SetId(strconv.Itoa(vnetresp.ID))
 	err = d.Set("name", vnetresp.Name)
@@ -540,6 +553,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	err = d.Set("tags", vnetresp.Tags)
 	if err != nil {
 		return err
+	}
+
+	if currentVpcId > 0 {
+		err = d.Set("vpcid", vnetresp.Vpc.ID)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
