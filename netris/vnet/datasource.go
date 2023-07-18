@@ -105,6 +105,12 @@ func DataResource() *schema.Resource {
 					},
 				},
 			},
+			"vpcid": {
+				ForceNew:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
+				Description: "ID of VPC.",
+			},
 		},
 		Read:   dataResourceRead,
 		Exists: dataResourceExists,
@@ -215,6 +221,12 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+
+	err = d.Set("vpcid", vnet.Vpc.ID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
