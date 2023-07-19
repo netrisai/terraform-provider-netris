@@ -135,14 +135,19 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	log.Println("[DEBUG] allocation resourceRead")
 	clientset := m.(*api.Clientset)
-
-	ipams, err := clientset.IPAM().Get()
+	currentVpcId := d.Get("vpcid").(int)
+	var ipams []*ipam.IPAM
+	var err error
+	if currentVpcId > 0 {
+		ipams, err = clientset.IPAM().GetByVPC(currentVpcId)
+	} else {
+		ipams, err = clientset.IPAM().Get()
+	}
 	if err != nil {
 		return err
 	}
 	id, _ := strconv.Atoi(d.Id())
 	ipam := getByID(ipams, id)
-	currentVpcId := d.Get("vpcid").(int)
 	if ipam == nil {
 		return nil
 	}

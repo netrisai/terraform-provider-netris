@@ -155,8 +155,15 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
+	var routes []*route.Route
 	var route *route.Route
-	routes, err := clientset.Route().Get()
+	currentVpcId := d.Get("vpcid").(int)
+	var err error
+	if currentVpcId > 0 {
+		routes, err = clientset.Route().GetByVPC(currentVpcId)
+	} else {
+		routes, err = clientset.Route().Get()
+	}
 	if err != nil {
 		return err
 	}
@@ -166,10 +173,9 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 			break
 		}
 	}
-	currentVpcId := d.Get("vpcid").(int)
 
 	if route == nil {
-		return fmt.Errorf("Coudn't find route by id %d", id)
+		return fmt.Errorf("coudn't find route by id %d", id)
 	}
 
 	d.SetId(strconv.Itoa(route.ID))
@@ -292,7 +298,14 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 	id, _ := strconv.Atoi(d.Id())
-	routes, err := clientset.Route().Get()
+	currentVpcId := d.Get("vpcid").(int)
+	var routes []*route.Route
+	var err error
+	if currentVpcId > 0 {
+		routes, err = clientset.Route().GetByVPC(currentVpcId)
+	} else {
+		routes, err = clientset.Route().Get()
+	}
 	if err != nil {
 		return false, err
 	}

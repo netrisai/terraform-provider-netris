@@ -166,7 +166,15 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	ipams, err := clientset.IPAM().GetSubnets()
+	currentVpcId := d.Get("vpcid").(int)
+	var ipams []*ipam.IPAM
+	var err error
+	if currentVpcId > 0 {
+		ipams, err = clientset.IPAM().GetSubnetsByVPC(currentVpcId)
+	} else {
+		ipams, err = clientset.IPAM().GetSubnets()
+	}
+
 	if err != nil {
 		return err
 	}
@@ -175,7 +183,6 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if ipam == nil {
 		return nil
 	}
-	currentVpcId := d.Get("vpcid").(int)
 
 	d.SetId(strconv.Itoa(ipam.ID))
 	err = d.Set("name", ipam.Name)

@@ -361,7 +361,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Untagged:           untagged,
 	}
 
-
 	if vpcid > 0 {
 		bgpAdd.Vpc = &bgp.IDName{ID: vpcid}
 	}
@@ -408,8 +407,15 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
+	currentVpcId := d.Get("vpcid").(int)
+	var bgps []*bgp.EBGP
 	var bgp *bgp.EBGP
-	bgps, err := clientset.BGP().Get()
+	var err error
+	if currentVpcId > 0 {
+		bgps, err = clientset.BGP().GetByVpc(currentVpcId)
+	} else {
+		bgps, err = clientset.BGP().Get()
+	}
 	if err != nil {
 		return err
 	}
@@ -424,7 +430,6 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if bgp == nil {
 		return nil
 	}
-	currentVpcId := d.Get("vpcid").(int)
 
 	d.SetId(strconv.Itoa(bgp.ID))
 	err = d.Set("name", bgp.Name)
@@ -754,8 +759,14 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 	bgpID, _ := strconv.Atoi(d.Id())
-
-	bgps, err := clientset.BGP().Get()
+	currentVpcId := d.Get("vpcid").(int)
+	var bgps []*bgp.EBGP
+	var err error
+	if currentVpcId > 0 {
+		bgps, err = clientset.BGP().GetByVpc(currentVpcId)
+	} else {
+		bgps, err = clientset.BGP().Get()
+	}
 	if err != nil {
 		return false, err
 	}
