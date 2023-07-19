@@ -3,9 +3,9 @@ HOSTNAME=registry.terraform.io
 NAMESPACE=netrisai
 NAME=netris
 BINARY=terraform-provider-${NAME}
-VERSION=2.2.2
+VERSION=3.0.0
 OS_ARCH=darwin_arm64
-WORKDIRECTORY=examples
+WORKDIRECTORY=scripts/examples
 
 default: install
 

@@ -412,7 +412,12 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	subnets, err := clientset.IPAM().GetSubnets()
+	var subnets []*ipam.IPAM
+	if currentVpcId > 0 {
+		subnets, err = clientset.IPAM().GetSubnetsByVPC(currentVpcId)
+	} else {
+		subnets, err = clientset.IPAM().GetSubnets()
+	}
 	if err != nil {
 		return err
 	}
