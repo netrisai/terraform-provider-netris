@@ -86,3 +86,27 @@ resource "netris_subnet" "my-subnet-vnetv6" {
     netris_allocation.my-allocation-vnetv6,
   ]
 }
+
+resource "netris_subnet" "my-subnet-vnet-in-my-vpc" {
+  name     = "my-subnet-vnet-in-my-vpc"
+  prefix   = "198.18.51.0/24"
+  tenantid = data.netris_tenant.admin.id
+  purpose  = "common"
+  siteids  = [netris_site.santa-clara.id]
+  vpcid = netris_vpc.my-vpc.id
+  depends_on = [
+    netris_allocation.my-allocation-vnet-in-my-vpc,
+  ]
+}
+
+resource "netris_subnet" "my-subnet-vnetv6-in-my-vpc" {
+  name     = "my-subnet-vnetV6-in-my-vpc"
+  prefix   = "2001:db8:acad::/64"
+  tenantid = data.netris_tenant.admin.id
+  purpose  = "common"
+  siteids  = [netris_site.santa-clara.id]
+  vpcid = netris_vpc.my-vpc.id
+  depends_on = [
+    netris_allocation.my-allocation-vnetv6-in-my-vpc,
+  ]
+}

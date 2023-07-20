@@ -5,7 +5,7 @@ NAME=netris
 BINARY=terraform-provider-${NAME}
 VERSION=3.0.0
 OS_ARCH=darwin_arm64
-WORKDIRECTORY=scripts/examples
+WORKDIRECTORY=examples
 
 default: install
 
