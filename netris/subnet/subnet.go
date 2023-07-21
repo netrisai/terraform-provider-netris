@@ -54,7 +54,7 @@ func Resource() *schema.Resource {
 				ForceNew:    true,
 				Optional:    true,
 				Type:        schema.TypeInt,
-				Description: "ID of VPC. If not specified, the allocation will be created in the VPC marked as a default.",
+				Description: "ID of VPC. If not specified, the subnet will be created in the VPC marked as a default.",
 			},
 			"purpose": {
 				Required:    true,

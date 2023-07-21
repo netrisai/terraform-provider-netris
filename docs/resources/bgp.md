@@ -69,3 +69,4 @@ resource "netris_bgp" "my-bgp" {
 - **vlanid** (Number) VLAN ID for tagging BGP neighbor facing ethernet frames. Valid values should be in range 2-4094.
 - **vnetid** (Number) Existing VNet service ID to terminate E-BGP on. Can't be used together `portid`.
 - **weight** (Number) BGP session weight. Default value is `0`.
+- **vpcid** (Number) ID of VPC. If not specified, the BGP will be created in the VPC marked as a default.

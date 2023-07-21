@@ -46,7 +46,7 @@ func Resource() *schema.Resource {
 			"guesttenantid": {
 				Optional:    true,
 				Type:        schema.TypeSet,
-				Description: "List of tenants allowed to add/remove services to the VPC but not allowed to manage other parameters of it.",
+				Description: "Tenant allowed to add/remove services to the VPC but not allowed to manage other parameters of it.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
