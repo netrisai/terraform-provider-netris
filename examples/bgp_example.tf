@@ -93,7 +93,7 @@ resource "netris_bgp" "my-bgp-isp1-in-my-vpc" {
   localip          = "172.19.25.2/30"
   remoteip         = "172.19.25.1/30"
   description      = "My ISP1 BGP"
-  vpcid = netris_vpc.my-vpc.id
+  vpcid            = netris_vpc.my-vpc.id
   inboundroutemap  = netris_routemap.routemap-in.id
   outboundroutemap = netris_routemap.routemap-out.id
   #  state = "enabled"
@@ -125,7 +125,7 @@ resource "netris_bgp" "my-bgp-isp2-in-my-vpc" {
   localip     = "172.19.35.2/30"
   remoteip    = "172.19.35.1/30"
   description = "My ISP2 BGP"
-  vpcid = netris_vpc.my-vpc.id
+  vpcid       = netris_vpc.my-vpc.id
   #  inboundroutemap = netris_routemap.routemap-in.id
   #  outboundroutemap = netris_routemap.routemap-out.id
   #  state = "enabled"

@@ -93,7 +93,7 @@ resource "netris_subnet" "my-subnet-vnet-in-my-vpc" {
   tenantid = data.netris_tenant.admin.id
   purpose  = "common"
   siteids  = [netris_site.santa-clara.id]
-  vpcid = netris_vpc.my-vpc.id
+  vpcid    = netris_vpc.my-vpc.id
   depends_on = [
     netris_allocation.my-allocation-vnet-in-my-vpc,
   ]
@@ -105,7 +105,7 @@ resource "netris_subnet" "my-subnet-vnetv6-in-my-vpc" {
   tenantid = data.netris_tenant.admin.id
   purpose  = "common"
   siteids  = [netris_site.santa-clara.id]
-  vpcid = netris_vpc.my-vpc.id
+  vpcid    = netris_vpc.my-vpc.id
   depends_on = [
     netris_allocation.my-allocation-vnetv6-in-my-vpc,
   ]
