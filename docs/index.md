@@ -21,6 +21,7 @@ terraform {
   required_providers {
     netris = {
       source  = "netrisai/netris"
+      version = ">= 2.1.0"
     }
   }
   required_version = ">= 0.13"
@@ -46,6 +47,14 @@ The provider supports the following arguments:
   also be specified with the `NETRIS_PASSWORD` environment variable.
 
 
+### Compatibility with Netris-Controller
+------------------------------------
+  | Provider version | Controller version |
+  | -----------------| -------------------|
+  | `v1.X`           | `v3.0`             |
+  | `v2.X`           | `v3.1+`            |
+  | `v3.X`           | `v4.0+`            |
+
 ## A simple infrastructure creation example
 
 ```hcl
@@ -53,6 +62,7 @@ terraform {
   required_providers {
     netris = {
       source  = "netrisai/netris"
+      version = ">= 2.1.0"
     }
   }
   required_version = ">= 0.13"
