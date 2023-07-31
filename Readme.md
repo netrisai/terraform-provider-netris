@@ -13,7 +13,7 @@ Requirements
 ------------
 
 -	[Terraform](https://www.terraform.io/downloads.html) 0.13.x +
--	[Go](https://golang.org/doc/install) 1.17.x (to build the provider plugin)
+-	[Go](https://golang.org/doc/install) 1.18.x (to build the provider plugin)
 
 Using the provider
 ----------------------
@@ -26,11 +26,12 @@ Compatibility with Netris-Controller
   | -----------------| -------------------|
   | `v1.X`           | `v3.0`             |
   | `v2.X`           | `v3.1+`            |
+  | `v3.X`           | `v4.0+`            |
 
 
 Manual Build and Install
 ------------
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.17+ is *required*).
+If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.18+ is *required*).
 
 To compile the provider, make sure that `OS_ARCH` in the Makefile is correct and run `make install`. This will build the provider and put the provider binary in the `~/.terraform.d/plugins/` directory.
 

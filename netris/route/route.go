@@ -53,6 +53,12 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeInt,
 				Description: "The site ID where the current route belongs",
 			},
+			"vpcid": {
+				ForceNew:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
+				Description: "ID of VPC. If not specified, the route will be created in the VPC marked as a default.",
+			},
 			"state": {
 				Default:     "enabled",
 				Optional:    true,
@@ -85,6 +91,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	hwIds := []int{}
 	hws := d.Get("hwids").([]interface{})
+	vpcid := d.Get("vpcid").(int)
 
 	for _, v := range hws {
 		hwIds = append(hwIds, v.(int))
@@ -97,6 +104,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		SiteID:      d.Get("siteid").(int),
 		StateStatus: d.Get("state").(string),
 		Switches:    hwIds,
+	}
+
+	if vpcid > 0 {
+		routeAdd.Vpc = &route.IDName{ID: vpcid}
 	}
 
 	js, _ := json.Marshal(routeAdd)
@@ -144,8 +155,15 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
+	var routes []*route.Route
 	var route *route.Route
-	routes, err := clientset.Route().Get()
+	currentVpcId := d.Get("vpcid").(int)
+	var err error
+	if currentVpcId > 0 {
+		routes, err = clientset.Route().GetByVPC(currentVpcId)
+	} else {
+		routes, err = clientset.Route().Get()
+	}
 	if err != nil {
 		return err
 	}
@@ -157,7 +175,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if route == nil {
-		return fmt.Errorf("Coudn't find route by id %d", id)
+		return fmt.Errorf("coudn't find route by id %d", id)
 	}
 
 	d.SetId(strconv.Itoa(route.ID))
@@ -180,6 +198,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	err = d.Set("state", route.State)
 	if err != nil {
 		return err
+	}
+
+	if currentVpcId > 0 {
+		err = d.Set("vpcid", route.Vpc.ID)
+		if err != nil {
+			return err
+		}
 	}
 
 	hwids := []int{}
@@ -273,7 +298,14 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 	id, _ := strconv.Atoi(d.Id())
-	routes, err := clientset.Route().Get()
+	currentVpcId := d.Get("vpcid").(int)
+	var routes []*route.Route
+	var err error
+	if currentVpcId > 0 {
+		routes, err = clientset.Route().GetByVPC(currentVpcId)
+	} else {
+		routes, err = clientset.Route().Get()
+	}
 	if err != nil {
 		return false, err
 	}

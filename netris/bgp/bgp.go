@@ -56,19 +56,16 @@ func Resource() *schema.Resource {
 				Description: "BGP neighbor AS number.",
 			},
 			"portid": {
-				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeInt,
 				Description: "Port ID where BGP neighbor cable is connected. Can't be used together `vnetid`.",
 			},
 			"vnetid": {
-				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeInt,
 				Description: "Existing VNet service ID to terminate E-BGP on. Can't be used together `portid`.",
 			},
 			"vlanid": {
-				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeInt,
 				Description: "VLAN ID for tagging BGP neighbor facing ethernet frames. Valid values should be in range 2-4094.",
@@ -192,6 +189,12 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"vpcid": {
+				ForceNew:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
+				Description: "ID of VPC. If not specified, the BGP will be created in the VPC marked as a default.",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -212,18 +215,20 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	var (
-		vlanID    = 1
+		vlanID    = -1
 		state     = "enabled"
 		ipVersion = "ipv6"
 		hwID      = 0
 		portID    = 0
 		vnetID    = 0
+		untagged  = false
 	)
 
 	originate := "disabled"
 	localPreference := 100
 
 	siteID := d.Get("siteid").(int)
+	vpcid := d.Get("vpcid").(int)
 
 	if d.Get("defaultoriginate").(bool) {
 		originate = "enabled"
@@ -261,6 +266,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	if transportVlanID >= 1 {
 		vlanID = transportVlanID
+	}
+
+	if vlanID == -1 {
+		untagged = true
 	}
 
 	localIPString := d.Get("localip").(string)
@@ -349,6 +358,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		State:              state,
 		Weight:             d.Get("weight").(int),
 		Tags:               []string{},
+		Untagged:           untagged,
+	}
+
+	if vpcid > 0 {
+		bgpAdd.Vpc = &bgp.IDName{ID: vpcid}
 	}
 
 	js, _ := json.Marshal(bgpAdd)
@@ -393,8 +407,15 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
+	currentVpcId := d.Get("vpcid").(int)
+	var bgps []*bgp.EBGP
 	var bgp *bgp.EBGP
-	bgps, err := clientset.BGP().Get()
+	var err error
+	if currentVpcId > 0 {
+		bgps, err = clientset.BGP().GetByVpc(currentVpcId)
+	} else {
+		bgps, err = clientset.BGP().Get()
+	}
 	if err != nil {
 		return err
 	}
@@ -535,6 +556,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	if currentVpcId > 0 {
+		err = d.Set("vpcid", bgp.Vpc.ID)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -542,12 +570,13 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	var (
-		vlanID    = 1
+		vlanID    = -1
 		state     = "enabled"
 		ipVersion = "ipv6"
 		hwID      = 0
 		portID    = 0
 		vnetID    = 0
+		untagged  = false
 	)
 
 	originate := "disabled"
@@ -591,6 +620,10 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	if transportVlanID >= 1 {
 		vlanID = transportVlanID
+	}
+
+	if vlanID == -1 {
+		untagged = true
 	}
 
 	localIPString := d.Get("localip").(string)
@@ -681,6 +714,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		State:              state,
 		Weight:             d.Get("weight").(int),
 		Tags:               []string{},
+		Untagged:           untagged,
 	}
 
 	js, _ := json.Marshal(bgpUpdate)
@@ -725,8 +759,14 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 	bgpID, _ := strconv.Atoi(d.Id())
-
-	bgps, err := clientset.BGP().Get()
+	currentVpcId := d.Get("vpcid").(int)
+	var bgps []*bgp.EBGP
+	var err error
+	if currentVpcId > 0 {
+		bgps, err = clientset.BGP().GetByVpc(currentVpcId)
+	} else {
+		bgps, err = clientset.BGP().Get()
+	}
 	if err != nil {
 		return false, err
 	}

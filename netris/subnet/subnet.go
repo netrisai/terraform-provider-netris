@@ -50,6 +50,12 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeInt,
 				Description: "ID of tenant. Users of this tenant will be permitted to manage the subnet.",
 			},
+			"vpcid": {
+				ForceNew:    true,
+				Optional:    true,
+				Type:        schema.TypeInt,
+				Description: "ID of VPC. If not specified, the subnet will be created in the VPC marked as a default.",
+			},
 			"purpose": {
 				Required:    true,
 				Type:        schema.TypeString,
@@ -92,6 +98,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	purpose := d.Get("purpose").(string)
 	defaultgw := ""
 	sitesList := d.Get("siteids").([]interface{})
+	vpcid := d.Get("vpcid").(int)
 	sites := []ipam.IDName{}
 	for _, s := range sitesList {
 		sites = append(sites, ipam.IDName{ID: s.(int)})
@@ -109,6 +116,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Sites:          sites,
 		DefaultGateway: defaultgw,
 		Tags:           []string{},
+	}
+
+	if vpcid > 0 {
+		subnetAdd.Vpc = &ipam.IDName{ID: vpcid}
 	}
 
 	js, _ := json.Marshal(subnetAdd)
@@ -155,7 +166,15 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	ipams, err := clientset.IPAM().GetSubnets()
+	currentVpcId := d.Get("vpcid").(int)
+	var ipams []*ipam.IPAM
+	var err error
+	if currentVpcId > 0 {
+		ipams, err = clientset.IPAM().GetSubnetsByVPC(currentVpcId)
+	} else {
+		ipams, err = clientset.IPAM().GetSubnets()
+	}
+
 	if err != nil {
 		return err
 	}
@@ -193,6 +212,12 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	err = d.Set("siteids", sites)
 	if err != nil {
 		return err
+	}
+	if currentVpcId > 0 {
+		err = d.Set("vpcid", ipam.Vpc.ID)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -265,8 +290,15 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
+	currentVpcId := d.Get("vpcid").(int)
+	var ipams []*ipam.IPAM
+	var err error
+	if currentVpcId > 0 {
+		ipams, err = clientset.IPAM().GetSubnetsByVPC(currentVpcId)
+	} else {
+		ipams, err = clientset.IPAM().GetSubnets()
+	}
 
-	ipams, err := clientset.IPAM().GetSubnets()
 	if err != nil {
 		return false, err
 	}
@@ -288,7 +320,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	prefix := d.Id()
 	ipam := GetByPrefix(ipams, prefix)
 	if ipam == nil {
-		return []*schema.ResourceData{d}, fmt.Errorf("Allocation '%s' not found", prefix)
+		return []*schema.ResourceData{d}, fmt.Errorf("allocation '%s' not found", prefix)
 	}
 
 	d.SetId(strconv.Itoa(ipam.ID))

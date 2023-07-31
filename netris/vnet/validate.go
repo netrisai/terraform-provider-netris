@@ -36,7 +36,7 @@ func validateVlanID(val interface{}, key string) (warns []string, errs []error) 
 	} else {
 		vlan, _ := strconv.Atoi(v)
 		if !(vlan >= 2 && vlan <= 4094) {
-			errs = append(errs, fmt.Errorf("port should be in range 2-3999"))
+			errs = append(errs, fmt.Errorf("port should be in range 2-4094"))
 		}
 	}
 	return warns, errs
@@ -62,7 +62,15 @@ func validateGateway(val interface{}, key string) (warns []string, errs []error)
 func validateDHCP(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
 	if !(v == "enabled" || v == "disabled") {
-		errs = append(errs, fmt.Errorf("'%s' must be enabled or disabled, got: %s", key, v))
+		errs = append(errs, fmt.Errorf("'%s' must be enabled or disabled, got - %s", key, v))
+	}
+	return warns, errs
+}
+
+func validateUntagged(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if !(v == "yes" || v == "no") {
+		errs = append(errs, fmt.Errorf("'%s' must be either 'yes' or 'no', got - %s", key, v))
 	}
 	return warns, errs
 }

@@ -193,7 +193,6 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-
 func dataResourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
 

@@ -29,7 +29,7 @@ resource "netris_vnet" "my-vnet" {
   tenantid = data.netris_tenant.admin.id
   # vlanid = "auto"
   state = "active"
-  sites{
+  sites {
     id = data.netris_site.santa-clara.id
     gateways {
       prefix = "203.0.113.1/25"
@@ -44,7 +44,6 @@ resource "netris_vnet" "my-vnet" {
     }
     interface {
       name = "swp7@my-sw02"
-      lacp = "on"
     }
   }
   depends_on = [
@@ -69,7 +68,8 @@ resource "netris_vnet" "my-vnet" {
 
 - **state** (String) V-Net state. Allowed values: `active` or `disabled`. Default value is `active`
 - **tags** (List of String) List of tags. Example `["foo", "bar"]`
-- **vlanid** (String) VLAN tag for all network interfaces of the vnet. Also can be `auto` for non-netris Switch Fabrics.
+- **vlanid** (String) VLAN tag for all network interfaces of the vnet. Also can be `auto`. If set `auto` the controller will assign a vlan ID  automatically.
+- **vpcid** (Number) ID of VPC. If not specified, the vnet will be created in the VPC marked as a default.
 
 <a id="nestedblock--sites"></a>
 ### Nested Schema for `sites`
@@ -105,5 +105,5 @@ Optional:
 Optional:
 
 - **name** (String) Network interface name. Example: `swp5@my-sw01`
-- **vlanid** (String) VLAN tag for the current interface. If `interface.vlanid` is not set the VLAN tag will be inherited from the main `vlanid`, if the main `vlanid` is also not set - means untagged. (Only for Netris Switch Fabric)
-- **lacp** (String) LAG mode. Allows for active-standby dual-homing, assuming LAG configuration on the remote end. Valid value is `on` or `off`. Default value is `off`. (Only for Netris Switch Fabric)
+- **vlanid** (String) VLAN tag for the current interface. Cannot be used together with global `vlanid`. If the main `vlanid` is also not set - means untagged. (Only for Netris Switch Fabric)
+- **untagged** (String) Can be used only when global `vlanid` is specified. Valid value is `yes` or `no`. (Only for Netris Switch Fabric)

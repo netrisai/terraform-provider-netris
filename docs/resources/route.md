@@ -48,3 +48,4 @@ resource "netris_route" "route-terraform-test" {
 - **description** (String) Description of route
 - **hwids** (List of Number) Hardware ID where to apply this route. It is typically used for Null routes. If not set, Netris will automatically decide where to apply
 - **state** (String) Administrative state of the route. Possible values: `enabled` or `disabled`. Default value is `enabled`
+- **vpcid** (Number) ID of VPC. If not specified, the route will be created in the VPC marked as a default.

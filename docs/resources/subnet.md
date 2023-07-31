@@ -51,3 +51,4 @@ resource "netris_subnet" "my-subnet-mgmt" {
 
 - **defaultgateway** (String) Use when purpose is set to `management`.
 - **siteids** (List of Number) List of sites IDs where this subnet is available.
+- **vpcid** (Number) ID of VPC. If not specified, the subnet will be created in the VPC marked as a default.

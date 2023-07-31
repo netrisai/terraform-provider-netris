@@ -17,7 +17,7 @@ limitations under the License.
 package site
 
 var routingProfiles = map[string]int{
-	"default": 1,
+	"default":     1,
 	"default_agg": 2,
-	"full_table": 3,
+	"full_table":  3,
 }
