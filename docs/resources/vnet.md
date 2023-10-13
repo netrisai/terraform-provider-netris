@@ -106,4 +106,4 @@ Optional:
 
 - **name** (String) Network interface name. Example: `swp5@my-sw01`
 - **vlanid** (String) VLAN tag for the current interface. Cannot be used together with global `vlanid`. If the main `vlanid` is also not set - means untagged. (Only for Netris Switch Fabric)
-- **untagged** (String) Can be used only when global `vlanid` is specified. Valid value is `yes` or `no`. (Only for Netris Switch Fabric)
+- **untagged** (String) This option is applicable only when a global `vlanid` is set. In such cases, the default value is `yes`. The valid value is `yes` or `no`. (Applicable exclusively to Netris Switch Fabric)

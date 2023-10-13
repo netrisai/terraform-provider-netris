@@ -59,7 +59,8 @@ resource "netris_site" "pnap-sea" {
 ### Optional
 
 - **switchfabric** (String) Type of switch fabric. Possible values: `netris`, `equinix_metal`, `dot1q_trunk`, `phoenixnap_bmc`. Default value is `netris`. 
-- **vlanrange** (String) Range of VLAN IDs allowed for use at this site. Ignoring when switchfabric == `netris`. Default value is `2-3999` when switchfabric == `equinix_metal`, `2-4094` when switchfabric == `dot1q_trunk`, and `3000-4094` when switchfabric == `phoenixnap_bmc`.
+- **vlanrange** (String) Range of VLAN IDs allowed for use at this site. Ignoring when switch fabric is set to `netris`. Default value is `2-3999` when switch fabric is set to `equinix_metal`, and `2-4094` when switch fabric is set to `dot1q_trunk` or `phoenixnap_bmc`.
+ - **vlanrangeautoassign** (String) The range of VLAN IDs for automatic VLAN assignment. If no specific range is provided and the switch fabric is set to `phoenixnap_bmc` the default range will be `3000-4094`. For all other switch fabric types, the range will match that of the `vlanRange` value."
 
 - **switchfabricproviders** (Block List) Block of switch fabric providers parameters. Only when switchfabric == `equinix_metal`, or `phoenixnap_bmc`. (see [below for nested schema](#nestedblock--switchfabricproviders))
 
