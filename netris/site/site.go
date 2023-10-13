@@ -85,6 +85,13 @@ func Resource() *schema.Resource {
 				Type:         schema.TypeString,
 				Description:  "VLAN range.",
 			},
+			"vlanrangeautoassign": {
+				Computed:     true,
+				ValidateFunc: validateVlanRange,
+				Optional:     true,
+				Type:         schema.TypeString,
+				Description:  "The range of VLAN IDs for automatic VLAN assignment. If not specified it will be the same value as vlanrange.",
+			},
 			"switchfabricproviders": {
 				Optional:    true,
 				Type:        schema.TypeSet,
@@ -161,6 +168,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	vmasn := d.Get("vmasn").(int)
 	fabric := d.Get("switchfabric").(string)
 	vlanRange := d.Get("vlanrange").(string)
+	vlanRangeAA := d.Get("vlanrangeautoassign").(string)
 
 	siteW := &site.Site{
 		Name: name,
@@ -216,7 +224,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	} else if fabric == "phoenixnap_bmc" {
 		if vlanRange == "" {
-			vlanRange = "3000-4094"
+			vlanRange = "2-4094"
+		}
+		if vlanRangeAA == "" {
+			vlanRangeAA = "3000-4094"
 		}
 
 		if err := valPhoenixVlanRange(vlanRange); err != nil {
@@ -245,6 +256,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	siteW.VlanRange = vlanRange
+	siteW.VlanRangeAutoAssign = vlanRangeAA
 
 	js, _ := json.Marshal(siteW)
 	log.Println("[DEBUG]", string(js))
@@ -345,6 +357,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("vlanrangeautoassign", site.VlanRangeAutoAssign)
+	if err != nil {
+		return err
+	}
 
 	providers := []map[string]interface{}{}
 
@@ -387,6 +403,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	vmasn := d.Get("vmasn").(int)
 	fabric := d.Get("switchfabric").(string)
 	vlanRange := d.Get("vlanrange").(string)
+	vlanRangeAA := d.Get("vlanrangeautoassign").(string)
+
 
 	siteW := &site.Site{
 		Name: name,
@@ -442,7 +460,10 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 	} else if fabric == "phoenixnap_bmc" {
 		if vlanRange == "" {
-			vlanRange = "3000-4094"
+			vlanRange = "2-4094"
+		}
+		if vlanRangeAA == "" {
+			vlanRangeAA = "3000-4094"
 		}
 
 		if err := valPhoenixVlanRange(vlanRange); err != nil {
@@ -471,6 +492,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	siteW.VlanRange = vlanRange
+	siteW.VlanRangeAutoAssign = vlanRangeAA
 
 	js, _ := json.Marshal(siteW)
 	log.Println("[DEBUG]", string(js))
