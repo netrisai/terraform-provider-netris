@@ -42,13 +42,13 @@ resource "netris_acl" "my-acl" {
 ### Optional
 
 - **comment** (String) Descriptive comment, commonly used for approval workflows.
-- **dstportfrom** (Number) Destination port from. Valid values should be in range 1-65535
-- **dstportgroup** (String) Match destination ports on a group of ports. Valid value name of ACL Port Group
-- **dstportto** (Number) Destination port to. Valid values should be in range 1-65535
+- **dstportfrom** (Number) Destination port from. Valid values should be in range 1-65535. Ignoring when `proto` == `all`
+- **dstportgroup** (String) Match destination ports on a group of ports. Valid value name of ACL Port Group. Ignoring when `proto` == `all`
+- **dstportto** (Number) Destination port to. Valid values should be in range 1-65535. Ignoring when `proto` == `all`
 - **established** (Number) For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Valid values are `0` and `1`. Default value is `1`
 - **icmptype** (Number) Custom IPv4 ICMP code. Valid values should be in range 0-36 according to RFC 1700. Default value is `0`
 - **reverse** (Boolean) For TCP, also match reverse packets except with TCP SYN flag. For non-TCP, also generate a reverse rule with swapped source/destination. Default value is `true`
-- **srcportfrom** (Number) Source port from. Valid values should be in range 1-65535
-- **srcportgroup** (String) Match source ports on a group of ports. Valid value name of ACL Port Group
-- **srcportto** (Number) Source port to. Valid values should be in range 1-65535
+- **srcportfrom** (Number) Source port from. Valid values should be in range 1-65535. Ignoring when `proto` == `all`
+- **srcportgroup** (String) Match source ports on a group of ports. Valid value name of ACL Port Group. Ignoring when `proto` == `all`
+- **srcportto** (Number) Source port to. Valid values should be in range 1-65535. Ignoring when `proto` == `all`
 - **validuntil** (String)
