@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/netrisai/netriswebapi/http"
 	"github.com/netrisai/netriswebapi/v2/types/port"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -168,11 +169,29 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	log.Println("[DEBUG]", string(reply.Data))
 
+	idStruct := struct {
+		ID int `json:"id"`
+	}{}
+
+	data, err := reply.Parse()
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	err = http.Decode(data.Data, &idStruct)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	log.Println("[DEBUG] ID:", idStruct.ID)
+
 	if reply.StatusCode != 200 {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	d.SetId("1")
+	d.SetId(strconv.Itoa(idStruct.ID))
 	return nil
 }
 
