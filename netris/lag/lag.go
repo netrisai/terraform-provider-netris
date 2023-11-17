@@ -32,12 +32,12 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages Switch Ports",
+		Description: "Manages LAGs",
 		Schema: map[string]*schema.Schema{
 			"description": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Lag desired description",
+				Description: "LAG desired description",
 			},
 			"tenantid": {
 				Type:        schema.TypeInt,
