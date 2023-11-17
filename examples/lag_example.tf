@@ -1,13 +1,13 @@
 resource "netris_lag" "lag1-switch-01" {
   description = "my lag1"
   tenantid    = data.netris_tenant.admin.id
-  mtu         = 9008                             # Optional
-  # lacp        = "on"                           # Optional. Possible values: 'off' or 'on'
-  # extension = {                                # Optional
+  mtu         = 9008
+  # lacp        = "on"
+  # extension = {
   #    extensionname = "ext1"
   #    vlanrange = "10-20"
   # }
-  members = [                                    # at least one member port is required
+  members = [
     "swp11@my-switch01",
     "swp12@my-switch01",
   ]
