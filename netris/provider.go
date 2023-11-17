@@ -30,6 +30,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/dhcpoptionset"
 	"github.com/netrisai/terraform-provider-netris/netris/inventoryprofile"
 	"github.com/netrisai/terraform-provider-netris/netris/l4lb"
+	"github.com/netrisai/terraform-provider-netris/netris/lag"
 	"github.com/netrisai/terraform-provider-netris/netris/link"
 	"github.com/netrisai/terraform-provider-netris/netris/nat"
 	"github.com/netrisai/terraform-provider-netris/netris/networkinterface"
@@ -97,6 +98,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_acltwozero":        acl2.Resource(),
 			"netris_dhcp_option_set":   dhcpoptionset.Resource(),
 			"netris_vpc":               vpc.Resource(),
+			"netris_lag":               lag.Resource(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"netris_site":              site.DataResource(),
@@ -109,6 +111,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_routemap":          routemap.DataResource(),
 			"netris_dhcp_option_set":   dhcpoptionset.DataResource(),
 			"netris_vpc":               vpc.DataResource(),
+			"netris_lag":               lag.DataResource(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
