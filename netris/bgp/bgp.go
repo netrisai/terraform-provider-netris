@@ -87,6 +87,12 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "BGP session description",
 			},
+			"localasn": {
+				Optional:    true,
+				Type:        schema.TypeString,
+				Description: "Local Autonomous System Number for the BGP speaker",
+				Default:     "public-as",
+			},
 			"state": {
 				Optional:     true,
 				Default:      "enabled",
@@ -335,6 +341,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		BgpPassword:        d.Get("bgppassword").(string),
 		BgpCommunity:       strings.Join(communityArr, "\n"),
 		Description:        d.Get("description").(string),
+		LocalAsn:           d.Get("localasn").(string),
 		IPFamily:           ipVersion,
 		LocalIP:            localIP.String(),
 		RemoteIP:           remoteIP.String(),
@@ -477,6 +484,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("description", bgp.Description)
+	if err != nil {
+		return err
+	}
+	err = d.Set("localasn", bgp.LocalAsn)
 	if err != nil {
 		return err
 	}
@@ -691,6 +702,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		BgpPassword:        d.Get("bgppassword").(string),
 		BgpCommunity:       strings.Join(communityArr, "\n"),
 		Description:        d.Get("description").(string),
+		LocalAsn:           d.Get("localasn").(string),
 		IPFamily:           ipVersion,
 		LocalIP:            localIP.String(),
 		RemoteIP:           remoteIP.String(),

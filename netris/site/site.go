@@ -405,7 +405,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	vlanRange := d.Get("vlanrange").(string)
 	vlanRangeAA := d.Get("vlanrangeautoassign").(string)
 
-
 	siteW := &site.Site{
 		Name: name,
 
