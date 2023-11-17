@@ -51,6 +51,7 @@ resource "netris_bgp" "my-bgp" {
 - **description** (String) BGP session description
 - **hardware** (String) Defines hardware for Layer-3 and BGP session termination. Valid value is hardware name or `auto` when BGP is terminated on VNet. Default value is `auto`.
 - **inboundroutemap** (Number) Reference to route-map resource ID.
+- **localasn** (String) Local ASN for the BGP speaker. Possible values: `public-as` - use the AS number defined as public ASN in the current site configuration, `switch-local-as` - if a switch is selected as a BGP router, use the individual switch local ASN to initiate the BGP session, or `<1-4294967295>` enter a custom AS number to initiate the BGP session from. The default value is `public-as`.
 - **localpreference** (Number) BGP session local preference. Default value is `100`.
 - **multihop** (Map of String) Multihop BGP session configurations.
 - **multihop.neighboraddress** (String) IP address of the neighbor when peering with the loopback IP address instead of the interface IP address (aka Multihop).

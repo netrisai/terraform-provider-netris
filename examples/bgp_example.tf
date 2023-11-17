@@ -31,6 +31,7 @@ resource "netris_bgp" "my-bgp-isp1" {
   description      = "My ISP1 BGP"
   inboundroutemap  = netris_routemap.routemap-in.id
   outboundroutemap = netris_routemap.routemap-out.id
+  localasn         = "4294967295"
   #  state = "enabled"
   #  multihop = {
   #    neighboraddress = "185.54.21.5"
