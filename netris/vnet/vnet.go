@@ -517,19 +517,20 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				}
 			}
 			if siteID == site.ID {
-				m := gatewayMap[gateway.Prefix]
-				m["prefix"] = gateway.Prefix
-				m["vlanid"] = gateway.Vlan
-				m["dhcp"] = "disabled"
-				if gateway.DHCPEnabled {
-					m["dhcp"] = "enabled"
-					if m["dhcpstartip"].(string) != "" {
-						m["dhcpoptionsetid"] = gateway.DHCP.OptionSet.ID
-						m["dhcpstartip"] = gateway.DHCP.Start
-						m["dhcpendip"] = gateway.DHCP.End
+				if m, ok := gatewayMap[gateway.Prefix]; ok {
+					m["prefix"] = gateway.Prefix
+					m["vlanid"] = gateway.Vlan
+					m["dhcp"] = "disabled"
+					if gateway.DHCPEnabled {
+						m["dhcp"] = "enabled"
+						if m["dhcpstartip"].(string) != "" {
+							m["dhcpoptionsetid"] = gateway.DHCP.OptionSet.ID
+							m["dhcpstartip"] = gateway.DHCP.Start
+							m["dhcpendip"] = gateway.DHCP.End
+						}
 					}
+					gatewayList = append(gatewayList, m)
 				}
-				gatewayList = append(gatewayList, m)
 			}
 		}
 		s["id"] = site.ID
