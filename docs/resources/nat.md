@@ -58,6 +58,24 @@ resource "netris_nat" "my_dnat" {
 }
 ```
 
+### DNAT W/ PORT GROUP
+
+```hcl
+resource "netris_nat" "my_dnat_with_port_group" {
+  name = "MY DNAT w/ PORT GROUP"
+  state = "enabled"
+  siteid = data.netris_site.santa-clara.id
+  action = "DNAT"
+  protocol = "tcp"
+  srcaddress = "0.0.0.0/0"
+  srcport = "1-65535"
+  dstaddress = "203.0.113.193/32"
+  portgroupid = netris_portgroup.my_portgroup.id
+  dnattoip = "10.10.10.60/32"
+  depends_on = [netris_subnet.my-subnet-common, netris_subnet.my-subnet-nat]
+}
+```
+
 ### ACCEPT (Excluding destination network from already defined SNAT Rule)
 
 ```hcl
@@ -89,8 +107,9 @@ resource "netris_nat" "my_snat_accept" {
 
 - **comment** (String) Custom comment for NAT rule
 - **dnattoip** (String) The internal IP address to which external hosts will gain access as a result of a DNAT translation. Only when action == `DNAT`
-- **dnattoport** (String) The internal port to which external port will gain access as a result of a DNAT translation. Only when action == `DNAT`
-- **dstport** (String) Match traffic destined to this port. Ignoring when protocol == `all` or `icmp`
+- **dnattoport** (String) The internal port to which external port will gain access as a result of a DNAT translation. Only when action == `DNAT`.  Ignoring when `portgroupid` is set
+- **dstport** (String) Match traffic destined to this port. Ignoring when protocol == `all` or `icmp`. Ignoring when `portgroupid` is set
+- **portgroupid** (Number) ID of a Port Group. Port Group will apply the list of ports to `dstport` and `dnattoport`. Only when action == `DNAT` and protocol == `tcp` or `udp`
 - **snattoip** (String) Replace the original address with the specified one. Only when action == `SNAT`
 - **snattopool** (String) Replace the original address with the pool of ip addresses. Only when action == `SNAT`
 - **srcport** (String) Match traffic sourced from this port. Ignoring when protocol == `all` or `icmp`

@@ -63,6 +63,11 @@ func Resource() *schema.Resource {
 				Type:         schema.TypeString,
 				Description:  "Rule action. Possible values: `DNAT`, `SNAT`, `ACCEPT_SNAT`, `MASQUERADE`",
 			},
+			"portgroupid": {
+				Optional: true,
+				Type:        schema.TypeInt,
+				Description: "ID of a Port Group. Port Group will apply the list of ports to Destination Port and DNAT to Port. Only when action == `DNAT` and protocol == `tcp` or `udp`",
+			},
 			"protocol": {
 				ValidateFunc: validateProto,
 				Required:     true,
@@ -91,7 +96,7 @@ func Resource() *schema.Resource {
 				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeString,
-				Description: "Match traffic destined to this port. Ignoring when protocol == `all` or `icmp`",
+				Description: "Match traffic destined to this port. Ignoring when protocol == `all` or `icmp`. Ignoring when `portgroupid` is set",
 			},
 			"dnattoip": {
 				Computed:     true,
@@ -104,7 +109,7 @@ func Resource() *schema.Resource {
 				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeString,
-				Description: "The internal port to which external port will gain access as a result of a DNAT translation. Only when action == `DNAT`",
+				Description: "The internal port to which external port will gain access as a result of a DNAT translation. Only when action == `DNAT`. Ignoring when `portgroupid` is set",
 			},
 			"snattoip": {
 				Computed:     true,
@@ -144,6 +149,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	comment := d.Get("comment").(string)
 	siteID := d.Get("siteid").(int)
 	action := d.Get("action").(string)
+	portgroupid := d.Get("portgroupid").(int)
 	protocol := d.Get("protocol").(string)
 	srcaddress := d.Get("srcaddress").(string)
 	srcport := d.Get("srcport").(string)
@@ -160,6 +166,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Comment:            comment,
 		State:              state,
 		Site:               nat.IDName{ID: siteID},
+		PortGroup:          nat.PortGroup{ID: portgroupid},
 		Protocol:           protocol,
 		SourceAddress:      srcaddress,
 		SourcePort:         srcport,
@@ -241,6 +248,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("portgroupid", nat.PortGroup.ID)
+	if err != nil {
+		return err
+	}
 	err = d.Set("protocol", nat.Protocol.Value)
 	if err != nil {
 		return err
@@ -271,11 +282,9 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	if !(nat.DnatToPort == 0 && d.Get("dnattoport").(string) == "") {
-		err = d.Set("dnattoport", strconv.Itoa(nat.DnatToPort))
-		if err != nil {
-			return err
-		}
+	err = d.Set("dnattoport", nat.DnatToPort)
+	if err != nil {
+		return err
 	}
 	err = d.Set("snattoip", nat.SnatToIP)
 	if err != nil {
@@ -297,6 +306,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	comment := d.Get("comment").(string)
 	siteID := d.Get("siteid").(int)
 	action := d.Get("action").(string)
+	portgroupid := d.Get("portgroupid").(int)
 	protocol := d.Get("protocol").(string)
 	srcaddress := d.Get("srcaddress").(string)
 	srcport := d.Get("srcport").(string)
@@ -314,6 +324,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Comment:            comment,
 		State:              state,
 		Site:               nat.IDName{ID: siteID},
+		PortGroup:          nat.PortGroup{ID: portgroupid},
 		Protocol:           protocol,
 		SourceAddress:      srcaddress,
 		SourcePort:         srcport,
