@@ -61,8 +61,8 @@ resource "netris_nat" "my_dnat" {
 ### DNAT W/ PORT GROUP
 
 ```hcl
-resource "netris_nat" "my_dnat" {
-  name = "MY DNAT"
+resource "netris_nat" "my_dnat_with_port_group" {
+  name = "MY DNAT w/ PORT GROUP"
   state = "enabled"
   siteid = data.netris_site.santa-clara.id
   action = "DNAT"
