@@ -108,7 +108,7 @@ resource "netris_nat" "my_snat_accept" {
 - **comment** (String) Custom comment for NAT rule
 - **dnattoip** (String) The internal IP address to which external hosts will gain access as a result of a DNAT translation. Only when action == `DNAT`
 - **dnattoport** (String) The internal port to which external port will gain access as a result of a DNAT translation. Only when action == `DNAT`.  Ignoring when `portgroupid` is set
-- **dstport** (String) Match traffic destined to this port. Ignoring when protocol == `all` or `icmp. Ignoring when `portgroupid` is set`
+- **dstport** (String) Match traffic destined to this port. Ignoring when protocol == `all` or `icmp`. Ignoring when `portgroupid` is set
 - **portgroupid** (Number) ID of a Port Group. Port Group will apply the list of ports to `dstport` and `dnattoport`. Only when action == `DNAT` and protocol == `tcp` or `udp`
 - **snattoip** (String) Replace the original address with the specified one. Only when action == `SNAT`
 - **snattopool** (String) Replace the original address with the pool of ip addresses. Only when action == `SNAT`
