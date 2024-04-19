@@ -89,6 +89,12 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "Preliminary port count is used for definition of topology. Possible values: `16`, `32`, `48`, `54`, `56`",
 			},
+			"breakout": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Initial Break Out applies to all switch ports of this switch.",
+				ForceNew:    true,
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -145,6 +151,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		MacAddress:  d.Get("macaddress").(string),
 		PortCount:   d.Get("portcount").(int),
 		Links:       []inventory.HWLink{},
+		Breakout:    d.Get("breakout").(string),
 	}
 
 	js, _ := json.Marshal(swAdd)
