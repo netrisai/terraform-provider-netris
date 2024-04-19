@@ -49,7 +49,7 @@ resource "netris_bgp" "my-bgp-isp1" {
   #  prefixlistinbound = ["deny 127.0.0.0/8 le 32", "permit 0.0.0.0/0 le 24"]
   #  prefixlistoutbound = ["permit 192.0.2.0/24", "permit 198.51.100.0/24 le 25"]
   #  sendbgpcommunity = ["65501:777"]
-  depends_on = [netris_softgate.my-softgate01]
+  depends_on = [netris_softgate.my-softgate01, netris_link.sg1_to_sw1]
 }
 
 resource "netris_bgp" "my-bgp-isp2" {
@@ -80,7 +80,7 @@ resource "netris_bgp" "my-bgp-isp2" {
   prefixlistinbound  = ["deny 127.0.0.0/8 le 32", "permit 0.0.0.0/0 le 24"]
   prefixlistoutbound = ["permit 192.0.2.0/24", "permit 198.51.100.0/24 le 25", "permit 203.0.113.0/24 le 26"]
   #  sendbgpcommunity = ["65501:777"]
-  depends_on = [netris_softgate.my-softgate02]
+  depends_on = [netris_softgate.my-softgate02, netris_link.sg2_to_sw2]
 }
 
 
@@ -114,7 +114,7 @@ resource "netris_bgp" "my-bgp-isp1-in-my-vpc" {
   #  prefixlistinbound = ["deny 127.0.0.0/8 le 32", "permit 0.0.0.0/0 le 24"]
   #  prefixlistoutbound = ["permit 192.0.2.0/24", "permit 198.51.100.0/24 le 25"]
   #  sendbgpcommunity = ["65501:777"]
-  depends_on = [netris_softgate.my-softgate01]
+  depends_on = [netris_softgate.my-softgate01, netris_link.sg1_to_sw1]
 }
 
 resource "netris_bgp" "my-bgp-isp2-in-my-vpc" {
@@ -146,5 +146,5 @@ resource "netris_bgp" "my-bgp-isp2-in-my-vpc" {
   prefixlistinbound  = ["deny 127.0.0.0/8 le 32", "permit 0.0.0.0/0 le 24"]
   prefixlistoutbound = ["permit 192.0.2.0/24", "permit 198.51.100.0/24 le 25", "permit 203.0.113.0/24 le 26"]
   #  sendbgpcommunity = ["65501:777"]
-  depends_on = [netris_softgate.my-softgate02]
+  depends_on = [netris_softgate.my-softgate02, netris_link.sg2_to_sw2]
 }

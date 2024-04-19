@@ -87,7 +87,7 @@ func Resource() *schema.Resource {
 			"portcount": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "Preliminary port count is used for definition of topology. Possible values: `16`, `32`, `48`, `54`, `56`",
+				Description: "Preliminary port count is used for definition of topology. Possible values: `16`, `32`, `48`, `54`, `56`, `64`",
 			},
 			"breakout": {
 				Type:        schema.TypeString,
