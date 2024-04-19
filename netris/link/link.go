@@ -143,13 +143,22 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 			portList = append(portList, remoteName)
 			found = true
 			break
-		} else if link.Local.ID == remote && link.Remote.ID == local {
-			portList = append(portList, remoteName)
-			portList = append(portList, localName)
-			found = true
-			break
 		}
 	}
+
+	// for _, link := range links {
+	// 	if link.Local.ID == local && link.Remote.ID == remote {
+	// 		portList = append(portList, localName)
+	// 		portList = append(portList, remoteName)
+	// 		found = true
+	// 		break
+	// 	} else if link.Local.ID == remote && link.Remote.ID == local {
+	// 		portList = append(portList, remoteName)
+	// 		portList = append(portList, localName)
+	// 		found = true
+	// 		break
+	// 	}
+	// }
 
 	if !found {
 		return fmt.Errorf("Link not found")
