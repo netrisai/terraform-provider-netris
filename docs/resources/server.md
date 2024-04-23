@@ -8,7 +8,7 @@ description: |-
 
 # netris_server
 
-Define a new server resource in Netris.
+Server Nodes. Used to declare the physical network topology, to be able to use servers as network services endpoints.
 
 ~> **Note:** If Server's `mainip` or `mgmtip` are set it requires the subnets to exist prior to resource creation. Use `depends_on` to set an explicit dependency on the subnets.
 
