@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 
+	"github.com/netrisai/netriswebapi/http"
 	api "github.com/netrisai/netriswebapi/v2"
 	"github.com/netrisai/netriswebapi/v2/types/link"
 
@@ -38,16 +38,37 @@ func Resource() *schema.Resource {
 				Required: true,
 				Type:     schema.TypeList,
 				Elem: &schema.Schema{
-					// ValidateFunc: validateIP,
 					Type: schema.TypeString,
 				},
 				Description: "List of two ports.",
+			},
+			"ipv4": {
+				ForceNew: true,
+				Optional: true,
+				Type:     schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "List of two IPv4 addresses.",
+			},
+			"ipv6": {
+				ForceNew: true,
+				Optional: true,
+				Type:     schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "List of two IPv6 addresses",
 			},
 		},
 		Create: resourceCreate,
 		Delete: resourceDelete,
 		Read:   resourceRead,
 		Exists: resourceExists,
+		// Update: resourceUpdate,
+		Importer: &schema.ResourceImporter{
+			State: resourceImport,
+		},
 	}
 }
 
@@ -70,17 +91,35 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	if o, ok := findPortByName(ports, portList[0].(string), clientset); ok {
 		local = o.ID
 	} else {
-		return fmt.Errorf("Couldn't find port %s", portList[0])
+		return fmt.Errorf("couldn't find port %s", portList[0])
 	}
 	if d, ok := findPortByName(ports, portList[1].(string), clientset); ok {
 		remote = d.ID
 	} else {
-		return fmt.Errorf("Couldn't find port %s", portList[1])
+		return fmt.Errorf("couldn't find port %s", portList[1])
 	}
 
-	linkAdd := &link.Link{
-		Local:  link.LinkIDName{ID: local},
-		Remote: link.LinkIDName{ID: remote},
+	localIpv4 := ""
+	remoteIpv4 := ""
+	localIpv6 := ""
+	remoteIpv6 := ""
+
+	ipv4List := d.Get("ipv4").([]interface{})
+	ipv6List := d.Get("ipv6").([]interface{})
+
+	if len(ipv4List) == 2 {
+		localIpv4 = ipv4List[0].(string)
+		remoteIpv4 = ipv4List[1].(string)
+	}
+
+	if len(ipv6List) == 2 {
+		localIpv6 = ipv6List[0].(string)
+		remoteIpv6 = ipv6List[1].(string)
+	}
+
+	linkAdd := &link.Linkw{
+		Local:  link.LinkIDName{ID: local, Ipv4: localIpv4, Ipv6: localIpv6},
+		Remote: link.LinkIDName{ID: remote, Ipv4: remoteIpv4, Ipv6: remoteIpv6},
 	}
 
 	js, _ := json.Marshal(linkAdd)
@@ -97,74 +136,114 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	log.Println("[DEBUG]", string(reply.Data))
 
+	idStruct := struct {
+		ID int `json:"id"`
+	}{}
+
+	data, err := reply.Parse()
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	err = http.Decode(data.Data, &idStruct)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	log.Println("[DEBUG] ID:", idStruct.ID)
+
 	if reply.StatusCode != 200 {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	d.SetId(fmt.Sprintf("%d-%d", local, remote))
+	d.SetId(strconv.Itoa(idStruct.ID))
 	return nil
 }
 
+// func resourceUpdate(d *schema.ResourceData, m interface{}) error {
+// 	clientset := m.(*api.Clientset)
+// 	linkID, _ := strconv.Atoi(d.Id())
+// 	local := 0
+// 	remote := 0
+
+// 	ports, err := clientset.Port().Get()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	portList := d.Get("ports").([]interface{})
+// 	if o, ok := findPortByName(ports, portList[0].(string), clientset); ok {
+// 		local = o.ID
+// 	} else {
+// 		return fmt.Errorf("Couldn't find port %s", portList[0])
+// 	}
+// 	if d, ok := findPortByName(ports, portList[1].(string), clientset); ok {
+// 		remote = d.ID
+// 	} else {
+// 		return fmt.Errorf("Couldn't find port %s", portList[1])
+// 	}
+
+// 	linkUpdate := &link.Linkw{
+// 		Local:  link.LinkIDName{ID: local},
+// 		Remote: link.LinkIDName{ID: remote},
+// 	}
+
+// 	js, _ := json.Marshal(linkUpdate)
+// 	log.Println("[DEBUG] linkUpdate", string(js))
+
+// 	reply, err := clientset.Link().Update(linkID, linkUpdate)
+// 	if err != nil {
+// 		log.Println("[DEBUG]", err)
+// 		return err
+// 	}
+
+// 	js, _ = json.Marshal(reply)
+// 	log.Println("[DEBUG]", string(js))
+
+// 	log.Println("[DEBUG]", string(reply.Data))
+
+// 	idStruct := struct {
+// 		ID int `json:"id"`
+// 	}{}
+
+// 	data, err := reply.Parse()
+// 	if err != nil {
+// 		log.Println("[DEBUG]", err)
+// 		return err
+// 	}
+
+// 	err = http.Decode(data.Data, &idStruct)
+// 	if err != nil {
+// 		log.Println("[DEBUG]", err)
+// 		return err
+// 	}
+
+// 	log.Println("[DEBUG] ID:", idStruct.ID)
+
+// 	if reply.StatusCode != 200 {
+// 		return fmt.Errorf(string(reply.Data))
+// 	}
+
+// 	return nil
+// }
+
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-	itemid := strings.Split(d.Id(), "-")
-	if len(itemid) != 2 {
-		return fmt.Errorf("invalid link")
-	}
-
-	local, _ := strconv.Atoi(itemid[0])
-	remote, _ := strconv.Atoi(itemid[1])
-	localName := ""
-	remoteName := ""
-
 	portList := []interface{}{}
 
-	links, err := clientset.Link().Get()
+	id, _ := strconv.Atoi(d.Id())
+	link, err := clientset.Link().GetByID(id)
 	if err != nil {
 		return err
 	}
 
-	ports, err := clientset.Port().Get()
-	if err != nil {
-		return err
-	}
+	portList = append(portList, link.Local.Name)
+	portList = append(portList, link.Remote.Name)
 
-	if o, ok := findPortByID(ports, local, clientset); ok {
-		localName = fmt.Sprintf("%s@%s", o.Port_, o.SwitchName)
-	}
-	if o, ok := findPortByID(ports, remote, clientset); ok {
-		remoteName = fmt.Sprintf("%s@%s", o.Port_, o.SwitchName)
-	}
+	d.SetId(strconv.Itoa(link.ID))
 
-	found := false
-	for _, link := range links {
-		if link.Local.ID == local && link.Remote.ID == remote {
-			portList = append(portList, localName)
-			portList = append(portList, remoteName)
-			found = true
-			break
-		}
-	}
-
-	// for _, link := range links {
-	// 	if link.Local.ID == local && link.Remote.ID == remote {
-	// 		portList = append(portList, localName)
-	// 		portList = append(portList, remoteName)
-	// 		found = true
-	// 		break
-	// 	} else if link.Local.ID == remote && link.Remote.ID == local {
-	// 		portList = append(portList, remoteName)
-	// 		portList = append(portList, localName)
-	// 		found = true
-	// 		break
-	// 	}
-	// }
-
-	if !found {
-		return fmt.Errorf("Link not found")
-	}
-
-	d.SetId(d.Id())
 	err = d.Set("ports", portList)
 	if err != nil {
 		return err
@@ -175,20 +254,9 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-	itemid := strings.Split(d.Id(), "-")
-	if len(itemid) != 2 {
-		return fmt.Errorf("invalid link")
-	}
+	id, _ := strconv.Atoi(d.Id())
 
-	local, _ := strconv.Atoi(itemid[0])
-	remote, _ := strconv.Atoi(itemid[1])
-
-	linkDelete := &link.Link{
-		Local:  link.LinkIDName{ID: local},
-		Remote: link.LinkIDName{ID: remote},
-	}
-
-	reply, err := clientset.Link().Delete(linkDelete)
+	reply, err := clientset.Link().DeletByID(id)
 	if err != nil {
 		return err
 	}
@@ -203,28 +271,29 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	clientset := m.(*api.Clientset)
-	itemid := strings.Split(d.Id(), "-")
-	if len(itemid) != 2 {
-		return false, fmt.Errorf("invalid link")
-	}
-
-	local, _ := strconv.Atoi(itemid[0])
-	remote, _ := strconv.Atoi(itemid[1])
-
-	links, err := clientset.Link().Get()
+	id, _ := strconv.Atoi(d.Id())
+	link, err := clientset.Link().GetByID(id)
 	if err != nil {
-		return false, err
-	}
-
-	found := false
-	for _, link := range links {
-		if (link.Local.ID == local && link.Remote.ID == remote) || (link.Local.ID == remote && link.Remote.ID == local) {
-			found = true
-		}
-	}
-
-	if !found {
 		return false, nil
 	}
-	return true, nil
+
+	if link == nil {
+		return false, nil
+	}
+	if link.ID > 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	clientset := m.(*api.Clientset)
+	id, _ := strconv.Atoi(d.Id())
+	link, err := clientset.Link().GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+	d.SetId(strconv.Itoa(link.ID))
+	return []*schema.ResourceData{d}, nil
 }
