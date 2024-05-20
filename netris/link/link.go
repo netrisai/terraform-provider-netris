@@ -78,26 +78,9 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-
-	local := 0
-	remote := 0
-
-	ports, err := clientset.Port().Get()
-	if err != nil {
-		return err
-	}
-
 	portList := d.Get("ports").([]interface{})
-	if o, ok := findPortByName(ports, portList[0].(string), clientset); ok {
-		local = o.ID
-	} else {
-		return fmt.Errorf("couldn't find port %s", portList[0])
-	}
-	if d, ok := findPortByName(ports, portList[1].(string), clientset); ok {
-		remote = d.ID
-	} else {
-		return fmt.Errorf("couldn't find port %s", portList[1])
-	}
+	local := portList[0].(string)
+	remote := portList[1].(string)
 
 	localIpv4 := ""
 	remoteIpv4 := ""
@@ -118,8 +101,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	linkAdd := &link.Linkw{
-		Local:  link.LinkIDName{ID: local, Ipv4: localIpv4, Ipv6: localIpv6},
-		Remote: link.LinkIDName{ID: remote, Ipv4: remoteIpv4, Ipv6: remoteIpv6},
+		Local:  link.LinkIDName{Name: local, Ipv4: localIpv4, Ipv6: localIpv6},
+		Remote: link.LinkIDName{Name: remote, Ipv4: remoteIpv4, Ipv6: remoteIpv6},
 	}
 
 	js, _ := json.Marshal(linkAdd)
