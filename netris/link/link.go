@@ -79,6 +79,9 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 	portList := d.Get("ports").([]interface{})
+	if len(portList) != 2 {
+		return fmt.Errorf("`ports` should be the list of TWO ports")
+	}
 	local := portList[0].(string)
 	remote := portList[1].(string)
 
