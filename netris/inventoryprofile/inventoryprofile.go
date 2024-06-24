@@ -105,6 +105,11 @@ func Resource() *schema.Resource {
 							Required:     true,
 							Description:  "Source port. 1-65535, or empty for any.",
 						},
+						"description": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Custom rule's description.",
+						},
 						"dstport": {
 							ValidateFunc: validatePort,
 							Type:         schema.TypeString,
@@ -232,10 +237,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	for _, customRule := range customRulesList {
 		customRules = append(customRules, inventoryprofile.CustomRule{
-			SrcSubnet: customRule["sourcesubnet"].(string),
-			SrcPort:   customRule["srcport"].(string),
-			DstPort:   customRule["dstport"].(string),
-			Protocol:  customRule["protocol"].(string),
+			SrcSubnet:   customRule["sourcesubnet"].(string),
+			SrcPort:     customRule["srcport"].(string),
+			Description: customRule["description"].(string),
+			DstPort:     customRule["dstport"].(string),
+			Protocol:    customRule["protocol"].(string),
 		})
 	}
 
@@ -382,6 +388,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		customRule := make(map[string]interface{})
 		customRule["sourcesubnet"] = rule.SrcSubnet
 		customRule["srcport"] = rule.SrcPort
+		customRule["description"] = rule.Description
 		customRule["dstport"] = rule.DstPort
 		customRule["protocol"] = rule.Protocol
 		customRules = append(customRules, customRule)
@@ -463,10 +470,11 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	for _, customRule := range customRulesList {
 		customRules = append(customRules, inventoryprofile.CustomRule{
-			SrcSubnet: customRule["sourcesubnet"].(string),
-			SrcPort:   customRule["srcport"].(string),
-			DstPort:   customRule["dstport"].(string),
-			Protocol:  customRule["protocol"].(string),
+			SrcSubnet:   customRule["sourcesubnet"].(string),
+			SrcPort:     customRule["srcport"].(string),
+			Description: customRule["description"].(string),
+			DstPort:     customRule["dstport"].(string),
+			Protocol:    customRule["protocol"].(string),
 		})
 	}
 
@@ -560,7 +568,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	var ok bool
 	profile, ok = findByName(name, clientset)
 	if !ok {
-		return []*schema.ResourceData{d}, fmt.Errorf("Coudn't find inventory profile '%s'", d.Get("name").(string))
+		return []*schema.ResourceData{d}, fmt.Errorf("coudn't find inventory profile '%s'", d.Get("name").(string))
 	}
 	d.SetId(strconv.Itoa(profile.ID))
 

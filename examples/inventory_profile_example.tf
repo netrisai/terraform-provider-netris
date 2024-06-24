@@ -6,19 +6,20 @@ resource "netris_inventory_profile" "my-profile" {
   timezone    = "America/Los_Angeles"
   ntpservers  = ["0.pool.ntp.org", "132.163.96.5"]
   dnsservers  = ["1.1.1.1", "8.8.8.8"]
-  # customrule {
-  #   sourcesubnet = "10.0.0.0/8"
-  #   srcport      = ""
-  #   dstport      = "8443"
-  #   protocol     = "tcp"
-  # }
+  customrule {
+    description  = "my custom rule"
+    sourcesubnet = "10.0.0.0/8"
+    srcport      = ""
+    dstport      = "8443"
+    protocol     = "tcp"
+  }
   fabricsettings {
     optimisebgpoverlay    = true
     unnumberedbgpunderlay = false
   }
   gpuclustersettings {
     aggregatel3vpnprefix = true
-    asicmonitoring       = true
+    asicmonitoring       = false
     congestioncontrol    = false
     qosandroce           = true
     roceadaptiverouting  = true

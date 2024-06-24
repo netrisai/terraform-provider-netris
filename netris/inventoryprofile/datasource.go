@@ -102,6 +102,11 @@ func DataResource() *schema.Resource {
 							Required:     true,
 							Description:  "Source port. 1-65535, or empty for any.",
 						},
+						"description": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Custom rule's description.",
+						},
 						"dstport": {
 							ValidateFunc: validatePort,
 							Type:         schema.TypeString,
@@ -176,6 +181,7 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 		customRule["sourcesubnet"] = rule.SrcSubnet
 		customRule["srcport"] = rule.SrcPort
 		customRule["dstport"] = rule.DstPort
+		customRule["description"] = rule.Description
 		customRule["protocol"] = rule.Protocol
 		customRules = append(customRules, customRule)
 	}
