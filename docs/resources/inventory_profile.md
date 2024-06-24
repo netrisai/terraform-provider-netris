@@ -40,6 +40,8 @@ resource "netris_inventory_profile" "my-profile" {
 ### Optional
 
 - **customrule** (Block List) Custom Rules configuration block. User defined rules to allow certain traffic. (see [below for nested schema](#nestedblock--customrule))
+- **fabricsettings** (Block List) Fabric Settings. (see [below for nested schema](#nestedblock--fabricsettings))
+- **gpuclustersettings** (Block List) GPU Cluster Specific Settings. Switch Fabric optimizations for GPU clusters. (see [below for nested schema](#nestedblock--gpuclustersettings))
 - **description** (String) Inventory profile description
 - **dnsservers** (List of String) List of IP addresses of DNS servers. Example `["1.1.1.1", "8.8.8.8"]`
 - **ipv6ssh** (List of String) List of IPv6 subnets allowed to ssh. Example `["2001:DB8::/32"]`
@@ -55,3 +57,28 @@ Required:
 - **protocol** (String) Protocol. Valid value is `udp`, `tcp` or `any`.
 - **sourcesubnet** (String) Source Subnet. Example `10.0.0.0/8`
 - **srcport** (String) Source port. 1-65535, or empty for any.
+
+Optional: 
+
+- **description** (String) Custom rule's description.
+
+
+<a id="nestedblock--fabricsettings"></a>
+### Nested Schema for `fabricsettings`
+
+Optional:
+
+- **optimisebgpoverlay** (Boolean) Optimize BGP Overlay for leaf-spine topology. When checked, overlay BGP updates will be optimized for large scale. Each leaf switch (based on name) will form its overlay BGP sessions only with two spine switches (with the lowest IDs). Otherwise, Overlay BGP sessions will be configured on p2p links alongside underlay. Default value is `false`.
+- **unnumberedbgpunderlay** (Boolean) When checked, BGP underlay sessions will be configured using p2p IPv4 addresses configured on link objects in the Netris controller. Otherwise, BGP unnumbered method is used and p2p ipv6 link-local addresses are used for BGP sessions. Default value is `false`.
+
+
+<a id="nestedblock--gpuclustersettings"></a>
+### Nested Schema for `gpuclustersettings`
+
+Optional:
+
+- **qosandroce** (Boolean) Optimize for RDMA over Converged Ethernet. Default value is `false`.
+- **roceadaptiverouting** (Boolean) Enable Adaptive Routing for RoCE. Default value is `false`.
+- **congestioncontrol** (Boolean) Enable Zero Touch RoCE Congestion Control. Default value is `false`.
+- **asicmonitoring** (Boolean) Enable ASIC monitoring: Histograms and Telemetry Snapshots. Default value is `false`.
+- **aggregatel3vpnprefix** (Boolean) Minimize prefix updates over BGP Overlay for L3VPN p2p links in rail-optimized topology and IP addressing schemes. Default value is `false`.
