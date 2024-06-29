@@ -54,6 +54,7 @@ The provider supports the following arguments:
   | `v1.X`           | `v3.0`             |
   | `v2.X`           | `v3.1+`            |
   | `v3.X`           | `v4.0+`            |
+  | `v3.3`           | `v4.3+`            |
 
 
 ## A simple infrastructure creation example
@@ -63,7 +64,7 @@ terraform {
   required_providers {
     netris = {
       source  = "netrisai/netris"
-      version = ">= 2.1.0"
+      version = ">= 3.3.0"
     }
   }
   required_version = ">= 0.13"

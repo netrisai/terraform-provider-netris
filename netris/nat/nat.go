@@ -64,7 +64,7 @@ func Resource() *schema.Resource {
 				Description:  "Rule action. Possible values: `DNAT`, `SNAT`, `ACCEPT_SNAT`, `MASQUERADE`",
 			},
 			"portgroupid": {
-				Optional: true,
+				Optional:    true,
 				Type:        schema.TypeInt,
 				Description: "ID of a Port Group. Port Group will apply the list of ports to Destination Port and DNAT to Port. Only when action == `DNAT` and protocol == `tcp` or `udp`",
 			},

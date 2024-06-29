@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package sw
+package server
 
 import (
 	"encoding/json"
@@ -31,12 +31,12 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
-		Description: "Creates and manages Switches",
+		Description: "Creates and manages servers",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "User assigned name of switch.",
+				Description: "User assigned name of server.",
 			},
 			"tenantid": {
 				Type:        schema.TypeInt,
@@ -46,54 +46,39 @@ func Resource() *schema.Resource {
 			"siteid": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "The site ID where this switch belongs.",
+				Description: "The site ID where this server belongs.",
 			},
 			"description": {
-				Computed:    true,
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Switch description.",
-			},
-			"nos": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Switch OS. Possible values: `cumulus_linux`, `sonic`, `ubuntu_switch_dev`",
-			},
-			"asnumber": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Switch AS numbers. Valid value is ASN (example `420000002`) or `auto`. If set `auto` the controller will assign automatically from `System ASN range`",
-			},
-			"profileid": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Description: "An inventory profile ID to define global configuration (NTP, DNS, timezone, etc...)",
+				Description: "server description.",
 			},
 			"mainip": {
 				Type:        schema.TypeString,
-				Required:    true,
-				Description: "A unique IP address which will be used as a loopback address of this unit. Valid value is ip address (example `198.51.100.21`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.",
+				Optional:    true,
+				Description: "A unique IP address which will be used as a loopback address of this unit. Valid value is ip address (example `198.51.100.11`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.",
 			},
 			"mgmtip": {
 				Type:        schema.TypeString,
-				Required:    true,
-				Description: "A unique IP address to be used on out of band management interface. Valid value is ip address (example `192.0.2.21`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.",
+				Optional:    true,
+				Description: "A unique IP address to be used on out of band management interface. Valid value is ip address (example `192.0.2.11`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.",
 			},
-			"macaddress": {
-				Computed: true,
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"portcount": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				Description: "Preliminary port count is used for definition of topology. Possible values: `16`, `32`, `48`, `54`, `56`, `64`",
-			},
-			"breakout": {
+			"asnumber": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Initial Break Out applies to all switch ports of this switch.",
+				Description: "Server AS numbers. Valid value is ASN (example `420000002`) or `auto`.",
+				Default:     "0",
+			},
+			"portcount": {
 				ForceNew:    true,
+				Type:        schema.TypeInt,
+				Required:    true,
+				Description: "Preliminary port count is used for definition of topology. Possible values: minimum - `0`, maximum - `60`.",
+			},
+			"customdata": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "You may paste any custom data that can be assosiated with the object.",
 			},
 		},
 		Create: resourceCreate,
@@ -114,20 +99,6 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
-	nosList, err := clientset.Inventory().GetNOS()
-	if err != nil {
-		return err
-	}
-
-	nosMap := make(map[string]inventory.NOS)
-	for _, nos := range nosList {
-		nosMap[nos.Tag] = *nos
-	}
-
-	nos := nosMap[d.Get("nos").(string)]
-
-	profileID := d.Get("profileid").(int)
-
 	var asnAny interface{} = d.Get("asnumber").(string)
 	asn := asnAny.(string)
 	if !(asn == "auto" || asn == "") {
@@ -138,26 +109,23 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		asnAny = asnInt
 	}
 
-	swAdd := &inventory.HWSwitchAdd{
+	serverAdd := &inventory.HWServer{
 		Name:        d.Get("name").(string),
 		Tenant:      inventory.IDName{ID: d.Get("tenantid").(int)},
 		Site:        inventory.IDName{ID: d.Get("siteid").(int)},
 		Description: d.Get("description").(string),
-		Nos:         nos,
-		Asn:         asnAny,
-		Profile:     inventory.IDName{ID: profileID},
 		MainAddress: d.Get("mainip").(string),
 		MgmtAddress: d.Get("mgmtip").(string),
-		MacAddress:  d.Get("macaddress").(string),
-		PortCount:   d.Get("portcount").(int),
 		Links:       []inventory.HWLink{},
-		Breakout:    d.Get("breakout").(string),
+		PortCount:   d.Get("portcount").(int),
+		Asn:         asnAny,
+		CustomData:  d.Get("customdata").(string),
 	}
 
-	js, _ := json.Marshal(swAdd)
+	js, _ := json.Marshal(serverAdd)
 	log.Println("[DEBUG]", string(js))
 
-	reply, err := clientset.Inventory().AddSwitch(swAdd)
+	reply, err := clientset.Inventory().AddServer(serverAdd)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -220,19 +188,17 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("nos", sw.Nos.Tag)
+	err = d.Set("customdata", sw.CustomData)
 	if err != nil {
 		return err
 	}
-	if asnumber := d.Get("asnumber"); asnumber.(string) != "auto" {
-		err = d.Set("asnumber", strconv.Itoa(sw.Asn))
-		if err != nil {
-			return err
-		}
+	err = d.Set("portcount", sw.PortCount)
+	if err != nil {
+		return err
 	}
 
-	if sw.Profile.Name != "None" {
-		err = d.Set("profileid", sw.Profile.ID)
+	if asnumber := d.Get("asnumber"); asnumber.(string) != "auto" {
+		err = d.Set("asnumber", strconv.Itoa(sw.Asn))
 		if err != nil {
 			return err
 		}
@@ -250,34 +216,12 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 			return err
 		}
 	}
-	err = d.Set("macaddress", sw.MacAddress)
-	if err != nil {
-		return err
-	}
-	err = d.Set("portcount", sw.PortCount)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
-
-	nosList, err := clientset.Inventory().GetNOS()
-	if err != nil {
-		return err
-	}
-
-	nosMap := make(map[string]inventory.NOS)
-	for _, nos := range nosList {
-		nosMap[nos.Tag] = *nos
-	}
-
-	nos := nosMap[d.Get("nos").(string)]
-
-	profileID := d.Get("profileid").(int)
 
 	id, _ := strconv.Atoi(d.Id())
 	sw, err := clientset.Inventory().GetByID(id)
@@ -295,26 +239,23 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		asnAny = asnInt
 	}
 
-	swUpdate := &inventory.HWSwitchUpdate{
+	serverUpdate := &inventory.HWServer{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
 		Tenant:      inventory.IDName{ID: d.Get("tenantid").(int)},
 		Site:        inventory.IDName{ID: d.Get("siteid").(int)},
-		Nos:         nos,
-		Asn:         asnAny,
-		Profile:     inventory.IDName{ID: profileID},
 		MainAddress: d.Get("mainip").(string),
 		MgmtAddress: d.Get("mgmtip").(string),
-		MacAddress:  d.Get("macaddress").(string),
-		PortCount:   d.Get("portcount").(int),
-		Type:        "switch",
 		Links:       sw.Links,
+		PortCount:   d.Get("portcount").(int),
+		Asn:         asnAny,
+		CustomData:  d.Get("customdata").(string),
 	}
 
-	js, _ := json.Marshal(swUpdate)
+	js, _ := json.Marshal(serverUpdate)
 	log.Println("[DEBUG]", string(js))
 
-	reply, err := clientset.Inventory().UpdateSwitch(id, swUpdate)
+	reply, err := clientset.Inventory().UpdateServer(id, serverUpdate)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -336,7 +277,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	reply, err := clientset.Inventory().Delete("switch", id)
+	reply, err := clientset.Inventory().Delete("server", id)
 	if err != nil {
 		return err
 	}

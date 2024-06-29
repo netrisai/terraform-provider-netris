@@ -7,9 +7,21 @@ resource "netris_inventory_profile" "my-profile" {
   ntpservers  = ["0.pool.ntp.org", "132.163.96.5"]
   dnsservers  = ["1.1.1.1", "8.8.8.8"]
   customrule {
+    description  = "my custom rule"
     sourcesubnet = "10.0.0.0/8"
     srcport      = ""
     dstport      = "8443"
     protocol     = "tcp"
+  }
+  fabricsettings {
+    optimisebgpoverlay    = true
+    unnumberedbgpunderlay = false
+  }
+  gpuclustersettings {
+    aggregatel3vpnprefix = true
+    asicmonitoring       = false
+    congestioncontrol    = false
+    qosandroce           = true
+    roceadaptiverouting  = true
   }
 }

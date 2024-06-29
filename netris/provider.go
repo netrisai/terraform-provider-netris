@@ -40,6 +40,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/roh"
 	"github.com/netrisai/terraform-provider-netris/netris/route"
 	"github.com/netrisai/terraform-provider-netris/netris/routemap"
+	"github.com/netrisai/terraform-provider-netris/netris/server"
 	"github.com/netrisai/terraform-provider-netris/netris/site"
 	"github.com/netrisai/terraform-provider-netris/netris/softgate"
 	"github.com/netrisai/terraform-provider-netris/netris/subnet"
@@ -80,6 +81,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_switch":            sw.Resource(),
 			"netris_controller":        controller.Resource(),
 			"netris_softgate":          softgate.Resource(),
+			"netris_server":            server.Resource(),
 			"netris_user_role":         userrole.Resource(),
 			"netris_user":              user.Resource(),
 			"netris_permission_group":  pgroup.Resource(),

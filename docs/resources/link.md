@@ -20,6 +20,14 @@ resource "netris_link" "sg_to_sw" {
     "swp1@my-softgate",
     "swp8@my-switch"
   ]
+  # ipv4 = [
+  #   "172.16.32.5/30",
+  #   "172.16.32.6/30"
+  # ]
+  # ipv6 = [
+  #   "fc00::c82a:75ff:fe66:84b0/127",
+  #   "fc00::c82a:75ff:fe66:84b1/127"
+  # ]
   depends_on = [netris_softgate.my-softgate, netris_switch.my-switch]
 }
 ```
@@ -32,3 +40,9 @@ resource "netris_link" "sg_to_sw" {
 ### Required
 
 - **ports** (List of String) List of two ports.
+
+### Optional
+
+- **ipv4** (List of String) List of two IPv4 addresses.
+
+- **ipv6** (List of String) List of two IPv6 addresses.

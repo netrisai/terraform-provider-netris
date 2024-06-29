@@ -42,6 +42,7 @@ data "netris_inventory_profile" "my-profile" {
 
 Attribute Reference:
 
+- **description** (String) Custom rule's description.
 - **dstport** (String) Destination port. 1-65535, or empty for any.
 - **protocol** (String) Protocol.
 - **sourcesubnet** (String) Source Subnet.

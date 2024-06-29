@@ -105,6 +105,11 @@ func Resource() *schema.Resource {
 							Required:     true,
 							Description:  "Source port. 1-65535, or empty for any.",
 						},
+						"description": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Custom rule's description.",
+						},
 						"dstport": {
 							ValidateFunc: validatePort,
 							Type:         schema.TypeString,
@@ -116,6 +121,61 @@ func Resource() *schema.Resource {
 							Type:         schema.TypeString,
 							Required:     true,
 							Description:  "Protocol. Valid value is `udp`, `tcp` or `any`.",
+						},
+					},
+				},
+			},
+			"fabricsettings": {
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Description: "Fabric Settings",
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"optimisebgpoverlay": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Optimize BGP Overlay for leaf-spine topology. When checked, overlay BGP updates will be optimized for large scale. Each leaf switch (based on name) will form its overlay BGP sessions only with two spine switches (with the lowest IDs). Otherwise, Overlay BGP sessions will be configured on p2p links alongside underlay.",
+						},
+						"unnumberedbgpunderlay": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "When checked, BGP underlay sessions will be configured using p2p IPv4 addresses configured on link objects in the Netris controller. Otherwise, BGP unnumbered method is used and p2p ipv6 link-local addresses are used for BGP sessions.",
+						},
+					},
+				},
+			},
+			"gpuclustersettings": {
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Description: "GPU Cluster Specific Settings. Switch Fabric optimizations for GPU clusters.",
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"qosandroce": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Optimize for RDMA over Converged Ethernet.",
+						},
+						"roceadaptiverouting": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enable Adaptive Routing for RoCE.",
+						},
+						"congestioncontrol": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enable Zero Touch RoCE Congestion Control.",
+						},
+						"asicmonitoring": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enable ASIC monitoring: Histograms and Telemetry Snapshots.",
+						},
+						"aggregatel3vpnprefix": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Minimize prefix updates over BGP Overlay for L3VPN p2p links in rail-optimized topology and IP addressing schemes.",
 						},
 					},
 				},
@@ -177,22 +237,65 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	for _, customRule := range customRulesList {
 		customRules = append(customRules, inventoryprofile.CustomRule{
-			SrcSubnet: customRule["sourcesubnet"].(string),
-			SrcPort:   customRule["srcport"].(string),
-			DstPort:   customRule["dstport"].(string),
-			Protocol:  customRule["protocol"].(string),
+			SrcSubnet:   customRule["sourcesubnet"].(string),
+			SrcPort:     customRule["srcport"].(string),
+			Description: customRule["description"].(string),
+			DstPort:     customRule["dstport"].(string),
+			Protocol:    customRule["protocol"].(string),
 		})
 	}
 
+	getBool := func(key string, inter map[string]interface{}, defaultVal bool) bool {
+		if val, ok := inter[key]; ok {
+			if boolVal, ok := val.(bool); ok {
+				return boolVal
+			}
+		}
+		return defaultVal
+	}
+
+	fabricsettingsList := d.Get("fabricsettings").(*schema.Set).List()
+	var fabricsettingstmp map[string]interface{}
+	if len(fabricsettingsList) > 0 {
+		if len(fabricsettingsList) > 1 {
+			return fmt.Errorf("please specify only one fabricsettings")
+		}
+		fabricsettingstmp = fabricsettingsList[0].(map[string]interface{})
+	}
+
+	fabricsettings := inventoryprofile.FabricProps{
+		OptimiseBgpOverlay:    getBool("optimisebgpoverlay", fabricsettingstmp, false),
+		UnnumberedBgpUnderlay: getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
+	}
+
+	gpuclustersettingsList := d.Get("gpuclustersettings").(*schema.Set).List()
+	var gpuclustersettingstmp map[string]interface{}
+	if len(gpuclustersettingsList) > 0 {
+		if len(gpuclustersettingsList) > 1 {
+			return fmt.Errorf("please specify only one gpuclustersettings")
+		}
+		gpuclustersettingstmp = gpuclustersettingsList[0].(map[string]interface{})
+	}
+
+	gpuclustersettings := inventoryprofile.GpuClusterProps{
+		Roce:                 getBool("qosandroce", gpuclustersettingstmp, false),
+		RoceAdaptiveRouting:  getBool("roceadaptiverouting", gpuclustersettingstmp, false),
+		CongestionControl:    getBool("congestioncontrol", gpuclustersettingstmp, false),
+		AsicMonitoring:       getBool("asicmonitoring", gpuclustersettingstmp, false),
+		AggregateL3VpnPrefix: getBool("aggregatel3vpnprefix", gpuclustersettingstmp, false),
+	}
+
 	profileAdd := &inventoryprofile.ProfileW{
-		Name:        name,
-		Description: description,
-		Ipv4List:    strings.Join(ipv4List, ","),
-		Ipv6List:    strings.Join(ipv6List, ","),
-		Timezone:    inventoryprofile.Timezone{Label: timezone, TzCode: timezone},
-		NTPServers:  strings.Join(ntpList, ","),
-		DNSServers:  strings.Join(dnsList, ","),
-		CustomRules: customRules,
+		Name:            name,
+		Description:     description,
+		Ipv4List:        strings.Join(ipv4List, ","),
+		Ipv6List:        strings.Join(ipv6List, ","),
+		Timezone:        inventoryprofile.Timezone{Label: timezone, TzCode: timezone},
+		NTPServers:      strings.Join(ntpList, ","),
+		DNSServers:      strings.Join(dnsList, ","),
+		CustomRules:     customRules,
+		FabricProps:     fabricsettings,
+		GpuClusterProps: gpuclustersettings,
 	}
 
 	js, _ := json.Marshal(profileAdd)
@@ -285,12 +388,40 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		customRule := make(map[string]interface{})
 		customRule["sourcesubnet"] = rule.SrcSubnet
 		customRule["srcport"] = rule.SrcPort
+		customRule["description"] = rule.Description
 		customRule["dstport"] = rule.DstPort
 		customRule["protocol"] = rule.Protocol
 		customRules = append(customRules, customRule)
 	}
+	var fabricsettingsList []map[string]interface{}
+	fabricsettings := make(map[string]interface{})
+	fabricsettings["optimisebgpoverlay"] = profile.FabricProps.OptimiseBgpOverlay
+	fabricsettings["unnumberedbgpunderlay"] = profile.FabricProps.UnnumberedBgpUnderlay
+	fabricsettingsList = append(fabricsettingsList, fabricsettings)
+
+	var gpuclustersettingsList []map[string]interface{}
+	gpuclustersettings := make(map[string]interface{})
+	gpuclustersettings["qosandroce"] = profile.GpuClusterProps.Roce
+	gpuclustersettings["roceadaptiverouting"] = profile.GpuClusterProps.RoceAdaptiveRouting
+	gpuclustersettings["congestioncontrol"] = profile.GpuClusterProps.CongestionControl
+	gpuclustersettings["asicmonitoring"] = profile.GpuClusterProps.AsicMonitoring
+	gpuclustersettings["aggregatel3vpnprefix"] = profile.GpuClusterProps.AggregateL3VpnPrefix
+	gpuclustersettingsList = append(gpuclustersettingsList, gpuclustersettings)
 
 	err = d.Set("customrule", customRules)
+	if err != nil {
+		return err
+	}
+
+	js, _ := json.Marshal(fabricsettingsList)
+	log.Println("[DEBUG] fabricsettingsListUpdate", string(js))
+
+	err = d.Set("fabricsettings", fabricsettingsList)
+	if err != nil {
+		return err
+	}
+
+	err = d.Set("gpuclustersettings", gpuclustersettingsList)
 	if err != nil {
 		return err
 	}
@@ -339,23 +470,67 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	for _, customRule := range customRulesList {
 		customRules = append(customRules, inventoryprofile.CustomRule{
-			SrcSubnet: customRule["sourcesubnet"].(string),
-			SrcPort:   customRule["srcport"].(string),
-			DstPort:   customRule["dstport"].(string),
-			Protocol:  customRule["protocol"].(string),
+			SrcSubnet:   customRule["sourcesubnet"].(string),
+			SrcPort:     customRule["srcport"].(string),
+			Description: customRule["description"].(string),
+			DstPort:     customRule["dstport"].(string),
+			Protocol:    customRule["protocol"].(string),
 		})
 	}
+
+	fabricsettingsList := d.Get("fabricsettings").(*schema.Set).List()
+	var fabricsettingstmp map[string]interface{}
+	if len(fabricsettingsList) > 0 {
+		if len(fabricsettingsList) > 1 {
+			return fmt.Errorf("please specify only one fabricsettings")
+		}
+		fabricsettingstmp = fabricsettingsList[0].(map[string]interface{})
+	}
+
+	getBool := func(key string, inter map[string]interface{}, defaultVal bool) bool {
+		if val, ok := inter[key]; ok {
+			if boolVal, ok := val.(bool); ok {
+				return boolVal
+			}
+		}
+		return defaultVal
+	}
+
+	fabricsettings := inventoryprofile.FabricProps{
+		OptimiseBgpOverlay:    getBool("optimisebgpoverlay", fabricsettingstmp, false),
+		UnnumberedBgpUnderlay: getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
+	}
+
+	gpuclustersettingsList := d.Get("gpuclustersettings").(*schema.Set).List()
+	var gpuclustersettingstmp map[string]interface{}
+	if len(gpuclustersettingsList) > 0 {
+		if len(gpuclustersettingsList) > 1 {
+			return fmt.Errorf("please specify only one gpuclustersettings")
+		}
+		gpuclustersettingstmp = gpuclustersettingsList[0].(map[string]interface{})
+	}
+
+	gpuclustersettings := inventoryprofile.GpuClusterProps{
+		Roce:                 getBool("qosandroce", gpuclustersettingstmp, false),
+		RoceAdaptiveRouting:  getBool("roceadaptiverouting", gpuclustersettingstmp, false),
+		CongestionControl:    getBool("congestioncontrol", gpuclustersettingstmp, false),
+		AsicMonitoring:       getBool("asicmonitoring", gpuclustersettingstmp, false),
+		AggregateL3VpnPrefix: getBool("aggregatel3vpnprefix", gpuclustersettingstmp, false),
+	}
+
 	id, _ := strconv.Atoi(d.Id())
 	profileUpdate := &inventoryprofile.ProfileW{
-		ID:          id,
-		Name:        name,
-		Description: description,
-		Ipv4List:    strings.Join(ipv4List, ","),
-		Ipv6List:    strings.Join(ipv6List, ","),
-		Timezone:    inventoryprofile.Timezone{Label: timezone, TzCode: timezone},
-		NTPServers:  strings.Join(ntpList, ","),
-		DNSServers:  strings.Join(dnsList, ","),
-		CustomRules: customRules,
+		ID:              id,
+		Name:            name,
+		Description:     description,
+		Ipv4List:        strings.Join(ipv4List, ","),
+		Ipv6List:        strings.Join(ipv6List, ","),
+		Timezone:        inventoryprofile.Timezone{Label: timezone, TzCode: timezone},
+		NTPServers:      strings.Join(ntpList, ","),
+		DNSServers:      strings.Join(dnsList, ","),
+		CustomRules:     customRules,
+		FabricProps:     fabricsettings,
+		GpuClusterProps: gpuclustersettings,
 	}
 
 	js, _ := json.Marshal(profileUpdate)
@@ -393,7 +568,7 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	var ok bool
 	profile, ok = findByName(name, clientset)
 	if !ok {
-		return []*schema.ResourceData{d}, fmt.Errorf("Coudn't find inventory profile '%s'", d.Get("name").(string))
+		return []*schema.ResourceData{d}, fmt.Errorf("coudn't find inventory profile '%s'", d.Get("name").(string))
 	}
 	d.SetId(strconv.Itoa(profile.ID))
 
