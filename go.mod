@@ -1,6 +1,6 @@
 module github.com/netrisai/terraform-provider-netris
 
-go 1.18
+go 1.20
 
 require (
 	github.com/hashicorp/terraform-plugin-sdk v1.17.2
