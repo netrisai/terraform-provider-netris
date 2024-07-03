@@ -27,7 +27,7 @@ init: install
 	cd ${WORKDIRECTORY} && terraform init
 
 apply: init
-	cd ${WORKDIRECTORY} && terraform apply -auto-approve
+	cd ${WORKDIRECTORY} && terraform apply
 
 plan: init
 	cd ${WORKDIRECTORY} && terraform plan
