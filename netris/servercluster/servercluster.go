@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -50,14 +51,14 @@ func Resource() *schema.Resource {
 				ForceNew:    true,
 				Description: "The site ID where this ServerCluster belongs.",
 			},
-			"serverclusterid": {
+			"vpcid": {
 				ForceNew:    true,
 				Optional:    true,
 				Type:        schema.TypeInt,
-				Default: 0,
+				Default:     0,
 				Description: "ID of VPC. If not specified, a new VPC will be created.",
 			},
-			"template": {
+			"templateid": {
 				ForceNew:    true,
 				Required:    true,
 				Type:        schema.TypeInt,
@@ -68,6 +69,13 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
+				},
+			},
+			"servers": {
+				Required: true,
+				Type:     schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeInt,
 				},
 			},
 		},
@@ -90,28 +98,33 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	log.Println("[DEBUG] serverclusterCreate")
 	clientset := m.(*api.Clientset)
 
-	guestTenantIdsList := d.Get("guesttenantid").(*schema.Set).List()
-	log.Println("[DEBUG] guestTenantIdsList", guestTenantIdsList)
-	guestTenants := []servercluster.GuestTenant{}
-
-	for _, eachGuestTenant := range guestTenantIdsList {
-		gTenant := eachGuestTenant.(map[string]interface{})
-		guestTenants = append(guestTenants, servercluster.GuestTenant{
-			ID: gTenant["id"].(int),
-		})
-	}
-
 	tagsList := d.Get("tags").(*schema.Set).List()
 	tags := []string{}
 	for _, tag := range tagsList {
 		tags = append(tags, tag.(string))
 	}
 
-	serverclusterAdd := &servercluster.ServerClusterw{
-		Name:        d.Get("name").(string),
-		AdminTenant: servercluster.AdminTenant{ID: d.Get("tenantid").(int)},
-		GuestTenant: guestTenants,
-		Tags:        tags,
+	serversList := d.Get("servers").(*schema.Set).List()
+	servers := []int{}
+	for _, server := range serversList {
+		servers = append(servers, server.(int))
+	}
+
+	sort.Ints(servers)
+	sortedServers := []servercluster.IDName{}
+
+	for _, sortedServer := range servers {
+		sortedServers = append(sortedServers, servercluster.IDName{ID: sortedServer})
+	}
+
+	serverclusterAdd := &servercluster.ServerClusterW{
+		Name:               d.Get("name").(string),
+		Admin:              servercluster.IDName{ID: d.Get("adminid").(int)},
+		Site:               servercluster.IDName{ID: d.Get("siteid").(int)},
+		VPC:                servercluster.IDName{ID: d.Get("vpcid").(int)},
+		SrvClusterTemplate: servercluster.IDName{ID: d.Get("templateid").(int)},
+		Tags:               tags,
+		Servers:            sortedServers,
 	}
 
 	js, _ := json.Marshal(serverclusterAdd)
@@ -170,25 +183,28 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("tenantid", apiServerCluster.AdminTenant.ID)
+	err = d.Set("adminid", apiServerCluster.Admin.ID)
 	if err != nil {
 		return err
 	}
-
-	log.Println("[DEBUG] serverclusterRead apiServerCluster.GuestTenant", apiServerCluster.GuestTenant)
-
-	var gTenantsList []map[string]interface{}
-	for _, gTenant := range apiServerCluster.GuestTenant {
-		gt := make(map[string]interface{})
-		gt["id"] = gTenant.ID
-		gTenantsList = append(gTenantsList, gt)
+	err = d.Set("siteid", apiServerCluster.Site.ID)
+	if err != nil {
+		return err
 	}
-
-	err = d.Set("guesttenantid", gTenantsList)
+	err = d.Set("vpcid", apiServerCluster.VPC.ID)
+	if err != nil {
+		return err
+	}
+	err = d.Set("templateid", apiServerCluster.SrvClusterTemplate.ID)
 	if err != nil {
 		return err
 	}
 	err = d.Set("tags", apiServerCluster.Tags)
+	if err != nil {
+		return err
+	}
+
+	err = d.Set("servers", apiServerCluster.Servers)
 	if err != nil {
 		return err
 	}
@@ -202,28 +218,33 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	serverclusterID, _ := strconv.Atoi(d.Id())
 
-	guestTenantIdsList := d.Get("guesttenantid").(*schema.Set).List()
-	log.Println("[DEBUG] guestTenantIdsList", guestTenantIdsList)
-	guestTenants := []servercluster.GuestTenant{}
-
-	for _, eachGuestTenant := range guestTenantIdsList {
-		gTenant := eachGuestTenant.(map[string]interface{})
-		guestTenants = append(guestTenants, servercluster.GuestTenant{
-			ID: gTenant["id"].(int),
-		})
-	}
-
 	tagsList := d.Get("tags").(*schema.Set).List()
 	tags := []string{}
 	for _, tag := range tagsList {
 		tags = append(tags, tag.(string))
 	}
 
-	serverclusterUpdate := &servercluster.ServerClusterw{
-		Name:        d.Get("name").(string),
-		AdminTenant: servercluster.AdminTenant{ID: d.Get("tenantid").(int)},
-		GuestTenant: guestTenants,
-		Tags:        tags,
+	serversList := d.Get("servers").(*schema.Set).List()
+	servers := []int{}
+	for _, server := range serversList {
+		servers = append(servers, server.(int))
+	}
+
+	sort.Ints(servers)
+	sortedServers := []servercluster.IDName{}
+
+	for _, sortedServer := range servers {
+		sortedServers = append(sortedServers, servercluster.IDName{ID: sortedServer})
+	}
+
+	serverclusterUpdate := &servercluster.ServerClusterW{
+		Name:               d.Get("name").(string),
+		Admin:              servercluster.IDName{ID: d.Get("adminid").(int)},
+		Site:               servercluster.IDName{ID: d.Get("siteid").(int)},
+		VPC:                servercluster.IDName{ID: d.Get("vpcid").(int)},
+		SrvClusterTemplate: servercluster.IDName{ID: d.Get("templateid").(int)},
+		Tags:               tags,
+		Servers:            sortedServers,
 	}
 
 	js, _ := json.Marshal(serverclusterUpdate)

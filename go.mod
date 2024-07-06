@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/hashicorp/terraform-plugin-sdk v1.17.2
-	github.com/netrisai/netriswebapi v0.0.0-20240703221045-0453d03ee3b0
+	github.com/netrisai/netriswebapi v0.0.0-20240705231342-f57062246765
 
 )
 

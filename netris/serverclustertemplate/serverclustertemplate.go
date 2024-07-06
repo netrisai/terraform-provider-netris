@@ -1,5 +1,5 @@
 /*
-Copyright 2021. Netris, Inc.
+Copyright 2023. Netris, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,21 +22,25 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/netrisai/netriswebapi/http"
 	api "github.com/netrisai/netriswebapi/v2"
-	"github.com/netrisai/netriswebapi/v2/types/inventory"
-
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/netrisai/netriswebapi/v2/types/serverclustertemplate"
 )
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
-		Description: "Creates and manages server cluster template",
+		Description: "Creates and manages ServerClusterTemplate",
 		Schema: map[string]*schema.Schema{
-			"template": {
+			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The template object.",
+				Description: "User assigned name of ServerClusterTemplate.",
+			},
+			"vnets": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Server Cluster VNets Template",
 			},
 		},
 		Create: resourceCreate,
@@ -55,14 +59,33 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 }
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
+	log.Println("[DEBUG] serverClusterTemplateCreate")
 	clientset := m.(*api.Clientset)
+	var vnetsUnmarshaled interface{}
 
-	resourceAdd := d.Get("template").(string)
+	jsonString := d.Get("vnets").(string)
+	// Convert the JSON string to the interface{}
+	err := json.Unmarshal([]byte(jsonString), &vnetsUnmarshaled)
+	if err != nil {
+		log.Println("[DEBUG] Error converting JSON string to interface{}: ", err)
+		return err
+	}
 
-	js, _ := json.Marshal(resourceAdd)
-	log.Println("[DEBUG]", resourceAdd)
+	vnetsSlice, ok := vnetsUnmarshaled.([]interface{})
+	if !ok {
+		log.Println("[DEBUG] Expected []interface{} but got something else")
+		return err
+	}
 
-	reply, err := clientset.ServerClusterTemplate().Add(resourceAdd)
+	serverClusterTemplateAdd := &serverclustertemplate.ServerClusterTemplateW{
+		Name:  d.Get("name").(string),
+		Vnets: vnetsSlice,
+	}
+
+	js, _ := json.Marshal(serverClusterTemplateAdd)
+	log.Println("[DEBUG] serverClusterTemplateAdd", string(js))
+
+	reply, err := clientset.ServerClusterTemplate().Add(serverClusterTemplateAdd)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -100,99 +123,75 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
+	log.Println("[DEBUG] serverClusterTemplateRead")
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	sw, err := clientset.Inventory().GetByID(id)
+	apiServerClusterTemplate, err := clientset.ServerClusterTemplate().GetByID(id)
+
 	if err != nil {
 		return nil
 	}
 
-	d.SetId(strconv.Itoa(sw.ID))
-	err = d.Set("name", sw.Name)
-	if err != nil {
-		return err
-	}
-	err = d.Set("tenantid", sw.Tenant.ID)
-	if err != nil {
-		return err
-	}
-	err = d.Set("siteid", sw.Site.ID)
-	if err != nil {
-		return err
-	}
-	err = d.Set("description", sw.Description)
-	if err != nil {
-		return err
-	}
-	err = d.Set("customdata", sw.CustomData)
-	if err != nil {
-		return err
-	}
-	err = d.Set("portcount", sw.PortCount)
+	d.SetId(strconv.Itoa(apiServerClusterTemplate.ID))
+	err = d.Set("name", apiServerClusterTemplate.Name)
 	if err != nil {
 		return err
 	}
 
-	if asnumber := d.Get("asnumber"); asnumber.(string) != "auto" {
-		err = d.Set("asnumber", strconv.Itoa(sw.Asn))
-		if err != nil {
-			return err
+	netrisVNETs := apiServerClusterTemplate.Vnets
+	for _, item := range netrisVNETs {
+		if itemMap, ok := item.(map[string]interface{}); ok {
+			delete(itemMap, "id")
 		}
 	}
 
-	if main := d.Get("mainip"); main.(string) != "auto" {
-		err = d.Set("mainip", sw.MainAddress)
-		if err != nil {
-			return err
-		}
+	jsonVNETs, err := json.Marshal(netrisVNETs)
+
+	if err != nil {
+		log.Fatalf("Error marshalling data to JSON: %v", err)
 	}
-	if main := d.Get("mgmtip"); main.(string) != "auto" {
-		err = d.Set("mgmtip", sw.MgmtAddress)
-		if err != nil {
-			return err
-		}
+
+	err = d.Set("vnets", string(jsonVNETs))
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
+	log.Println("[DEBUG] serverClusterTemplateUpdate")
 	clientset := m.(*api.Clientset)
 
-	id, _ := strconv.Atoi(d.Id())
-	sw, err := clientset.Inventory().GetByID(id)
+	serverClusterTemplateID, _ := strconv.Atoi(d.Id())
+
+	var vnetsUnmarshaled interface{}
+
+	jsonString := d.Get("vnets").(string)
+	// Convert the JSON string to the interface{}
+	err := json.Unmarshal([]byte(jsonString), &vnetsUnmarshaled)
 	if err != nil {
-		return nil
+		log.Println("[DEBUG] Error converting JSON string to interface{}: ", err)
+		return err
 	}
 
-	var asnAny interface{} = d.Get("asnumber").(string)
-	asn := asnAny.(string)
-	if !(asn == "auto" || asn == "") {
-		asnInt, err := strconv.Atoi(asn)
-		if err != nil {
-			return err
-		}
-		asnAny = asnInt
+	// If you need to work with the data, you can use type assertions
+	vnetsSlice, ok := vnetsUnmarshaled.([]interface{})
+	if !ok {
+		log.Println("[DEBUG] Expected []interface{} but got something else")
+		return err
 	}
 
-	serverUpdate := &inventory.HWServer{
-		Name:        d.Get("name").(string),
-		Description: d.Get("description").(string),
-		Tenant:      inventory.IDName{ID: d.Get("tenantid").(int)},
-		Site:        inventory.IDName{ID: d.Get("siteid").(int)},
-		MainAddress: d.Get("mainip").(string),
-		MgmtAddress: d.Get("mgmtip").(string),
-		Links:       sw.Links,
-		PortCount:   d.Get("portcount").(int),
-		Asn:         asnAny,
-		CustomData:  d.Get("customdata").(string),
+	serverClusterTemplateUpdate := &serverclustertemplate.ServerClusterTemplateW{
+		Name:  d.Get("name").(string),
+		Vnets: vnetsSlice,
 	}
 
-	js, _ := json.Marshal(serverUpdate)
-	log.Println("[DEBUG]", string(js))
+	js, _ := json.Marshal(serverClusterTemplateUpdate)
+	log.Println("[DEBUG] serverClusterTemplateUpdate", string(js))
 
-	reply, err := clientset.Inventory().UpdateServer(id, serverUpdate)
+	reply, err := clientset.ServerClusterTemplate().Update(serverClusterTemplateID, serverClusterTemplateUpdate)
 	if err != nil {
 		log.Println("[DEBUG]", err)
 		return err
@@ -203,6 +202,24 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	log.Println("[DEBUG]", string(reply.Data))
 
+	idStruct := struct {
+		ID int `json:"id"`
+	}{}
+
+	data, err := reply.Parse()
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	err = http.Decode(data.Data, &idStruct)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	log.Println("[DEBUG] ID:", idStruct.ID)
+
 	if reply.StatusCode != 200 {
 		return fmt.Errorf(string(reply.Data))
 	}
@@ -210,11 +227,46 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
+func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
+	clientset := m.(*api.Clientset)
+
+	id, _ := strconv.Atoi(d.Id())
+	item, err := clientset.ServerClusterTemplate().GetByID(id)
+	if err != nil {
+		log.Println("[DEBUG] serverClusterTemplateExist response err:", err)
+	}
+
+	if item == nil {
+		return false, nil
+	}
+
+	if item.ID > 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	clientset := m.(*api.Clientset)
+
+	items, _ := clientset.ServerClusterTemplate().Get()
+	name := d.Id()
+	for _, item := range items {
+		if item.Name == name {
+			d.SetId(strconv.Itoa(item.ID))
+			return []*schema.ResourceData{d}, nil
+		}
+	}
+
+	return []*schema.ResourceData{d}, nil
+}
+
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	id, _ := strconv.Atoi(d.Id())
-	reply, err := clientset.Inventory().Delete("server", id)
+	reply, err := clientset.ServerClusterTemplate().Delete(id)
 	if err != nil {
 		return err
 	}
@@ -225,38 +277,4 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 	d.SetId("")
 	return nil
-}
-
-func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
-	clientset := m.(*api.Clientset)
-
-	id, _ := strconv.Atoi(d.Id())
-	sw, err := clientset.Inventory().GetByID(id)
-	if err != nil {
-		return false, nil
-	}
-
-	if sw.ID == 0 {
-		return false, nil
-	}
-
-	return true, nil
-}
-
-func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-	clientset := m.(*api.Clientset)
-
-	sws, err := clientset.Inventory().Get()
-	if err != nil {
-		return []*schema.ResourceData{d}, err
-	}
-	name := d.Id()
-	for _, sw := range sws {
-		if sw.Name == name {
-			d.SetId(strconv.Itoa(sw.ID))
-			return []*schema.ResourceData{d}, nil
-		}
-	}
-
-	return []*schema.ResourceData{d}, nil
 }
