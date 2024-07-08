@@ -53,9 +53,9 @@ func Resource() *schema.Resource {
 			},
 			"vpcid": {
 				ForceNew:    true,
+				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeInt,
-				Default:     0,
 				Description: "ID of VPC. If not specified, a new VPC will be created.",
 			},
 			"templateid": {
@@ -204,7 +204,14 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	err = d.Set("servers", apiServerCluster.Servers)
+	serversList := apiServerCluster.Servers
+	servers := []int{}
+	for _, server := range serversList {
+		servers = append(servers, server.ID)
+	}
+	sort.Ints(servers)
+
+	err = d.Set("servers", servers)
 	if err != nil {
 		return err
 	}
