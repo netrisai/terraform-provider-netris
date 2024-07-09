@@ -244,12 +244,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		sortedServers = append(sortedServers, servercluster.IDName{ID: sortedServer})
 	}
 
-	serverclusterUpdate := &servercluster.ServerClusterW{
-		Name:               d.Get("name").(string),
-		Admin:              servercluster.IDName{ID: d.Get("adminid").(int)},
-		Site:               servercluster.IDName{ID: d.Get("siteid").(int)},
-		VPC:                servercluster.IDName{ID: d.Get("vpcid").(int)},
-		SrvClusterTemplate: servercluster.IDName{ID: d.Get("templateid").(int)},
+	serverclusterUpdate := &servercluster.ServerClusterU{
 		Tags:               tags,
 		Servers:            sortedServers,
 	}
