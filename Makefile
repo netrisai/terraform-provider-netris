@@ -3,7 +3,7 @@ HOSTNAME=registry.terraform.io
 NAMESPACE=netrisai
 NAME=netris
 BINARY=terraform-provider-${NAME}
-VERSION=3.3.0
+VERSION=3.4.0
 OS_ARCH=darwin_arm64
 WORKDIRECTORY=examples
 
@@ -27,7 +27,7 @@ init: install
 	cd ${WORKDIRECTORY} && terraform init
 
 apply: init
-	cd ${WORKDIRECTORY} && terraform apply -auto-approve
+	cd ${WORKDIRECTORY} && terraform apply
 
 plan: init
 	cd ${WORKDIRECTORY} && terraform plan
