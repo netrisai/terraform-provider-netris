@@ -29,3 +29,19 @@ resource "netris_softgate" "my-softgate02" {
     netris_subnet.my-subnet-loopback,
   ]
 }
+
+resource "netris_softgate" "my-softgate03" {
+  name        = "my-softgate03"
+  tenantid    = data.netris_tenant.admin.id
+  siteid      = netris_site.santa-clara.id
+  description = "Softgate 3 HS"
+  profileid   = netris_inventory_profile.my-profile.id
+  mainip      = "auto"
+  mgmtip      = "auto"
+  flavor      = "sg-hs"
+  # role = "snat"
+  depends_on = [
+    netris_subnet.my-subnet-mgmt,
+    netris_subnet.my-subnet-loopback,
+  ]
+}

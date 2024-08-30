@@ -69,6 +69,19 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "A unique IP address to be used on out of band management interface. Valid value is ip address (example `192.0.2.11`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.",
 			},
+			"flavor": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Softgate's flavor.",
+				Default:     "sg",
+				ForceNew:    true,
+			},
+			"role": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Softgate HA's role.",
+				Computed:    true,
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -99,6 +112,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		MainAddress: d.Get("mainip").(string),
 		MgmtAddress: d.Get("mgmtip").(string),
 		Links:       []inventory.HWLink{},
+		SGFlavor:    d.Get("flavor").(string),
+		SGRole:      d.Get("role").(string),
 	}
 
 	js, _ := json.Marshal(softgateAdd)
@@ -171,6 +186,14 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("flavor", sw.SGFlavor)
+	if err != nil {
+		return err
+	}
+	err = d.Set("role", sw.SGRole)
+	if err != nil {
+		return err
+	}
 	if main := d.Get("mainip"); main.(string) != "auto" {
 		err = d.Set("mainip", sw.MainAddress)
 		if err != nil {
@@ -207,6 +230,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		MainAddress: d.Get("mainip").(string),
 		MgmtAddress: d.Get("mgmtip").(string),
 		Links:       sw.Links,
+		SGFlavor:    d.Get("flavor").(string),
+		SGRole:      d.Get("role").(string),
 	}
 
 	js, _ := json.Marshal(softgateUpdate)

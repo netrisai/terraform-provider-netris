@@ -245,8 +245,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	serverclusterUpdate := &servercluster.ServerClusterU{
-		Tags:               tags,
-		Servers:            sortedServers,
+		Tags:    tags,
+		Servers: sortedServers,
 	}
 
 	js, _ := json.Marshal(serverclusterUpdate)
