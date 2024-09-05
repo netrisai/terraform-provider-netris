@@ -53,7 +53,7 @@ resource "netris_switch" "my-switch" {
 - **mainip** (String) A unique IP address which will be used as a loopback address of this unit. Valid value is ip address (example `198.51.100.21`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.
 - **mgmtip** (String) A unique IP address to be used on out of band management interface. Valid value is ip address (example `192.0.2.21`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.
 - **name** (String) User assigned name of switch.
-- **nos** (String) Switch OS. Possible values: `cumulus_linux`, `sonic`, `ubuntu_switch_dev`
+- **nos** (String) Switch OS. Possible values: `cumulus_linux`, `cumulus_nvue`, `sonic`, `ubuntu_switch_dev`
 - **portcount** (Number) Preliminary port count is used for definition of topology. Possible values: `16`, `32`, `48`, `54`, `56`, `64` 
 - **siteid** (Number) The site ID where this switch belongs.
 - **tenantid** (Number) ID of tenant. Users of this tenant will be permitted to edit this unit.
