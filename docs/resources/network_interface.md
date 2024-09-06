@@ -47,7 +47,7 @@ resource "netris_network_interface" "swp10_my-switch" {
 ### Optional
 
 - **autoneg** (String) Toggle auto negotiation. Possible values: `default`, `on`, `off`. Default value is `default`
-- **breakout** (String) Toggle breakout. Possible values: `off`, `4x10`, `4x25`, `4x100`, `manual`. Default value is `off`
+- **breakout** (String) Toggle breakout. Possible values: `off`, `disabled`, `4x10`, `4x25`, `2x50`, `4x50`, `2x100`, `4x100`, `2x200`, `4x200`, `2x400`. Default value is `off`.
 - **description** (String) Network Interface desired description
 - **extension** (Map of String) Network Interface extension configurations.
 - **mtu** (Number) MTU must be integer between 68 and 9216. Default value is `9000`
