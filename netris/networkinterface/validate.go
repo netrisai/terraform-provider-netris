@@ -25,10 +25,21 @@ import (
 
 func validateBreakout(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
-	if !(v == "off" || v == "4x10" || v == "4x25" || v == "4x100" || v == "manual") {
-		errs = append(errs, fmt.Errorf("Breakout available values are (off, 4x10, 4x25, 4x100, manual)"))
-		return warns, errs
+	allowedValues := []string{"off", "disabled", "4x10", "4x25", "2x50", "4x50", "2x100", "4x100", "2x200", "4x200", "2x400"}
+
+	// Check if the provided value is in the list of allowed values
+	isValid := false
+	for _, allowedValue := range allowedValues {
+		if v == allowedValue {
+			isValid = true
+			break
+		}
 	}
+
+	if !isValid {
+		errs = append(errs, fmt.Errorf("Breakout available values are %v", allowedValues))
+	}
+
 	return warns, errs
 }
 
