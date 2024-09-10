@@ -133,13 +133,11 @@ func Resource() *schema.Resource {
 				Description: "BGP session will be interrupted if neighbor advertises more prefixes than defined. Equal to `1000` if BGP session is terminated on hardware type of switch.",
 			},
 			"inboundroutemap": {
-				Default:     0,
 				Optional:    true,
 				Type:        schema.TypeInt,
 				Description: "Reference to route-map resource. Valid value is route-map name.",
 			},
 			"outboundroutemap": {
-				Default:     0,
 				Optional:    true,
 				Type:        schema.TypeInt,
 				Description: "Reference to route-map resource. Valid value is route-map name.",
@@ -352,8 +350,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		NeighborAS:         d.Get("neighboras").(int),
 		PrefixLength:       prefixLength,
 		DefaultOriginate:   originate,
-		InboundRouteMap:    d.Get("inboundroutemap").(int),
-		OutboundRouteMap:   d.Get("outboundroutemap").(int),
 		PrefixInboundMax:   d.Get("prefixinboundmax").(string),
 		PrefixListInbound:  strings.Join(prefixListInboundArr, "\n"),
 		PrefixListOutbound: strings.Join(prefixListOutbound, "\n"),
@@ -370,6 +366,16 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	if vpcid > 0 {
 		bgpAdd.Vpc = &bgp.IDName{ID: vpcid}
+	}
+
+	iRouteMap := d.Get("inboundroutemap").(int)
+	oRouteMap := d.Get("outboundroutemap").(int)
+	if iRouteMap > 0 {
+		bgpAdd.InboundRouteMap = &iRouteMap
+	}
+
+	if oRouteMap > 0 {
+		bgpAdd.OutboundRouteMap = &oRouteMap
 	}
 
 	js, _ := json.Marshal(bgpAdd)
@@ -713,8 +719,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		NeighborAS:         d.Get("neighboras").(int),
 		PrefixLength:       prefixLength,
 		DefaultOriginate:   originate,
-		InboundRouteMap:    d.Get("inboundroutemap").(int),
-		OutboundRouteMap:   d.Get("outboundroutemap").(int),
 		PrefixInboundMax:   d.Get("prefixinboundmax").(string),
 		PrefixListInbound:  strings.Join(prefixListInboundArr, "\n"),
 		PrefixListOutbound: strings.Join(prefixListOutbound, "\n"),
@@ -727,6 +731,16 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Weight:             d.Get("weight").(int),
 		Tags:               []string{},
 		Untagged:           untagged,
+	}
+
+	iRouteMap := d.Get("inboundroutemap").(int)
+	oRouteMap := d.Get("outboundroutemap").(int)
+	if iRouteMap > 0 {
+		bgpUpdate.InboundRouteMap = &iRouteMap
+	}
+
+	if oRouteMap > 0 {
+		bgpUpdate.OutboundRouteMap = &oRouteMap
 	}
 
 	js, _ := json.Marshal(bgpUpdate)

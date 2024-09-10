@@ -32,6 +32,7 @@ resource "netris_lag" "lag2-mc" {
   ]
   depends_on = [
     netris_switch.my-switch01,
-    netris_switch.my-switch02
+    netris_switch.my-switch02,
+    netris_link.sw1_to_sw2_mc
   ]
 }
