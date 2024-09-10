@@ -52,3 +52,4 @@ resource "netris_lag" "lag1_switch-01" {
 - **mtu** (Number) MTU must be integer between 68 and 9216. Default value is `9000`
 - **lacp** (String) Configuring Link Aggregation Control Protocol (LACP) signaling for the current LAG Network Interface. Valid value is `on` or `off`. The default value is `off`.
 - **extension** (Map of String) LAG Network Interface extension configurations
+- **mclagid** (Number) Each MC-LAG requires an ID value in the range of `1-65535`, unique for the given switch-pair.

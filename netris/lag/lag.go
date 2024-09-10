@@ -93,6 +93,11 @@ func Resource() *schema.Resource {
 					},
 				},
 			},
+			"mclagid": {
+				Optional:    true,
+				Type:        schema.TypeInt,
+				Description: "Each MC-LAG requires an ID value in the range of `1-65535`, unique for the given switch-pair",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -124,6 +129,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	lagAdd.Ports = ports
 
 	mtu := d.Get("mtu").(int)
+	mclagid := d.Get("mclagid").(int)
 	lacp := d.Get("lacp").(string)
 	autoneg := d.Get("autoneg").(string)
 	if autoneg == "default" {
@@ -154,6 +160,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	lagAdd.Mtu = mtu
 	lagAdd.Extension = extension
 	lagAdd.LACP = lacp
+	lagAdd.MCLagId = &mclagid
 
 	js, _ := json.Marshal(lagAdd)
 	log.Println("[DEBUG]", string(js))
@@ -221,6 +228,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	err = d.Set("mclagid", hwPort.MCLagId)
+	if err != nil {
+		return err
+	}
+
 	var ext *port.PortLAGExtension
 	list, err := clientset.Port().GetExtenstion()
 	if err != nil {
@@ -283,6 +295,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	lagAdd.Ports = ports
 
 	mtu := d.Get("mtu").(int)
+	mclagid := d.Get("mclagid").(int)
 	lacp := d.Get("lacp").(string)
 	autoneg := d.Get("autoneg").(string)
 	if autoneg == "default" {
@@ -311,6 +324,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	lagAdd.Mtu = mtu
+	lagAdd.MCLagId = &mclagid
 	lagAdd.Extension = extension
 	lagAdd.LACP = lacp
 
