@@ -58,7 +58,7 @@ resource "netris_bgp" "my-bgp" {
 - **multihop.updatesource** (String) When Multihop BGP peering is used it allows the operator to choose one of the loopback IP addresses of the SoftGate node as a BGP speaker source IP address.
 - **multihop.hops** (Number) Multihop BGP hops count.
 - **neighboras** (Number) BGP neighbor AS number.
-- **outboundroutemap** (String) Reference to route-map resource ID.
+- **outboundroutemap** (Number) Reference to route-map resource ID.
 - **portid** (Number) Port ID where BGP neighbor cable is connected. Can't be used together `vnetid`.
 - **prefixinboundmax** (String) BGP session will be interrupted if neighbor advertises more prefixes than defined. Equal to `1000` if BGP session is terminated on hardware type of switch.
 - **prefixlistinbound** (List of String) List of inbound prefix list. Example `["deny 127.0.0.0/8 le 32", "permit 0.0.0.0/0 le 24"]`.
