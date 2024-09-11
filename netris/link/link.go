@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 
 	"github.com/netrisai/netriswebapi/http"
@@ -59,6 +60,30 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Description: "List of two IPv6 addresses",
+			},
+			"mclag": {
+				ForceNew:    true,
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Description: "When specified, the link is marked for MC-LAG peer link. Multiple MC-LAG peer links between the same pair of switches must have the same MC-LAG IPv4 and MAC addresses.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"sharedipv4addr": {
+							ValidateFunc: validateIP,
+							Type:         schema.TypeString,
+							Required:     true,
+							ForceNew:     true,
+							Description:  "MC-LAG shared IPV4 address. Shall be part of any IPAM defined subnet with the purpose set to loopback.",
+						},
+						"anycastmacaddr": {
+							ValidateFunc: validateMAC,
+							Type:         schema.TypeString,
+							Required:     true,
+							ForceNew:     true,
+							Description:  "MC-LAG anycast MAC address. Recommended range 44:38:39:ff:00:00 - 44:38:39:ff:ff:ff",
+						},
+					},
+				},
 			},
 		},
 		Create: resourceCreate,
@@ -103,9 +128,37 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		remoteIpv6 = ipv6List[1].(string)
 	}
 
+	mcLagList := d.Get("mclag").(*schema.Set).List()
+
 	linkAdd := &link.Linkw{
 		Local:  link.LinkIDName{Name: local, Ipv4: localIpv4, Ipv6: localIpv6},
 		Remote: link.LinkIDName{Name: remote, Ipv4: remoteIpv4, Ipv6: remoteIpv6},
+	}
+
+	if len(mcLagList) > 0 {
+		if len(mcLagList) > 1 {
+			return fmt.Errorf("please specify only one mclag block")
+		}
+
+		mcLAG := mcLagList[0].(map[string]interface{})
+
+		// Check for existence and validity of keys
+		sharedIPv4, ok := mcLAG["sharedipv4addr"].(string)
+		if !ok || sharedIPv4 == "" {
+			return fmt.Errorf("invalid or missing 'sharedipv4addr' in mclag block")
+		}
+
+		anycastMAC, ok := mcLAG["anycastmacaddr"].(string)
+		if !ok || anycastMAC == "" {
+			return fmt.Errorf("invalid or missing 'anycastmacaddr' in mclag block")
+		}
+
+		nMCLAG := link.MCLagPeerLink{
+			SharedIPv4Addr: sharedIPv4,
+			AnycastMACAddr: anycastMAC,
+		}
+
+		linkAdd.MCLagPeerLink = &nMCLAG
 	}
 
 	js, _ := json.Marshal(linkAdd)
@@ -153,19 +206,30 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	portList := []interface{}{}
 
 	id, _ := strconv.Atoi(d.Id())
-	link, err := clientset.Link().GetByID(id)
+	nlink, err := clientset.Link().GetByID(id)
 	if err != nil {
 		return err
 	}
 
-	portList = append(portList, link.Local.Name)
-	portList = append(portList, link.Remote.Name)
+	portList = append(portList, nlink.Local.Name)
+	portList = append(portList, nlink.Remote.Name)
 
-	d.SetId(strconv.Itoa(link.ID))
+	d.SetId(strconv.Itoa(nlink.ID))
 
 	err = d.Set("ports", portList)
 	if err != nil {
 		return err
+	}
+	if nlink.MCLagPeerLink != nil {
+		mclink := []map[string]interface{}{}
+		mcLag := make(map[string]interface{})
+		mcLag["sharedipv4addr"] = nlink.MCLagPeerLink.SharedIPv4Addr
+		mcLag["anycastmacaddr"] = nlink.MCLagPeerLink.AnycastMACAddr
+		mclink = append(mclink, mcLag)
+		err = d.Set("mclag", mclink)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -215,4 +279,32 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	}
 	d.SetId(strconv.Itoa(link.ID))
 	return []*schema.ResourceData{d}, nil
+}
+
+func validateIP(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if !validateIPAddr(v) {
+		errs = append(errs, fmt.Errorf("invalid %s: %s", key, v))
+	}
+	return warns, errs
+}
+
+func validateIPAddr(s string) bool {
+	re := regexp.MustCompile(`(^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/([0-9]|[12]\d|3[0-2]))?$)|(^((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?(\/([0-9]|[1-5][0-9]|6[0-4]))?$)`)
+	return re.Match([]byte(s))
+}
+
+// validateMAC validates a MAC address format
+func validateMAC(val interface{}, key string) (warns []string, errs []error) {
+	// Convert the input value to a string
+	v := val.(string)
+
+	// Regular expression pattern for validating MAC address
+	re := regexp.MustCompile(`^([0-9A-Fa-f]{2}([-:])){5}([0-9A-Fa-f]{2})$`)
+
+	// Check if the MAC address matches the pattern
+	if !re.MatchString(v) {
+		errs = append(errs, fmt.Errorf("invalid %s: %s", key, v))
+	}
+	return warns, errs
 }

@@ -28,6 +28,10 @@ resource "netris_link" "sg_to_sw" {
   #   "fc00::c82a:75ff:fe66:84b0/127",
   #   "fc00::c82a:75ff:fe66:84b1/127"
   # ]
+  # mclag {
+  #   sharedipv4addr = "198.51.100.50"
+  #   anycastmacaddr = "44:38:39:ff:00:f0"
+  # }
   depends_on = [netris_softgate.my-softgate, netris_switch.my-switch]
 }
 ```
@@ -46,3 +50,13 @@ resource "netris_link" "sg_to_sw" {
 - **ipv4** (List of String) List of two IPv4 addresses.
 
 - **ipv6** (List of String) List of two IPv6 addresses.
+
+- **mclag** (Block List) Block of MC-LAG. When specified, the link is marked for MC-LAG peer link. Multiple MC-LAG peer links between the same pair of switches must have the same MC-LAG IPv4 and MAC addresses. (see [below for nested schema](#nestedblock--mclag))
+
+<a id="nestedblock--mclag"></a>
+### Nested Schema for `mclag`
+
+Required:
+- **sharedipv4addr** (String) MC-LAG shared IPV4 address. Shall be part of any IPAM defined subnet with the purpose set to loopback
+
+- **anycastmacaddr** (String) MC-LAG anycast MAC address. Recommended range 44:38:39:ff:00:00 - 44:38:39:ff:ff:ff

@@ -85,3 +85,16 @@ resource "netris_link" "srv2_to_sw2" {
   # ]
   depends_on = [netris_switch.my-switch02, netris_server.my-server02]
 }
+
+
+resource "netris_link" "sw1_to_sw2_mc" {
+  ports = [
+    "swp7@my-switch01",
+    "swp7@my-switch02"
+  ]
+  mclag {
+    sharedipv4addr = "198.51.100.50"
+    anycastmacaddr = "44:38:39:ff:00:f0"
+  }
+  depends_on = [netris_switch.my-switch01, netris_switch.my-switch02]
+}

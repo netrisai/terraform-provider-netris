@@ -58,7 +58,7 @@ resource "netris_bgp" "my-bgp" {
 - **multihop.updatesource** (String) When Multihop BGP peering is used it allows the operator to choose one of the loopback IP addresses of the SoftGate node as a BGP speaker source IP address.
 - **multihop.hops** (Number) Multihop BGP hops count.
 - **neighboras** (Number) BGP neighbor AS number.
-- **outboundroutemap** (String) Reference to route-map resource ID.
+- **outboundroutemap** (Number) Reference to route-map resource ID.
 - **portid** (Number) Port ID where BGP neighbor cable is connected. Can't be used together `vnetid`.
 - **prefixinboundmax** (String) BGP session will be interrupted if neighbor advertises more prefixes than defined. Equal to `1000` if BGP session is terminated on hardware type of switch.
 - **prefixlistinbound** (List of String) List of inbound prefix list. Example `["deny 127.0.0.0/8 le 32", "permit 0.0.0.0/0 le 24"]`.
@@ -71,3 +71,7 @@ resource "netris_bgp" "my-bgp" {
 - **vnetid** (Number) Existing VNet service ID to terminate E-BGP on. Can't be used together `portid`.
 - **weight** (Number) BGP session weight. Default value is `0`.
 - **vpcid** (Number) ID of VPC. If not specified, the BGP will be created in the VPC marked as a default.
+- **hellotimer** (Number) Hello timer is the frequency (seconds) of sending `Hello` messages. Default value is `3`.
+- **holdtimer** (Number) Hold timer is the amount of time in seconds to keep BGP session up after the last received `Hello` message. This value must be at least 3 times bigger than `Hello` timer. Default value is `10`.
+- **connecttimer** (Number) Connect timer is the amount of time in seconds which BGP waits between connection attempts to a neighbor. Default value is `10`.
+- **bfd** (String) Valid value is `enabled` or `disabled`. Default value is `disabled`.
