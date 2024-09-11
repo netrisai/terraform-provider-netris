@@ -71,3 +71,7 @@ resource "netris_bgp" "my-bgp" {
 - **vnetid** (Number) Existing VNet service ID to terminate E-BGP on. Can't be used together `portid`.
 - **weight** (Number) BGP session weight. Default value is `0`.
 - **vpcid** (Number) ID of VPC. If not specified, the BGP will be created in the VPC marked as a default.
+- **hellotimer** (Number) Hello timer is the frequency (seconds) of sending `Hello` messages. Default value is `3`.
+- **holdtimer** (Number) Hold timer is the amount of time in seconds to keep BGP session up after the last received `Hello` message. This value must be at least 3 times bigger than `Hello` timer. Default value is `10`.
+- **connecttimer** (Number) Connect timer is the amount of time in seconds which BGP waits between connection attempts to a neighbor. Default value is `10`.
+- **bfd** (String) Valid value is `enabled` or `disabled`. Default value is `disabled`.

@@ -40,6 +40,13 @@ func Resource() *schema.Resource {
 				Required:    true,
 				Description: "User assigned name of BGP session.",
 			},
+			"bfd": {
+				Optional:     true,
+				Default:      "disabled",
+				ValidateFunc: validateState,
+				Type:         schema.TypeString,
+				Description:  "Valid value is `enabled` or `disabled`. Default value is `disabled`.",
+			},
 			"siteid": {
 				Required:    true,
 				Type:        schema.TypeInt,
@@ -109,6 +116,24 @@ func Resource() *schema.Resource {
 					Optional:     true,
 					ValidateFunc: validateMultihop,
 				},
+			},
+			"hellotimer": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Hello timer is the frequency (seconds) of sending `Hello` messages. Default value is `3`.",
+				Default:     3,
+			},
+			"holdtimer": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Hold timer is the amount of time in seconds to keep BGP session up after the last received `Hello` message. This value must be at least 3 times bigger than `Hello` timer. Default value is `10`.",
+				Default:     10,
+			},
+			"connecttimer": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Connect timer is the amount of time in seconds which BGP waits between connection attempts to a neighbor. Default value is `10`.",
+				Default:     10,
 			},
 			"bgppassword": {
 				Optional:    true,
@@ -331,12 +356,19 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		hwIDNone = "auto"
 	}
 
+	bgpTimers := bgp.Timers{
+		Hello:   d.Get("hellotimer").(int),
+		Hold:    d.Get("holdtimer").(int),
+		Connect: d.Get("connecttimer").(int),
+	}
+
 	bgpAdd := &bgp.EBGPAdd{
 		Name:               d.Get("name").(string),
 		Site:               bgp.IDName{ID: siteID},
 		Vlan:               vlanID,
 		AllowAsIn:          d.Get("allowasin").(int),
 		BgpPassword:        d.Get("bgppassword").(string),
+		Bfd:                d.Get("bfd").(string),
 		BgpCommunity:       strings.Join(communityArr, "\n"),
 		Description:        d.Get("description").(string),
 		LocalAsn:           d.Get("localasn").(string),
@@ -362,6 +394,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Weight:             d.Get("weight").(int),
 		Tags:               []string{},
 		Untagged:           untagged,
+		Timers:             bgpTimers,
 	}
 
 	if vpcid > 0 {
@@ -481,6 +514,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	err = d.Set("bfd", bgp.Bfd)
+	if err != nil {
+		return err
+	}
+
 	err = d.Set("localip", fmt.Sprintf("%s/%d", bgp.LocalIP, bgp.PrefixLength))
 	if err != nil {
 		return err
@@ -513,14 +551,31 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	err = d.Set("hellotimer", bgp.Timers.Hello)
+	if err != nil {
+		return err
+	}
+
+	err = d.Set("holdtimer", bgp.Timers.Hold)
+	if err != nil {
+		return err
+	}
+
+	err = d.Set("connecttimer", bgp.Timers.Connect)
+	if err != nil {
+		return err
+	}
+
 	err = d.Set("bgppassword", bgp.BgpPassword)
 	if err != nil {
 		return err
 	}
+
 	err = d.Set("allowasin", bgp.AllowasIn)
 	if err != nil {
 		return err
 	}
+
 	var defaultOriginate bool
 	if bgp.DefaultOriginate == "enabled" {
 		defaultOriginate = true
@@ -700,11 +755,18 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	bgpID, _ := strconv.Atoi(d.Id())
 
+	bgpTimers := bgp.Timers{
+		Hello:   d.Get("hellotimer").(int),
+		Hold:    d.Get("holdtimer").(int),
+		Connect: d.Get("connecttimer").(int),
+	}
+
 	bgpUpdate := &bgp.EBGPUpdate{
 		Name:               d.Get("name").(string),
 		Site:               bgp.IDName{ID: siteID},
 		Vlan:               vlanID,
 		AllowAsIn:          d.Get("allowasin").(int),
+		Bfd:                d.Get("bfd").(string),
 		BgpPassword:        d.Get("bgppassword").(string),
 		BgpCommunity:       strings.Join(communityArr, "\n"),
 		Description:        d.Get("description").(string),
@@ -731,6 +793,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Weight:             d.Get("weight").(int),
 		Tags:               []string{},
 		Untagged:           untagged,
+		Timers:             bgpTimers,
 	}
 
 	iRouteMap := d.Get("inboundroutemap").(int)
