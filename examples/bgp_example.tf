@@ -23,11 +23,12 @@ resource "netris_bgp" "my-bgp-isp1" {
   name   = "my-bgp-isp1"
   siteid = netris_site.santa-clara.id
   # bfd         = "enabled"
-  hardware    = "my-softgate01"
-  neighboras  = 23456
-  portid      = data.netris_network_interface.swp14_sw1.id
-  vlanid      = 3000
-  localip     = "172.19.25.2/30"
+  hardware   = "my-softgate01"
+  neighboras = 23456
+  portid     = data.netris_network_interface.swp14_sw1.id
+  vlanid     = 3000
+  localip    = "172.19.25.2/30"
+  # removeprivateas = "disabled"
   remoteip    = "172.19.25.1/30"
   description = "My ISP1 BGP"
   # inboundroutemap  = netris_routemap.routemap-in.id

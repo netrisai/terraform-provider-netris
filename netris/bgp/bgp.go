@@ -89,6 +89,13 @@ func Resource() *schema.Resource {
 				Type:         schema.TypeString,
 				Description:  "BGP session remote IP. Example `10.0.1.2/24`.",
 			},
+			"removeprivateas": {
+				Optional:     true,
+				Default:      "enabled",
+				ValidateFunc: validateState,
+				Type:         schema.TypeString,
+				Description:  "When Enabled, Netris will remove all private ASNs from the AS path when advertising routes to a BGP neighbor. Valid value is `enabled` or `disabled`. Default value is `enabled`.",
+			},
 			"description": {
 				Optional:    true,
 				Type:        schema.TypeString,
@@ -375,6 +382,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		IPFamily:           ipVersion,
 		LocalIP:            localIP.String(),
 		RemoteIP:           remoteIP.String(),
+		RemovePrivateAs:    d.Get("removeprivateas").(string),
 		LocalPreference:    localPreference,
 		Multihop:           multihopHop,
 		NeighborAddress:    multihopNeighborAddress,
@@ -527,6 +535,12 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+
+	err = d.Set("removeprivateas", bgp.RemovePrivateAs)
+	if err != nil {
+		return err
+	}
+
 	err = d.Set("description", bgp.Description)
 	if err != nil {
 		return err
@@ -774,6 +788,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		IPFamily:           ipVersion,
 		LocalIP:            localIP.String(),
 		RemoteIP:           remoteIP.String(),
+		RemovePrivateAs:    d.Get("removeprivateas").(string),
 		LocalPreference:    localPreference,
 		Multihop:           multihopHop,
 		NeighborAddress:    multihopNeighborAddress,

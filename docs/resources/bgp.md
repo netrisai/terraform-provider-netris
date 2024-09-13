@@ -75,3 +75,4 @@ resource "netris_bgp" "my-bgp" {
 - **holdtimer** (Number) Hold timer is the amount of time in seconds to keep BGP session up after the last received `Hello` message. This value must be at least 3 times bigger than `Hello` timer. Default value is `10`.
 - **connecttimer** (Number) Connect timer is the amount of time in seconds which BGP waits between connection attempts to a neighbor. Default value is `10`.
 - **bfd** (String) Valid value is `enabled` or `disabled`. Default value is `disabled`.
+- **removeprivateas** (String) When Enabled, Netris will remove all private ASNs from the AS path when advertising routes to a BGP neighbor. Valid value is `enabled` or `disabled`. Default value is `enabled`.
