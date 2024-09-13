@@ -142,6 +142,16 @@ func Resource() *schema.Resource {
 							Optional:    true,
 							Description: "When checked, BGP underlay sessions will be configured using p2p IPv4 addresses configured on link objects in the Netris controller. Otherwise, BGP unnumbered method is used and p2p ipv6 link-local addresses are used for BGP sessions.",
 						},
+						"automaticlinkaggregation": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Automatically configure non-backbone switch ports under a single legged link aggregation (agg) interface. This allows for active/standby multihoming if LACP is enabled on the server side. Active/Active multihoming with EVPN-MH will be automatically configured on Nvidia Spectrum-2 and higher switch models.",
+						},
+						"mclag": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enabling MC-LAG functionality will disable any EVPN-MH functionality. Two multihoming methods are not supported simultaneously on the same switches.",
+						},
 					},
 				},
 			},
@@ -264,8 +274,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	fabricsettings := inventoryprofile.FabricProps{
-		OptimiseBgpOverlay:    getBool("optimisebgpoverlay", fabricsettingstmp, false),
-		UnnumberedBgpUnderlay: getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
+		OptimiseBgpOverlay:       getBool("optimisebgpoverlay", fabricsettingstmp, false),
+		UnnumberedBgpUnderlay:    getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
+		AutomaticLinkAggregation: getBool("automaticlinkaggregation", fabricsettingstmp, false),
+		MCLag:                    getBool("mclag", fabricsettingstmp, false),
 	}
 
 	gpuclustersettingsList := d.Get("gpuclustersettings").(*schema.Set).List()
@@ -397,6 +409,8 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	fabricsettings := make(map[string]interface{})
 	fabricsettings["optimisebgpoverlay"] = profile.FabricProps.OptimiseBgpOverlay
 	fabricsettings["unnumberedbgpunderlay"] = profile.FabricProps.UnnumberedBgpUnderlay
+	fabricsettings["automaticlinkaggregation"] = profile.FabricProps.AutomaticLinkAggregation
+	fabricsettings["mclag"] = profile.FabricProps.MCLag
 	fabricsettingsList = append(fabricsettingsList, fabricsettings)
 
 	var gpuclustersettingsList []map[string]interface{}
@@ -497,8 +511,10 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	fabricsettings := inventoryprofile.FabricProps{
-		OptimiseBgpOverlay:    getBool("optimisebgpoverlay", fabricsettingstmp, false),
-		UnnumberedBgpUnderlay: getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
+		OptimiseBgpOverlay:       getBool("optimisebgpoverlay", fabricsettingstmp, false),
+		UnnumberedBgpUnderlay:    getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
+		AutomaticLinkAggregation: getBool("automaticlinkaggregation", fabricsettingstmp, false),
+		MCLag:                    getBool("mclag", fabricsettingstmp, false),
 	}
 
 	gpuclustersettingsList := d.Get("gpuclustersettings").(*schema.Set).List()

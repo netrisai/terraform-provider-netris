@@ -14,8 +14,10 @@ resource "netris_inventory_profile" "my-profile" {
     protocol     = "tcp"
   }
   fabricsettings {
-    optimisebgpoverlay    = true
-    unnumberedbgpunderlay = false
+    # optimisebgpoverlay    = true
+    # unnumberedbgpunderlay = false
+    # automaticlinkaggregation = false
+    mclag = true
   }
   gpuclustersettings {
     aggregatel3vpnprefix = true

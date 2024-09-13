@@ -12,18 +12,32 @@ Inventory profiles allow security hardening of inventory devices. By default all
 ## Example Usages
 ```hcl
 resource "netris_inventory_profile" "my-profile" {
-  name = "my-profile"
+  name        = "my-profile"
   description = "My First Inventory Profile"
-  ipv4ssh = ["10.0.10.0/24", "172.16.16.16"]
-  ipv6ssh = ["2001:DB8::/32"]
-  timezone = "America/Los_Angeles"
-  ntpservers = ["0.pool.ntp.org", "132.163.96.5"]
-  dnsservers = ["1.1.1.1", "8.8.8.8"]
+  ipv4ssh     = ["100.71.56.0/24", "203.0.113.0/24"]
+  ipv6ssh     = ["2001:db8:acad::/64"]
+  timezone    = "America/Los_Angeles"
+  ntpservers  = ["0.pool.ntp.org", "132.163.96.5"]
+  dnsservers  = ["1.1.1.1", "8.8.8.8"]
   customrule {
+    description  = "my custom rule"
     sourcesubnet = "10.0.0.0/8"
-    srcport = ""
-    dstport = "22"
-    protocol = "tcp"
+    srcport      = ""
+    dstport      = "8443"
+    protocol     = "tcp"
+  }
+  fabricsettings {
+    # optimisebgpoverlay    = true
+    # unnumberedbgpunderlay = false
+    # automaticlinkaggregation = false
+    mclag = true
+  }
+  gpuclustersettings {
+    aggregatel3vpnprefix = true
+    asicmonitoring       = false
+    congestioncontrol    = false
+    qosandroce           = true
+    roceadaptiverouting  = true
   }
 }
 ```
@@ -70,6 +84,8 @@ Optional:
 
 - **optimisebgpoverlay** (Boolean) Optimize BGP Overlay for leaf-spine topology. When checked, overlay BGP updates will be optimized for large scale. Each leaf switch (based on name) will form its overlay BGP sessions only with two spine switches (with the lowest IDs). Otherwise, Overlay BGP sessions will be configured on p2p links alongside underlay. Default value is `false`.
 - **unnumberedbgpunderlay** (Boolean) When checked, BGP underlay sessions will be configured using p2p IPv4 addresses configured on link objects in the Netris controller. Otherwise, BGP unnumbered method is used and p2p ipv6 link-local addresses are used for BGP sessions. Default value is `false`.
+- **automaticlinkaggregation** (Boolean) Automatically configure non-backbone switch ports under a single legged link aggregation (agg) interface. This allows for active/standby multihoming if LACP is enabled on the server side. Active/Active multihoming with EVPN-MH will be automatically configured on Nvidia Spectrum-2 and higher switch models. Default value is `false`.
+- **mclag** (Boolean) Enabling MC-LAG functionality will disable any EVPN-MH functionality. Two multihoming methods are not supported simultaneously on the same switches. Default value is `false`.
 
 
 <a id="nestedblock--gpuclustersettings"></a>
