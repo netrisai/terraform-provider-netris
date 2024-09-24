@@ -78,6 +78,11 @@ func Resource() *schema.Resource {
 							Description: "Block of interfaces",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
+									"id": {
+										Type:        schema.TypeInt,
+										Optional:    true,
+										Description: "Switch port ID",
+									},
 									"name": {
 										Type:        schema.TypeString,
 										Optional:    true,
@@ -112,6 +117,11 @@ func Resource() *schema.Resource {
 							Description: "Block of ports",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
+									"id": {
+										Type:        schema.TypeInt,
+										Optional:    true,
+										Description: "Switch port ID",
+									},
 									"name": {
 										Type:        schema.TypeString,
 										Optional:    true,
@@ -287,6 +297,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 					}
 					members = append(members, vnet.VNetAddPort{
 						AccessMode: accessMode,
+						ID:         port["id"].(int),
 						Name:       port["name"].(string),
 						Vlan:       vID,
 						State:      "active",
@@ -313,6 +324,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 					}
 					members = append(members, vnet.VNetAddPort{
 						AccessMode: accessMode,
+						ID:         port["id"].(int),
 						Name:       port["name"].(string),
 						Vlan:       vID,
 						State:      "active",
@@ -431,8 +443,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	tportVlanIDMap := make(map[string]string)
+	tportPortID := make(map[int]string)
 
 	tPorts := make(map[string]map[string]interface{})
+	tPortsId := make(map[int]map[string]interface{})
 	interfaces := false
 	gatewayMap := make(map[string]map[string]interface{})
 
@@ -451,14 +465,22 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				for _, p := range ports {
 					port := p.(map[string]interface{})
 					tportVlanIDMap[port["name"].(string)] = port["vlanid"].(string)
+					tportPortID[port["id"].(int)] = port["vlanid"].(string)
 					tPorts[port["name"].(string)] = port
+					if port["id"].(int) != 0 {
+						tPortsId[port["id"].(int)] = port
+					}
 				}
 			} else if p, ok := site["ports"]; ok {
 				ports := p.(*schema.Set).List()
 				for _, p := range ports {
 					port := p.(map[string]interface{})
 					tportVlanIDMap[port["name"].(string)] = port["vlanid"].(string)
+					tportPortID[port["id"].(int)] = port["vlanid"].(string)
 					tPorts[port["name"].(string)] = port
+					if port["id"].(int) != 0 {
+						tPortsId[port["id"].(int)] = port
+					}
 				}
 			}
 		}
@@ -473,18 +495,35 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				m := make(map[string]interface{})
 				name := fmt.Sprintf("%s@%s", port.Port, port.SwitchName)
 				if vlanFromTf, ok := tportVlanIDMap[name]; ok {
+					m["name"] = name
 					if vlanFromTf == "1" && vnetresp.Vlan != 0 && d.Get("vlanid").(string) != "" {
 						port.Vlan = "1"
 					}
 				}
-				m["name"] = name
+				if vlanFromTfId, ok := tportPortID[port.ID]; ok {
+					m["id"] = port.ID
+					if vlanFromTfId == "1" && vnetresp.Vlan != 0 && d.Get("vlanid").(string) != "" {
+						port.Vlan = "1"
+					}
+				}
 				m["vlanid"] = port.Vlan
 				m["lacp"] = "off"
-				if tPortUntagged := tPorts[name]["untagged"]; tPortUntagged != "" {
-					if port.Untagged {
-						m["untagged"] = "yes"
-					} else {
-						m["untagged"] = "no"
+				if tPort, exists := tPorts[name]; exists {
+					if tPortUntagged, ok := tPort["untagged"]; ok && tPortUntagged != "" {
+						if port.Untagged {
+							m["untagged"] = "yes"
+						} else {
+							m["untagged"] = "no"
+						}
+					}
+				}
+				if tPortid, exists := tPortsId[port.ID]; exists {
+					if tPortUntagged, ok := tPortid["untagged"]; ok && tPortUntagged != "" {
+						if port.Untagged {
+							m["untagged"] = "yes"
+						} else {
+							m["untagged"] = "no"
+						}
 					}
 				}
 				portList = append(portList, m)
@@ -667,6 +706,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 						members = append(members, vnet.VNetUpdatePort{
 							AccessMode: accessMode,
 							Name:       port["name"].(string),
+							ID:         port["id"].(int),
 							Vlan:       vID,
 							State:      "active",
 						})
@@ -707,6 +747,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 						members = append(members, vnet.VNetUpdatePort{
 							AccessMode: accessMode,
 							Name:       port["name"].(string),
+							ID:         port["id"].(int),
 							Vlan:       vID,
 							State:      "active",
 						})

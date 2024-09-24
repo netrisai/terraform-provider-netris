@@ -19,6 +19,9 @@ resource "netris_vnet" "my-vnet" {
     interface {
       name = "swp8@my-switch02"
     }
+    interface {
+      id = netris_lag.lag2-mc.id
+    }
   }
   depends_on = [
     netris_switch.my-switch01,

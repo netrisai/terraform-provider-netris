@@ -45,6 +45,9 @@ resource "netris_vnet" "my-vnet" {
     interface {
       name = "swp7@my-sw02"
     }
+    interface {
+      id = netris_lag.lag1-switch-01.id
+    }
   }
   depends_on = [
     netris_switch.my-sw01,
@@ -104,6 +107,7 @@ Optional:
 
 Optional:
 
-- **name** (String) Network interface name. Example: `swp5@my-sw01`
+- **id** (Number) Network interface ID. Example: `data.netris_network_interface.swp5-my-sw91.id`. Can't be used together `name`.
+- **name** (String) Network interface name. Example: `swp5@my-sw01`. Can't be used together `id`.
 - **vlanid** (String) VLAN tag for the current interface. Cannot be used together with global `vlanid`. If the main `vlanid` is also not set - means untagged. (Only for Netris Switch Fabric)
 - **untagged** (String) This option is applicable only when a global `vlanid` is set. In such cases, the default value is `yes`. The valid value is `yes` or `no`. (Applicable exclusively to Netris Switch Fabric)
