@@ -68,6 +68,7 @@ resource "netris_bgp" "my-bgp" {
 - **sendbgpcommunity** (List of String) Send BGP Community Unconditionally advertise defined list of BGP communities towards BGP neighbor. Format: AA:NN Community number in AA:NN format (where AA and NN are (0-65535)) or local-AS. Example `["65501:777"]`.
 - **state** (String) Valid value is `enabled` or `disabled`; enabled - initiating and waiting for BGP connections, disabled - disable Layer-2 tunnel and Layer-3 address. Default value is `enabled`.
 - **vlanid** (Number) VLAN ID for tagging BGP neighbor facing ethernet frames. Valid values should be in range 2-4094.
+- **untagged** (Boolean) Untag the ethernet frames on BGP neighbor facing ethernet.
 - **vnetid** (Number) Existing VNet service ID to terminate E-BGP on. Can't be used together `portid`.
 - **weight** (Number) BGP session weight. Default value is `0`.
 - **vpcid** (Number) ID of VPC. If not specified, the BGP will be created in the VPC marked as a default.
