@@ -231,6 +231,11 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeInt,
 				Description: "ID of VPC. If not specified, the BGP will be created in the VPC marked as a default.",
 			},
+			"untagged": {
+				Optional:    true,
+				Type:        schema.TypeBool,
+				Description: "Untag ethernet frames on BGP neighbor facing ethernet.",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -251,20 +256,21 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	var (
-		vlanID    = -1
 		state     = "enabled"
 		ipVersion = "ipv6"
 		hwID      = 0
 		portID    = 0
 		vnetID    = 0
-		untagged  = false
 	)
+
+	untagged := d.Get("untagged").(bool)
 
 	originate := "disabled"
 	localPreference := 100
 
 	siteID := d.Get("siteid").(int)
 	vpcid := d.Get("vpcid").(int)
+	vlanID := d.Get("vlanid").(int)
 
 	if d.Get("defaultoriginate").(bool) {
 		originate = "enabled"
@@ -283,8 +289,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	transportVlanID := d.Get("vlanid").(int)
-
 	localPreferenceTmp := d.Get("localpreference").(int)
 	if localPreferenceTmp > 0 {
 		localPreference = localPreferenceTmp
@@ -298,14 +302,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		portID = v
 	} else if v := d.Get("vnetid").(int); v > 0 {
 		vnetID = v
-	}
-
-	if transportVlanID >= 1 {
-		vlanID = transportVlanID
-	}
-
-	if vlanID == -1 {
-		untagged = true
 	}
 
 	localIPString := d.Get("localip").(string)
@@ -522,6 +518,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	err = d.Set("untagged", bgp.Untagged)
+	if err != nil {
+		return err
+	}
+
 	err = d.Set("bfd", bgp.Bfd)
 	if err != nil {
 		return err
@@ -656,14 +657,14 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	var (
-		vlanID    = -1
 		state     = "enabled"
 		ipVersion = "ipv6"
 		hwID      = 0
 		portID    = 0
 		vnetID    = 0
-		untagged  = false
 	)
+
+	untagged := d.Get("untagged").(bool)
 
 	originate := "disabled"
 	localPreference := 100
@@ -687,7 +688,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	transportVlanID := d.Get("vlanid").(int)
+	vlanID := d.Get("vlanid").(int)
 
 	localPreferenceTmp := d.Get("localpreference").(int)
 	if localPreferenceTmp > 0 {
@@ -702,14 +703,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		portID = v
 	} else if v := d.Get("vnetid").(int); v > 0 {
 		vnetID = v
-	}
-
-	if transportVlanID >= 1 {
-		vlanID = transportVlanID
-	}
-
-	if vlanID == -1 {
-		untagged = true
 	}
 
 	localIPString := d.Get("localip").(string)
