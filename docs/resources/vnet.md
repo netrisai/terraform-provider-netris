@@ -73,6 +73,7 @@ resource "netris_vnet" "my-vnet" {
 - **tags** (List of String) List of tags. Example `["foo", "bar"]`
 - **vlanid** (String) VLAN tag for all network interfaces of the vnet. Also can be `auto`. If set `auto` the controller will assign a vlan ID  automatically.
 - **vpcid** (Number) ID of VPC. If not specified, the vnet will be created in the VPC marked as a default.
+- **vxlanid** (Number) VXLAN ID. If not specified will be generated automatically.
 
 <a id="nestedblock--sites"></a>
 ### Nested Schema for `sites`
