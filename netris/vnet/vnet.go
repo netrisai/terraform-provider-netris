@@ -209,6 +209,12 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeInt,
 				Description: "ID of VPC. If not specified, the V-Net will be created in the VPC marked as a default.",
 			},
+			"vxlanid": {
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeInt,
+				Description: "VXLAN ID. If not specified will be generated automatically.",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -243,6 +249,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	tagsList := d.Get("tags").(*schema.Set).List()
 	vpcid := d.Get("vpcid").(int)
+	vxlanid := d.Get("vxlanid").(int)
 	tags := []string{}
 	for _, tag := range tagsList {
 		tags = append(tags, tag.(string))
@@ -353,6 +360,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Ports:        members,
 		Vlan:         vlanidInterface,
 		Tags:         tags,
+		VxlanID:      vxlanid,
 	}
 
 	if vpcid > 0 {
@@ -600,6 +608,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	err = d.Set("vxlanid", vnetresp.VxlanID)
+	if err != nil {
+		return err
+	}
+
 	if currentVpcId > 0 {
 		err = d.Set("vpcid", vnetresp.Vpc.ID)
 		if err != nil {
@@ -616,6 +629,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	sites := d.Get("sites").([]interface{})
 	vlanid := d.Get("vlanid").(string)
 	vnetTypeOne := false
+	vxlanid := d.Get("vxlanid").(int)
 
 	var sitesList []map[string]interface{}
 	for _, site := range sites {
@@ -784,6 +798,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Ports:        members,
 		Vlan:         vlanidInterface,
 		Tags:         tags,
+		VxlanID:      vxlanid,
 	}
 
 	js, _ := json.Marshal(vnetUpdate)

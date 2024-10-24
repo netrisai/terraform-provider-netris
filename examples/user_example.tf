@@ -1,8 +1,8 @@
 resource "netris_user" "terrraform-user" {
   username = "terraform"
   fullname = "Terraform"
-  email    = "terraform@netris.ai"
-  emailcc  = "devops@netris.ai"
+  email    = "terraform@netris.local"
+  emailcc  = "devops@netris.local"
   phone    = "6504570097"
   company  = "Netris, Inc."
   position = "DevOps Engineer"
