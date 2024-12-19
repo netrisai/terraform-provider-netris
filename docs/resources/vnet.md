@@ -48,6 +48,10 @@ resource "netris_vnet" "my-vnet" {
     interface {
       id = netris_lag.lag1-switch-01.id
     }
+    interfacetag {
+      tag        = "foo"
+      accessmode = true
+    }
   }
   depends_on = [
     netris_switch.my-sw01,
@@ -86,6 +90,7 @@ Optional:
 
 - **gateways** (Block List) Block of gateways (see [below for nested schema](#nestedblock--sites--gateways))
 - **interface** (Block List) Block for network interface (see [below for nested schema](#nestedblock--sites--interface))
+- **interfacetag** (Block List) Block for Network Interface Tags. Network Interface Tags help referencing one or more network interface objects to one or more V-Net objects. Network interfaces with matching tags will appear in a given V-Net. (see [below for nested schema](#nestedblock--sites--interfacetag))
 
 <a id="nestedblock--sites--gateways"></a>
 ### Nested Schema for `sites.gateways`
@@ -112,3 +117,12 @@ Optional:
 - **name** (String) Network interface name. Example: `swp5@my-sw01`. Can't be used together `id`.
 - **vlanid** (String) VLAN tag for the current interface. Cannot be used together with global `vlanid`. If the main `vlanid` is also not set - means untagged. (Only for Netris Switch Fabric)
 - **untagged** (String) This option is applicable only when a global `vlanid` is set. In such cases, the default value is `yes`. The valid value is `yes` or `no`. (Applicable exclusively to Netris Switch Fabric)
+
+
+<a id="nestedblock--sites--interfacetag"></a>
+### Nested Schema for `sites.interfacetag`
+
+Optional:
+
+- **tag** (String) Any tag. Example `"foo"`.
+- **accessmode** (Boolean) The default value is `false`. Valid value are `false` or `true`. When enabled the frames will be sent toward ports without a VLAN tag.
