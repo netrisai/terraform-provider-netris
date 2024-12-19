@@ -7,6 +7,6 @@ resource "netris_servercluster" "my-servercluster1" {
   tags       = ["boo", "foo"]
   servers = [
     netris_server.my-server01.id,
-    # netris_server.my-server02.id,
+    netris_server.my-server02.id,
   ]
 }
