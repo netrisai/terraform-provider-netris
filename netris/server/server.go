@@ -80,6 +80,12 @@ func Resource() *schema.Resource {
 				Optional:    true,
 				Description: "You may paste any custom data that can be assosiated with the object.",
 			},
+			"role": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Server's role.",
+				Computed:    true,
+			},
 			"tags": {
 				// Computed: true,
 				Optional: true,
@@ -135,6 +141,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Asn:         asnAny,
 		CustomData:  d.Get("customdata").(string),
 		Tags:        tags,
+		SRVRole:     d.Get("role").(string),
 	}
 
 	js, _ := json.Marshal(serverAdd)
@@ -215,6 +222,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("role", sw.SRVRole)
+	if err != nil {
+		return err
+	}
 
 	if asnumber := d.Get("asnumber"); asnumber.(string) != "auto" {
 		err = d.Set("asnumber", strconv.Itoa(sw.Asn))
@@ -276,6 +287,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Asn:         asnAny,
 		CustomData:  d.Get("customdata").(string),
 		Tags:        tags,
+		SRVRole:     d.Get("role").(string),
 	}
 
 	js, _ := json.Marshal(serverUpdate)

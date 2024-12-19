@@ -71,4 +71,4 @@ resource "netris_server" "my-server-2" {
 - **asnumber** (String) Server AS numbers. Valid value is ASN (example `420000002`) or `auto`.
 - **customdata** (String) You may paste any custom data that can be assosiated with the object.
 - **tags** (List of String) List of tags. Example `["foo", "bar"]`
-
+- **role** (String) Server's role. Valid values are `generic` or `hyperv_cs`. The default value is `generic`.

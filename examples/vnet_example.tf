@@ -36,7 +36,7 @@ resource "netris_vnet" "my-vnet-in-my-vpc" {
   tenantid = data.netris_tenant.admin.id
   state    = "active"
   # tags  = ["foo", "bar"]
-  vpcid = netris_vpc.my-vpc.id
+  vpcid   = netris_vpc.my-vpc.id
   vxlanid = 456
   sites {
     id = netris_site.santa-clara.id

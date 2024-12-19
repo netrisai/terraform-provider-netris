@@ -40,7 +40,7 @@ resource "netris_softgate" "my-softgate03" {
   mainip      = "auto"
   mgmtip      = "auto"
   flavor      = "sg-hs"
-  tags  = ["foo", "bar"]
+  tags        = ["foo", "bar"]
   # role = "snat"
   depends_on = [
     netris_subnet.my-subnet-mgmt,
