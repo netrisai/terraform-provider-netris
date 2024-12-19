@@ -83,6 +83,7 @@ Optional:
 Optional:
 
 - **optimisebgpoverlay** (Boolean) Optimize BGP Overlay for leaf-spine topology. When checked, overlay BGP updates will be optimized for large scale. Each leaf switch (based on name) will form its overlay BGP sessions only with two spine switches (with the lowest IDs). Otherwise, Overlay BGP sessions will be configured on p2p links alongside underlay. Default value is `false`.
+- **optimisebgpoverlayhypervisor** (Boolean) Required for BGP/EVPN VXLAN integration with compute hypervisor networking. This optimization makes sure that a large number of hypervisor virtual networking EVPN prefixes do not overflow switch TCAM. Default value is `false`.
 - **unnumberedbgpunderlay** (Boolean) When checked, BGP underlay sessions will be configured using p2p IPv4 addresses configured on link objects in the Netris controller. Otherwise, BGP unnumbered method is used and p2p ipv6 link-local addresses are used for BGP sessions. Default value is `false`.
 - **automaticlinkaggregation** (Boolean) Automatically configure non-backbone switch ports under a single legged link aggregation (agg) interface. This allows for active/standby multihoming if LACP is enabled on the server side. Active/Active multihoming with EVPN-MH will be automatically configured on Nvidia Spectrum-2 and higher switch models. Default value is `false`.
 - **mclag** (Boolean) Enabling MC-LAG functionality will disable any EVPN-MH functionality. Two multihoming methods are not supported simultaneously on the same switches. Default value is `false`.

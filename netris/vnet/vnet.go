@@ -111,6 +111,26 @@ func Resource() *schema.Resource {
 								},
 							},
 						},
+						"interfacetag": {
+							Optional:    true,
+							Type:        schema.TypeSet,
+							Description: "Network Interface Tags help referencing one or more network interface objects to one or more V-Net objects. Network interfaces with matching tags will appear in a given V-Net.",
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"tag": {
+										Type:        schema.TypeString,
+										Description: "Any tag. Example: `zone1`",
+										Required:    true,
+									},
+									"accessmode": {
+										Type:        schema.TypeBool,
+										Default:     false,
+										Optional:    true,
+										Description: "Default value is `false`.",
+									},
+								},
+							},
+						},
 						"ports": {
 							Optional:    true,
 							Type:        schema.TypeSet,
@@ -246,6 +266,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	siteIDs := []vnet.VNetAddSite{}
 	members := []vnet.VNetAddPort{}
 	gatewayList := []vnet.VNetAddGateway{}
+	portTagsList := []vnet.VNetPortTag{}
 
 	tagsList := d.Get("tags").(*schema.Set).List()
 	vpcid := d.Get("vpcid").(int)
@@ -338,7 +359,18 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 					})
 				}
 			}
+		}
+		if ifTags, ok := site["interfacetag"]; ok {
+			ifaceTags := ifTags.(*schema.Set).List()
 
+			for _, ifTag := range ifaceTags {
+				ifaceTag := ifTag.(map[string]interface{})
+				ifTagAdd := vnet.VNetPortTag{
+					Name:       ifaceTag["tag"].(string),
+					AccessMode: ifaceTag["accessmode"].(bool),
+				}
+				portTagsList = append(portTagsList, ifTagAdd)
+			}
 		}
 	}
 
@@ -361,6 +393,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Vlan:         vlanidInterface,
 		Tags:         tags,
 		VxlanID:      vxlanid,
+		PortTags:     portTagsList,
 	}
 
 	if vpcid > 0 {
@@ -457,6 +490,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	tPortsId := make(map[int]map[string]interface{})
 	interfaces := false
 	gatewayMap := make(map[string]map[string]interface{})
+	ifaceTagsMap := make(map[string]map[string]interface{})
 
 	for _, site := range sitesList {
 		if gws, ok := site["gateways"]; ok {
@@ -464,6 +498,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 			for _, g := range gateways {
 				gw := g.(map[string]interface{})
 				gatewayMap[gw["prefix"].(string)] = gw
+			}
+		}
+		if ifTags, ok := site["interfacetag"]; ok {
+			ifaceTags := ifTags.(*schema.Set).List()
+			for _, ifT := range ifaceTags {
+				ifTag := ifT.(map[string]interface{})
+				ifaceTagsMap[ifTag["tag"].(string)] = ifTag
 			}
 		}
 		if p, ok := site["interface"]; ok {
@@ -580,6 +621,16 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				}
 			}
 		}
+
+		interfacePortsList := make([]interface{}, 0)
+		for _, portTag := range vnetresp.PortTags {
+			if m, ok := ifaceTagsMap[portTag.Name]; ok {
+				m["tag"] = portTag.Name
+				m["accessmode"] = portTag.AccessMode
+				interfacePortsList = append(interfacePortsList, m)
+			}
+		}
+
 		s["id"] = site.ID
 		if interfaces {
 			s["interface"] = portList
@@ -588,6 +639,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		}
 
 		s["gateways"] = gatewayList
+		s["interfacetag"] = interfacePortsList
 		sites = append(sites, s)
 	}
 
@@ -651,6 +703,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	siteIDs := []vnet.VNetUpdateSite{}
 	members := []vnet.VNetUpdatePort{}
 	gatewayList := []vnet.VNetUpdateGateway{}
+	portTagsList := []vnet.VNetPortTag{}
 	apiPorts := make(map[string]vnet.VNetDetailedPort)
 	for _, p := range v.Ports {
 		apiPorts[fmt.Sprintf("%s@%s", p.Port, p.SwitchName)] = p
@@ -769,6 +822,18 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 				}
 			}
 		}
+		if ifTags, ok := site["interfacetag"]; ok {
+			ifaceTags := ifTags.(*schema.Set).List()
+
+			for _, ifTag := range ifaceTags {
+				ifaceTag := ifTag.(map[string]interface{})
+				ifTagAdd := vnet.VNetPortTag{
+					Name:       ifaceTag["tag"].(string),
+					AccessMode: ifaceTag["accessmode"].(bool),
+				}
+				portTagsList = append(portTagsList, ifTagAdd)
+			}
+		}
 	}
 
 	log.Println("[DEBUG] ExistingVlanForAuto", existingVlanForAuto)
@@ -799,6 +864,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Vlan:         vlanidInterface,
 		Tags:         tags,
 		VxlanID:      vxlanid,
+		PortTags:     portTagsList,
 	}
 
 	js, _ := json.Marshal(vnetUpdate)

@@ -53,6 +53,8 @@ resource "netris_link" "sg_to_sw" {
 
 - **mclag** (Block List) Block of MC-LAG. When specified, the link is marked for MC-LAG peer link. Multiple MC-LAG peer links between the same pair of switches must have the same MC-LAG IPv4 and MAC addresses. (see [below for nested schema](#nestedblock--mclag))
 
+- **underlay** (String) Inform the system that the current link should use EVPN/BGP underlay for VXLAN transport. Valid values are `enabled` or `disabled`. The default value is `enabled`.
+
 <a id="nestedblock--mclag"></a>
 ### Nested Schema for `mclag`
 

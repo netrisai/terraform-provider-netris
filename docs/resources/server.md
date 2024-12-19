@@ -46,6 +46,7 @@ resource "netris_server" "my-server-2" {
   portcount = 3
   asnumber = "auto"
   customdata = "sh -c 'echo $(date) | sudo tee -a /root/runcmd.log'"
+  # tags  = ["foo", "bar"]
 }
 
 ```
@@ -69,4 +70,5 @@ resource "netris_server" "my-server-2" {
 - **description** (String) Server description.
 - **asnumber** (String) Server AS numbers. Valid value is ASN (example `420000002`) or `auto`.
 - **customdata** (String) You may paste any custom data that can be assosiated with the object.
-
+- **tags** (List of String) List of tags. Example `["foo", "bar"]`
+- **role** (String) Server's role. Valid values are `generic` or `hyperv_cs`. The default value is `generic`.

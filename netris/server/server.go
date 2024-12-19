@@ -80,6 +80,20 @@ func Resource() *schema.Resource {
 				Optional:    true,
 				Description: "You may paste any custom data that can be assosiated with the object.",
 			},
+			"role": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Server's role.",
+				Computed:    true,
+			},
+			"tags": {
+				// Computed: true,
+				Optional: true,
+				Type:     schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -109,6 +123,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		asnAny = asnInt
 	}
 
+	tagsList := d.Get("tags").(*schema.Set).List()
+	tags := []string{}
+	for _, tag := range tagsList {
+		tags = append(tags, tag.(string))
+	}
+
 	serverAdd := &inventory.HWServer{
 		Name:        d.Get("name").(string),
 		Tenant:      inventory.IDName{ID: d.Get("tenantid").(int)},
@@ -120,6 +140,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		PortCount:   d.Get("portcount").(int),
 		Asn:         asnAny,
 		CustomData:  d.Get("customdata").(string),
+		Tags:        tags,
+		SRVRole:     d.Get("role").(string),
 	}
 
 	js, _ := json.Marshal(serverAdd)
@@ -184,6 +206,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("tags", sw.Tags)
+	if err != nil {
+		return err
+	}
 	err = d.Set("description", sw.Description)
 	if err != nil {
 		return err
@@ -193,6 +219,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("portcount", sw.PortCount)
+	if err != nil {
+		return err
+	}
+	err = d.Set("role", sw.SRVRole)
 	if err != nil {
 		return err
 	}
@@ -239,6 +269,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		asnAny = asnInt
 	}
 
+	tagsList := d.Get("tags").(*schema.Set).List()
+	tags := []string{}
+	for _, tag := range tagsList {
+		tags = append(tags, tag.(string))
+	}
+
 	serverUpdate := &inventory.HWServer{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
@@ -250,6 +286,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		PortCount:   d.Get("portcount").(int),
 		Asn:         asnAny,
 		CustomData:  d.Get("customdata").(string),
+		Tags:        tags,
+		SRVRole:     d.Get("role").(string),
 	}
 
 	js, _ := json.Marshal(serverUpdate)

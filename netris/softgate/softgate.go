@@ -82,6 +82,14 @@ func Resource() *schema.Resource {
 				Description: "Softgate HA's role.",
 				Computed:    true,
 			},
+			"tags": {
+				// Computed: true,
+				Optional: true,
+				Type:     schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -103,6 +111,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	profileID := d.Get("profileid").(int)
 
+	tagsList := d.Get("tags").(*schema.Set).List()
+	tags := []string{}
+	for _, tag := range tagsList {
+		tags = append(tags, tag.(string))
+	}
+
 	softgateAdd := &inventory.HWSoftgate{
 		Name:        d.Get("name").(string),
 		Tenant:      inventory.IDName{ID: d.Get("tenantid").(int)},
@@ -114,6 +128,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Links:       []inventory.HWLink{},
 		SGFlavor:    d.Get("flavor").(string),
 		SGRole:      d.Get("role").(string),
+		Tags:        tags,
 	}
 
 	js, _ := json.Marshal(softgateAdd)
@@ -182,6 +197,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("tags", sw.Tags)
+	if err != nil {
+		return err
+	}
 	err = d.Set("description", sw.Description)
 	if err != nil {
 		return err
@@ -221,6 +240,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
+	tagsList := d.Get("tags").(*schema.Set).List()
+	tags := []string{}
+	for _, tag := range tagsList {
+		tags = append(tags, tag.(string))
+	}
+
 	softgateUpdate := &inventory.HWSoftgateUpdate{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
@@ -232,6 +257,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Links:       sw.Links,
 		SGFlavor:    d.Get("flavor").(string),
 		SGRole:      d.Get("role").(string),
+		Tags:        tags,
 	}
 
 	js, _ := json.Marshal(softgateUpdate)

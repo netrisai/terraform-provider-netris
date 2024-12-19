@@ -3,6 +3,7 @@ resource "netris_vnet" "my-vnet" {
   tenantid = data.netris_tenant.admin.id
   state    = "active"
   # tags  = ["foo", "bar"]
+  vlanid = "auto"
   sites {
     id = netris_site.santa-clara.id
     gateways {
@@ -13,14 +14,21 @@ resource "netris_vnet" "my-vnet" {
       prefix = "2001:db8:acad::fffe/64"
     }
     interface {
-      name   = "swp8@my-switch01"
-      vlanid = 1050
+      name = "swp8@my-switch01"
     }
     interface {
       name = "swp8@my-switch02"
     }
     interface {
       id = netris_lag.lag2-mc.id
+    }
+    interfacetag {
+      tag        = "foo"
+      accessmode = true
+    }
+    interfacetag {
+      tag = "bar"
+      # accessmode = true
     }
   }
   depends_on = [
@@ -36,7 +44,7 @@ resource "netris_vnet" "my-vnet-in-my-vpc" {
   tenantid = data.netris_tenant.admin.id
   state    = "active"
   # tags  = ["foo", "bar"]
-  vpcid = netris_vpc.my-vpc.id
+  vpcid   = netris_vpc.my-vpc.id
   vxlanid = 456
   sites {
     id = netris_site.santa-clara.id
