@@ -9,6 +9,7 @@ resource "netris_switch" "my-switch01" {
   mainip      = "auto"
   mgmtip      = "auto"
   portcount   = 16
+  tags  = ["foo", "bar"]
   depends_on = [
     netris_subnet.my-subnet-mgmt,
     netris_subnet.my-subnet-loopback,

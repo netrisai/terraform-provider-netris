@@ -8,6 +8,7 @@ resource "netris_server" "my-server01" {
   portcount = 2
   # asnumber    = "auto"
   # customdata  = "custom data"
+  # tags  = ["foo", "bar"]
   depends_on = [netris_subnet.my-subnet-mgmt, netris_subnet.my-subnet-loopback]
 }
 
@@ -21,5 +22,6 @@ resource "netris_server" "my-server02" {
   portcount = 2
   # asnumber    = "auto"
   # customdata  = "custom data"
+  tags  = ["foo", "bar"]
   depends_on = [netris_subnet.my-subnet-mgmt, netris_subnet.my-subnet-loopback]
 }

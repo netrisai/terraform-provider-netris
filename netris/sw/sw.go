@@ -96,6 +96,14 @@ func Resource() *schema.Resource {
 				Description: "Initial Break Out applies to all switch ports of this switch.",
 				ForceNew:    true,
 			},
+			"tags": {
+				// Computed: true,
+				Optional: true,
+				Type:     schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -139,6 +147,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		asnAny = asnInt
 	}
 
+	tagsList := d.Get("tags").(*schema.Set).List()
+	tags := []string{}
+	for _, tag := range tagsList {
+		tags = append(tags, tag.(string))
+	}
+
 	swAdd := &inventory.HWSwitchAdd{
 		Name:        d.Get("name").(string),
 		Tenant:      inventory.IDName{ID: d.Get("tenantid").(int)},
@@ -153,6 +167,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		PortCount:   d.Get("portcount").(int),
 		Links:       []inventory.HWLink{},
 		Breakout:    d.Get("breakout").(string),
+		Tags:        tags,
 	}
 
 	js, _ := json.Marshal(swAdd)
@@ -218,6 +233,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("description", sw.Description)
+	if err != nil {
+		return err
+	}
+	err = d.Set("tags", sw.Tags)
 	if err != nil {
 		return err
 	}
@@ -296,6 +315,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		asnAny = asnInt
 	}
 
+	tagsList := d.Get("tags").(*schema.Set).List()
+	tags := []string{}
+	for _, tag := range tagsList {
+		tags = append(tags, tag.(string))
+	}
+
 	swUpdate := &inventory.HWSwitchUpdate{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
@@ -310,6 +335,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		PortCount:   d.Get("portcount").(int),
 		Type:        "switch",
 		Links:       sw.Links,
+		Tags:        tags,
 	}
 
 	js, _ := json.Marshal(swUpdate)

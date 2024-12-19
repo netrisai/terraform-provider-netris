@@ -36,6 +36,7 @@ resource "netris_switch" "my-switch" {
   mainip = "auto"
   mgmtip = "auto"
   portcount = 16
+  # tags  = ["foo", "bar"]
   depends_on = [
     netris_subnet.my-subnet-mgmt,
     netris_subnet.my-subnet-loopback,
@@ -63,4 +64,4 @@ resource "netris_switch" "my-switch" {
 - **description** (String) Switch description.
 - **profileid** (Number) An inventory profile ID to define global configuration (NTP, DNS, timezone, etc...)
 - **breakout** (String) Initial Break Out applies to all switch ports of this switch. Possible values: `off`, `disabled`, `4x10`, `4x25`, `2x50`, `4x50`, `2x100`, `4x100`, `2x200`, `4x200`, `2x400`
-
+- **tags** (List of String) List of tags. Example `["foo", "bar"]`

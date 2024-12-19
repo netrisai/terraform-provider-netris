@@ -41,6 +41,7 @@ resource "netris_softgate" "my-softgate" {
   profileid = data.netris_inventory_profile.my-profile.id
   mainip = "auto"
   mgmtip = "192.0.2.11"
+  # tags  = ["foo", "bar"]
   # flavor = "sg-hs"
   # role = "snat"
   depends_on = [
@@ -68,3 +69,4 @@ resource "netris_softgate" "my-softgate" {
 - **profileid** (Number) An inventory profile ID to define global configuration (NTP, DNS, timezone, etc...)
 - **flavor** (String) Softgate's flavor. Valid values are `sg`, `sg-pro` or `sg-hs`. The default value is `sg`.
 - **role** (String) Softgate's role. Only when flavor == `sg-hs` Valid values are `general` or `snat`. The default value is `general`.
+- **tags** (List of String) List of tags. Example `["foo", "bar"]`
