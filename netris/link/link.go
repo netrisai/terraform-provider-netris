@@ -61,6 +61,14 @@ func Resource() *schema.Resource {
 				},
 				Description: "List of two IPv6 addresses",
 			},
+			"underlay": {
+				ForceNew:     true,
+				Optional:     true,
+				Default:      "enabled",
+				Type:         schema.TypeString,
+				ValidateFunc: validateUnderlay,
+				Description:  "Inform the system that the current link should use EVPN/BGP underlay for VXLAN transport.",
+			},
 			"mclag": {
 				ForceNew:    true,
 				Optional:    true,
@@ -131,8 +139,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	mcLagList := d.Get("mclag").(*schema.Set).List()
 
 	linkAdd := &link.Linkw{
-		Local:  link.LinkIDName{Name: local, Ipv4: localIpv4, Ipv6: localIpv6},
-		Remote: link.LinkIDName{Name: remote, Ipv4: remoteIpv4, Ipv6: remoteIpv6},
+		Local:    link.LinkIDName{Name: local, Ipv4: localIpv4, Ipv6: localIpv6},
+		Remote:   link.LinkIDName{Name: remote, Ipv4: remoteIpv4, Ipv6: remoteIpv6},
+		Underlay: d.Get("underlay").(string),
 	}
 
 	if len(mcLagList) > 0 {
@@ -217,6 +226,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	d.SetId(strconv.Itoa(nlink.ID))
 
 	err = d.Set("ports", portList)
+	if err != nil {
+		return err
+	}
+	err = d.Set("underlay", nlink.Underlay)
 	if err != nil {
 		return err
 	}
@@ -305,6 +318,14 @@ func validateMAC(val interface{}, key string) (warns []string, errs []error) {
 	// Check if the MAC address matches the pattern
 	if !re.MatchString(v) {
 		errs = append(errs, fmt.Errorf("invalid %s: %s", key, v))
+	}
+	return warns, errs
+}
+
+func validateUnderlay(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if !(v == "enabled" || v == "disabled") {
+		errs = append(errs, fmt.Errorf("'%s' must be 'enabled' or 'disabled', got: %s", key, v))
 	}
 	return warns, errs
 }

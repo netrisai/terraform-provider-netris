@@ -19,6 +19,7 @@ resource "netris_link" "sw1_to_sw2" {
     "swp15@my-switch01",
     "swp15@my-switch02"
   ]
+  underlay = "disabled"
   depends_on = [netris_switch.my-switch01, netris_switch.my-switch02]
 }
 
