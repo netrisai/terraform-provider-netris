@@ -137,6 +137,11 @@ func Resource() *schema.Resource {
 							Optional:    true,
 							Description: "Optimize BGP Overlay for leaf-spine topology. When checked, overlay BGP updates will be optimized for large scale. Each leaf switch (based on name) will form its overlay BGP sessions only with two spine switches (with the lowest IDs). Otherwise, Overlay BGP sessions will be configured on p2p links alongside underlay.",
 						},
+						"optimisebgpoverlayhypervisor": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Required for BGP/EVPN VXLAN integration with compute hypervisor networking. This optimization makes sure that a large number of hypervisor virtual networking EVPN prefixes do not overflow switch TCAM.",
+						},
 						"unnumberedbgpunderlay": {
 							Type:        schema.TypeBool,
 							Optional:    true,
@@ -274,10 +279,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	fabricsettings := inventoryprofile.FabricProps{
-		OptimiseBgpOverlay:       getBool("optimisebgpoverlay", fabricsettingstmp, false),
-		UnnumberedBgpUnderlay:    getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
-		AutomaticLinkAggregation: getBool("automaticlinkaggregation", fabricsettingstmp, false),
-		MCLag:                    getBool("mclag", fabricsettingstmp, false),
+		OptimiseBgpOverlay:           getBool("optimisebgpoverlay", fabricsettingstmp, false),
+		OptimiseBgpOverlayHypervisor: getBool("optimisebgpoverlayhypervisor", fabricsettingstmp, false),
+		UnnumberedBgpUnderlay:        getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
+		AutomaticLinkAggregation:     getBool("automaticlinkaggregation", fabricsettingstmp, false),
+		MCLag:                        getBool("mclag", fabricsettingstmp, false),
 	}
 
 	gpuclustersettingsList := d.Get("gpuclustersettings").(*schema.Set).List()
@@ -408,6 +414,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	var fabricsettingsList []map[string]interface{}
 	fabricsettings := make(map[string]interface{})
 	fabricsettings["optimisebgpoverlay"] = profile.FabricProps.OptimiseBgpOverlay
+	fabricsettings["optimisebgpoverlayhypervisor"] = profile.FabricProps.OptimiseBgpOverlayHypervisor
 	fabricsettings["unnumberedbgpunderlay"] = profile.FabricProps.UnnumberedBgpUnderlay
 	fabricsettings["automaticlinkaggregation"] = profile.FabricProps.AutomaticLinkAggregation
 	fabricsettings["mclag"] = profile.FabricProps.MCLag
@@ -511,10 +518,11 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	fabricsettings := inventoryprofile.FabricProps{
-		OptimiseBgpOverlay:       getBool("optimisebgpoverlay", fabricsettingstmp, false),
-		UnnumberedBgpUnderlay:    getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
-		AutomaticLinkAggregation: getBool("automaticlinkaggregation", fabricsettingstmp, false),
-		MCLag:                    getBool("mclag", fabricsettingstmp, false),
+		OptimiseBgpOverlay:           getBool("optimisebgpoverlay", fabricsettingstmp, false),
+		OptimiseBgpOverlayHypervisor: getBool("optimisebgpoverlayhypervisor", fabricsettingstmp, false),
+		UnnumberedBgpUnderlay:        getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
+		AutomaticLinkAggregation:     getBool("automaticlinkaggregation", fabricsettingstmp, false),
+		MCLag:                        getBool("mclag", fabricsettingstmp, false),
 	}
 
 	gpuclustersettingsList := d.Get("gpuclustersettings").(*schema.Set).List()

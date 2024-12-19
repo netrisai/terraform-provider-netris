@@ -15,6 +15,7 @@ resource "netris_inventory_profile" "my-profile" {
   }
   fabricsettings {
     # optimisebgpoverlay    = true
+    # optimisebgpoverlayhypervisor = true
     # unnumberedbgpunderlay = false
     # automaticlinkaggregation = false
     mclag = true
