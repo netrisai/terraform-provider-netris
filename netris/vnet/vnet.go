@@ -379,7 +379,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	if vnetTypeOne {
 		vlanidInterface = 0
 	} else {
-		vlanidInterface = vlanid
+		if vlanid == "disabled" {
+			vlanidInterface = 0
+		} else {
+			vlanidInterface = vlanid
+		}
 	}
 
 	vnetAdd := &vnet.VNetAdd{
@@ -851,7 +855,11 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	if vnetTypeOne {
 		vlanidInterface = 0
 	} else {
-		vlanidInterface = vlanid
+		if vlanid == "disabled" {
+			vlanidInterface = 0
+		} else {
+			vlanidInterface = vlanid
+		}
 	}
 
 	vnetUpdate := &vnet.VNetUpdate{

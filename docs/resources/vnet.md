@@ -75,7 +75,7 @@ resource "netris_vnet" "my-vnet" {
 
 - **state** (String) V-Net state. Allowed values: `active` or `disabled`. Default value is `active`
 - **tags** (List of String) List of tags. Example `["foo", "bar"]`
-- **vlanid** (String) VLAN tag for all network interfaces of the vnet. Also can be `auto`. If set `auto` the controller will assign a vlan ID  automatically.
+- **vlanid** (String) VLAN tag for all network interfaces of the vnet. Also can be `auto`, or `disabled`. If set `auto` the controller will assign a vlan ID  automatically.
 - **vpcid** (Number) ID of VPC. If not specified, the vnet will be created in the VPC marked as a default.
 - **vxlanid** (Number) VXLAN ID. If not specified will be generated automatically.
 
