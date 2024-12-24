@@ -32,7 +32,8 @@ func validateState(val interface{}, key string) (warns []string, errs []error) {
 
 func validateVlanID(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
-	if v == "auto" {
+	if v == "auto" || v == "disabled" {
+		// No further checks are needed for "auto" or "disabled"
 	} else {
 		vlan, _ := strconv.Atoi(v)
 		if !(vlan >= 2 && vlan <= 4094) {
