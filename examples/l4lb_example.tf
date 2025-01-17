@@ -12,5 +12,6 @@ resource "netris_l4lb" "my_l4lb" {
     timeout     = 3000
     requestPath = "/"
   }
+  # vpcid = netris_vpc.my-vpc.id
   depends_on = [netris_subnet.my-subnet-load-balancer, netris_subnet.my-subnet-vnet]
 }
