@@ -68,6 +68,7 @@ func Resource() *schema.Resource {
 			"frontend": {
 				Optional:    true,
 				Type:        schema.TypeString,
+				Computed:    true,
 				Description: "L4LB frontend IP. If not specified, will be assigned automatically from subnets with relevant purpose.",
 			},
 			"port": {

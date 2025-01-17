@@ -50,3 +50,18 @@ resource "netris_nat" "my_snat_accept" {
   srcaddress = "100.71.56.0/24"
   dstaddress = "10.10.0.0/16"
 }
+
+resource "netris_nat" "my_snat_in_vpc" {
+  name       = "MY SNAT IN VPC"
+  comment    = "Terraform Test SNAT IN VPC"
+  state      = "enabled"
+  siteid     = netris_site.santa-clara.id
+  action     = "SNAT"
+  protocol   = "all"
+  srcaddress = "198.18.51.0/24"
+  dstaddress = "0.0.0.0/0"
+  snattoip   = "203.0.113.194"
+  # snattopool = "203.0.113.192/26"
+  vpcid      = netris_vpc.my-vpc.id
+  depends_on = [netris_subnet.my-subnet-nat, netris_subnet.my-subnet-vnet-in-my-vpc]
+}

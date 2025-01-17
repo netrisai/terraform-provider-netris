@@ -32,6 +32,7 @@ resource "netris_l4lb" "my_l4lb" {
     timeout = 3000
     requestPath =  "/"
   }
+  # vpcid = netris_vpc.my-vpc.id
 }
 ```
 

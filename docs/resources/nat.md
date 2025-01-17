@@ -35,6 +35,7 @@ resource "netris_nat" "my_snat" {
   dstaddress = "0.0.0.0/0"
   snattoip = "203.0.113.192"
   # snattopool = "203.0.113.192/26"
+  # vpcid = netris_vpc.my-vpc.id
   depends_on = [netris_subnet.my-subnet-common, netris_subnet.my-subnet-nat]
 }
 ```
@@ -114,3 +115,4 @@ resource "netris_nat" "my_snat_accept" {
 - **snattopool** (String) Replace the original address with the pool of ip addresses. Only when action == `SNAT`
 - **srcport** (String) Match traffic sourced from this port. Ignoring when protocol == `all` or `icmp`
 - **state** (String) Rule state. Valid value is `enabled` or `disabled`. Default value is `enabled`.
+- **vpcid** (Number) ID of VPC. If not specified, the NAT Rule will be created in the VPC marked as a default.
