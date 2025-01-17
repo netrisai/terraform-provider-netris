@@ -68,6 +68,7 @@ func Resource() *schema.Resource {
 			"frontend": {
 				Optional:    true,
 				Type:        schema.TypeString,
+				Computed:    true,
 				Description: "L4LB frontend IP. If not specified, will be assigned automatically from subnets with relevant purpose.",
 			},
 			"port": {
@@ -92,6 +93,12 @@ func Resource() *schema.Resource {
 					Optional: true,
 				},
 			},
+			"vpcid": {
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeInt,
+				Description: "ID of VPC. If not specified, the L4LB will be created in the VPC marked as a default.",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -115,6 +122,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	tenantID := d.Get("tenantid").(int)
 	siteID := d.Get("siteid").(int)
+	vpcid := d.Get("vpcid").(int)
 
 	var state string
 	var timeout string
@@ -208,8 +216,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	l4lbAdd := &l4lb.LoadBalancerAdd{
 		Name:        d.Get("name").(string),
-		Tenant:      tenantID,
-		SiteID:      siteID,
+		Tenant:      l4lb.IDName{ID: tenantID},
+		Site:        l4lb.IDName{ID: siteID},
 		Automatic:   automatic,
 		Protocol:    strings.ToUpper(proto),
 		IP:          frontendIP,
@@ -222,6 +230,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	if healthCheck != "" {
 		l4lbAdd.HealthCheck = healthCheck
+	}
+	if vpcid > 0 {
+		l4lbAdd.Vpc = &l4lb.IDName{ID: vpcid}
 	}
 
 	js, _ := json.Marshal(l4lbAdd)
@@ -291,11 +302,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("tenantid", l4lb.TenantID)
+	err = d.Set("tenantid", l4lb.Tenant.ID)
 	if err != nil {
 		return err
 	}
-	err = d.Set("siteid", l4lb.SiteID)
+	err = d.Set("siteid", l4lb.Site.ID)
 	if err != nil {
 		return err
 	}
@@ -316,6 +327,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("port", l4lb.Port)
+	if err != nil {
+		return err
+	}
+
+	err = d.Set("vpcid", l4lb.Vpc.ID)
 	if err != nil {
 		return err
 	}
@@ -424,12 +440,13 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		automatic = true
 		frontendIP = ""
 	}
+	vpcid := d.Get("vpcid").(int)
 
 	id, _ := strconv.Atoi(d.Id())
 	l4lbUpdate := &l4lb.LoadBalancerUpdate{
 		Name:        d.Get("name").(string),
-		TenantID:    d.Get("tenantid").(int),
-		SiteID:      d.Get("siteid").(int),
+		Tenant:      l4lb.IDName{ID: d.Get("tenantid").(int)},
+		Site:        l4lb.IDName{ID: d.Get("siteid").(int)},
 		Automatic:   automatic,
 		Protocol:    strings.ToUpper(proto),
 		IP:          frontendIP,
@@ -438,6 +455,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		RequestPath: checkRequestPath,
 		Timeout:     timeout,
 		BackendIPs:  lbBackends,
+		Vpc:         &l4lb.IDName{ID: vpcid},
 	}
 
 	if healthCheck != "" {

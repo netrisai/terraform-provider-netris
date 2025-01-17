@@ -32,6 +32,7 @@ resource "netris_l4lb" "my_l4lb" {
     timeout = 3000
     requestPath =  "/"
   }
+  # vpcid = netris_vpc.my-vpc.id
 }
 ```
 
@@ -52,5 +53,5 @@ resource "netris_l4lb" "my_l4lb" {
 - **siteid** (Number) The site ID. Resources defined in the selected site will be permitted to be used as backed entries for this L4 Load Balancer service.
 - **tenantid** (Number) ID of tenant. Users of this tenant will be permitted to edit this unit.
 ### Optional
-
+- **vpcid** (Number) ID of VPC. If not specified, the L4LB will be created in the VPC marked as a default.
 - **state** (String) Administrative status. Possible values: `active` or `disable`. Default value is `active`

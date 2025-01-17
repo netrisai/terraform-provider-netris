@@ -125,6 +125,12 @@ func Resource() *schema.Resource {
 				Type:         schema.TypeString,
 				Description:  "Replace the original address with the pool of ip addresses. Only when action == `SNAT`",
 			},
+			"vpcid": {
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeInt,
+				Description: "ID of VPC. If not specified, the NAT rule will be created in the VPC marked as a default.",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -159,6 +165,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	dnattoport := d.Get("dnattoport").(string)
 	snattoip := d.Get("snattoip").(string)
 	snattopool := d.Get("snattopool").(string)
+	vpcid := d.Get("vpcid").(int)
 
 	natW := &nat.NATw{
 		Name:               name,
@@ -176,6 +183,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		DnatToPort:         dnattoport,
 		SnatToIP:           snattoip,
 		SnatToPool:         snattopool,
+	}
+
+	if vpcid > 0 {
+		natW.Vpc = &nat.IDName{ID: vpcid}
 	}
 
 	js, _ := json.Marshal(natW)
@@ -295,6 +306,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	err = d.Set("vpcid", nat.Vpc.ID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -316,6 +332,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	dnattoport := d.Get("dnattoport").(string)
 	snattoip := d.Get("snattoip").(string)
 	snattopool := d.Get("snattopool").(string)
+	vpcid := d.Get("vpcid").(int)
 
 	id, _ := strconv.Atoi(d.Id())
 	natW := &nat.NATw{
@@ -334,6 +351,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		DnatToPort:         dnattoport,
 		SnatToIP:           snattoip,
 		SnatToPool:         snattopool,
+		Vpc:                &nat.IDName{ID: vpcid},
 	}
 
 	js, _ := json.Marshal(natW)

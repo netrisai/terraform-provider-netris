@@ -36,6 +36,7 @@ resource "netris_link" "srv1_to_sw1" {
     "fc00::c82a:75ff:fe66:84a0/127",
     "fc00::c82a:75ff:fe66:84a1/127"
   ]
+  underlay   = "disabled"
   depends_on = [netris_switch.my-switch01, netris_server.my-server01]
 }
 
@@ -52,6 +53,7 @@ resource "netris_link" "srv1_to_sw2" {
   #   "fc00::c82a:75ff:fe66:84b0/127",
   #   "fc00::c82a:75ff:fe66:84b1/127"
   # ]
+  underlay   = "disabled"
   depends_on = [netris_switch.my-switch02, netris_server.my-server01]
 }
 
@@ -68,6 +70,7 @@ resource "netris_link" "srv2_to_sw1" {
     "fc00:c0::0/64",
     "fc00:c0::1/64"
   ]
+  underlay   = "disabled"
   depends_on = [netris_switch.my-switch01, netris_server.my-server02]
 }
 
@@ -84,6 +87,7 @@ resource "netris_link" "srv2_to_sw2" {
   #   "fc00:c0::2/64",
   #   "fc00:c0::3/64"
   # ]
+  underlay   = "disabled"
   depends_on = [netris_switch.my-switch02, netris_server.my-server02]
 }
 
