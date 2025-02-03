@@ -74,6 +74,11 @@ func Resource() *schema.Resource {
 					Type: schema.TypeInt,
 				},
 			},
+			"globalrouting": {
+				Optional:    true,
+				Type:        schema.TypeBool,
+				Description: "Subnets with `Global Routing` enabled will be advertised from guest VPCs to the System VPC, and if the System VPC has upstream (Internet) connection such subnets will be advertised further upstream.",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -103,6 +108,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	for _, s := range sitesList {
 		sites = append(sites, ipam.IDName{ID: s.(int)})
 	}
+	globalRouting := d.Get("globalrouting").(bool)
 
 	if purpose == "management" {
 		defaultgw = d.Get("defaultgateway").(string)
@@ -116,6 +122,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Sites:          sites,
 		DefaultGateway: defaultgw,
 		Tags:           []string{},
+		GlobalRouting:  &globalRouting,
 	}
 
 	if vpcid > 0 {
@@ -218,6 +225,12 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return err
 		}
+
+		err = d.Set("globalrouting", ipam.GlobalRouting)
+		if err != nil {
+			return err
+		}
+
 	}
 	return nil
 }
@@ -235,6 +248,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		sites = append(sites, ipam.IDName{ID: s.(int)})
 	}
 
+	globalRouting := d.Get("globalrouting").(bool)
+
 	if purpose == "management" {
 		defaultgw = d.Get("defaultgateway").(string)
 	}
@@ -247,6 +262,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Sites:          sites,
 		DefaultGateway: defaultgw,
 		Tags:           []string{},
+		GlobalRouting:  &globalRouting,
 	}
 
 	js, _ := json.Marshal(subnetUpdate)
