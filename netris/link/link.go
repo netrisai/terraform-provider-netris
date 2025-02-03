@@ -44,7 +44,6 @@ func Resource() *schema.Resource {
 				Description: "List of two ports.",
 			},
 			"ipv4": {
-				ForceNew: true,
 				Optional: true,
 				Type:     schema.TypeList,
 				Elem: &schema.Schema{
@@ -53,7 +52,6 @@ func Resource() *schema.Resource {
 				Description: "List of two IPv4 addresses.",
 			},
 			"ipv6": {
-				ForceNew: true,
 				Optional: true,
 				Type:     schema.TypeList,
 				Elem: &schema.Schema{
@@ -62,7 +60,6 @@ func Resource() *schema.Resource {
 				Description: "List of two IPv6 addresses",
 			},
 			"underlay": {
-				ForceNew:     true,
 				Optional:     true,
 				Default:      "enabled",
 				Type:         schema.TypeString,
@@ -98,7 +95,7 @@ func Resource() *schema.Resource {
 		Delete: resourceDelete,
 		Read:   resourceRead,
 		Exists: resourceExists,
-		// Update: resourceUpdate,
+		Update: resourceUpdate,
 		Importer: &schema.ResourceImporter{
 			State: resourceImport,
 		},
@@ -243,6 +240,57 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func resourceUpdate(d *schema.ResourceData, m interface{}) error {
+	log.Println("[DEBUG] linkUpdate")
+	clientset := m.(*api.Clientset)
+
+	linkID, _ := strconv.Atoi(d.Id())
+
+	localIpv4 := ""
+	remoteIpv4 := ""
+	localIpv6 := ""
+	remoteIpv6 := ""
+
+	ipv4List := d.Get("ipv4").([]interface{})
+	ipv6List := d.Get("ipv6").([]interface{})
+
+	if len(ipv4List) == 2 {
+		localIpv4 = ipv4List[0].(string)
+		remoteIpv4 = ipv4List[1].(string)
+	}
+
+	if len(ipv6List) == 2 {
+		localIpv6 = ipv6List[0].(string)
+		remoteIpv6 = ipv6List[1].(string)
+	}
+
+	linkUpdate := &link.LinkU{
+		Local:    link.LinkIDNameU{Ipv4: localIpv4, Ipv6: localIpv6},
+		Remote:   link.LinkIDNameU{Ipv4: remoteIpv4, Ipv6: remoteIpv6},
+		Underlay: d.Get("underlay").(string),
+	}
+
+	js, _ := json.Marshal(linkUpdate)
+	log.Println("[DEBUG] linkUpdate", string(js))
+
+	reply, err := clientset.Link().Update(linkID, linkUpdate)
+	if err != nil {
+		log.Println("[DEBUG]", err)
+		return err
+	}
+
+	js, _ = json.Marshal(reply)
+	log.Println("[DEBUG]", string(js))
+
+	log.Println("[DEBUG]", string(reply.Data))
+
+	if reply.StatusCode != 200 {
+		return fmt.Errorf(string(reply.Data))
 	}
 
 	return nil
