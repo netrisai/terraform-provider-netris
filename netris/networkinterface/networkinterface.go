@@ -121,7 +121,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
 
 	var hwPort *port.Port
-	ports, err := clientset.Port().Get()
+	switchID := d.Get("nodeid").(int)
+
+	ports, err := clientset.Port().GetBySwId(switchID)
 	if err != nil {
 		return err
 	}
@@ -129,7 +131,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	breakout := d.Get("breakout").(string)
-	switchID := d.Get("nodeid").(int)
 	tenantID := d.Get("tenantid").(int)
 
 	for _, p := range ports {
