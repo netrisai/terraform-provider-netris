@@ -25,8 +25,7 @@ import (
 
 func validateBreakout(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
-	allowedValues := []string{"off", "disabled", "4x10", "4x25", "2x50", "4x50", "2x100", "4x100", "2x200", "4x200", "2x400", "1x400", "8x100"}
-
+	allowedValues := []string{"off", "disabled", "1x10","1x25","1x40","1x50","1x100","1x200","1x400","1x800","2x10","2x25","2x40","2x50","2x100","2x200","2x400","4x10","4x25","4x50","4x100","4x200","8x10","8x25","8x50","8x100"}
 	// Check if the provided value is in the list of allowed values
 	isValid := false
 	for _, allowedValue := range allowedValues {
