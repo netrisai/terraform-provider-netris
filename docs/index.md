@@ -146,7 +146,7 @@ resource "netris_subnet" "my-subnet-common" {
 resource "netris_inventory_profile" "my-profile" {
   name = "my-profile"
   description = "My First Inventory Profile"
-  ipv4ssh = ["10.0.10.0/24", "172.16.16.16"]
+  ipv4ssh = ["10.0.10.0/24", "172.16.16.16/32"]
   ipv6ssh = ["2001:DB8::/32"]
   timezone = "America/Los_Angeles"
   ntpservers = ["0.pool.ntp.org", "132.163.96.5"]
@@ -178,7 +178,7 @@ resource "netris_switch" "my-switch" {
   tenantid = data.netris_tenant.admin.id
   siteid = netris_site.santa-clara.id
   description = "Switch 01"
-  nos = "cumulus_linux"
+  nos = "cumulus_nvue"
   asnumber = "auto"
   profileid = netris_inventory_profile.my-profile.id
   mainip = "auto"
