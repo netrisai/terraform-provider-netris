@@ -68,5 +68,5 @@ resource "netris_softgate" "my-softgate" {
 - **description** (String) Softgate description.
 - **profileid** (Number) An inventory profile ID to define global configuration (NTP, DNS, timezone, etc...)
 - **flavor** (String) Softgate's flavor. Valid values are `sg`, `sg-pro` or `sg-hs`. The default value is `sg`.
-- **role** (String) Softgate's role. Only when flavor == `sg-hs` Valid values are `general` or `snat`. The default value is `general`.
+- **role** (String) Softgate's role. Only when flavor == `sg-hs` or `sg-pro`. Valid values are `general` or `snat`. The default value is `general`.
 - **tags** (List of String) List of tags. Example `["foo", "bar"]`
