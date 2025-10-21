@@ -57,8 +57,6 @@ resource "netris_server" "my-server-2" {
 
 ### Required
 
-- **mainip** (String) A unique IP address which will be used as a loopback address of this unit. Valid value is ip address (example `198.51.100.11`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.
-- **mgmtip** (String) A unique IP address to be used on out of band management interface. Valid value is ip address (example `192.0.2.11`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.
 - **name** (String) User assigned name of server.
 - **siteid** (Number) The site ID where this server belongs.
 - **tenantid** (Number) ID of tenant. Users of this tenant will be permitted to edit this unit.
@@ -67,6 +65,8 @@ resource "netris_server" "my-server-2" {
 
 ### Optional
 
+- **mainip** (String) A unique IP address which will be used as a loopback address of this unit. Valid value is ip address (example `198.51.100.11`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.
+- **mgmtip** (String) A unique IP address to be used on out of band management interface. Valid value is ip address (example `192.0.2.11`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.
 - **description** (String) Server description.
 - **asnumber** (String) Server AS numbers. Valid value is ASN (example `420000002`) or `auto`.
 - **customdata** (String) You may paste any custom data that can be assosiated with the object.
