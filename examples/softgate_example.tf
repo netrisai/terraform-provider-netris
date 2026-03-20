@@ -10,6 +10,7 @@ resource "netris_softgate" "my-softgate01" {
   profileid   = netris_inventory_profile.my-profile.id
   mainip      = "auto"
   mgmtip      = "auto"
+  flavor      = "sg-pro"
   depends_on = [
     netris_subnet.my-subnet-mgmt,
     netris_subnet.my-subnet-loopback,
@@ -24,6 +25,7 @@ resource "netris_softgate" "my-softgate02" {
   profileid   = netris_inventory_profile.my-profile.id
   mainip      = "auto"
   mgmtip      = "auto"
+  flavor      = "sg-pro"
   # tags  = ["foo", "bar"]
   depends_on = [
     netris_subnet.my-subnet-mgmt,
