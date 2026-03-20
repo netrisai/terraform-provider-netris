@@ -202,13 +202,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			healthCheck = "HTTP"
 			requestPath = checkRequestPath
 		case "none":
-			healthCheck = ""
+			healthCheck = "None"
 		default:
 			healthCheck = "HTTP"
 			requestPath = checkRequestPath
 		}
 
-		if healthCheck != "" {
+		if healthCheck == "TCP" || healthCheck == "HTTP" {
 			if checkTimeout == 0 {
 				timeout = "2000"
 			} else {
@@ -439,13 +439,13 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			healthCheck = "HTTP"
 			requestPath = checkRequestPath
 		case "none":
-			healthCheck = ""
+			healthCheck = "None"
 		default:
 			healthCheck = "HTTP"
 			requestPath = checkRequestPath
 		}
 
-		if healthCheck != "" {
+		if healthCheck == "TCP" || healthCheck == "HTTP" {
 			if checkTimeout == 0 {
 				timeout = "2000"
 			} else {
