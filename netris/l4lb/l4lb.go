@@ -182,7 +182,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	check := d.Get("check").(map[string]interface{})
 	if v, ok := check["type"]; ok {
-		checkType = v.(string)
+		checkType = strings.ToLower(v.(string))
 	}
 	if v, ok := check["timeout"]; ok {
 		checkTimeout, _ = strconv.Atoi(v.(string))
@@ -191,19 +191,29 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		checkRequestPath = v.(string)
 	}
 
-	healthCheck := "None"
+	healthCheck := ""
+	requestPath := ""
 
 	if proto == "TCP" {
-		if checkTimeout == 0 {
-			timeout = "2000"
-		} else {
-			timeout = strconv.Itoa(checkTimeout)
+		switch checkType {
+		case "", "tcp":
+			healthCheck = "TCP"
+		case "http":
+			healthCheck = "HTTP"
+			requestPath = checkRequestPath
+		case "none":
+			healthCheck = ""
+		default:
+			healthCheck = "HTTP"
+			requestPath = checkRequestPath
 		}
 
-		if checkType == "tcp" || checkType == "" {
-			healthCheck = "TCP"
-		} else {
-			healthCheck = "HTTP"
+		if healthCheck != "" {
+			if checkTimeout == 0 {
+				timeout = "2000"
+			} else {
+				timeout = strconv.Itoa(checkTimeout)
+			}
 		}
 	}
 
@@ -223,7 +233,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		IP:          frontendIP,
 		Port:        d.Get("port").(int),
 		Status:      state,
-		RequestPath: checkRequestPath,
+		RequestPath: requestPath,
 		Timeout:     timeout,
 		Backend:     lbBackends,
 	}
@@ -409,7 +419,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	check := d.Get("check").(map[string]interface{})
 	if v, ok := check["type"]; ok {
-		checkType = v.(string)
+		checkType = strings.ToLower(v.(string))
 	}
 	if v, ok := check["timeout"]; ok {
 		checkTimeout, _ = strconv.Atoi(v.(string))
@@ -418,19 +428,29 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		checkRequestPath = v.(string)
 	}
 
-	healthCheck := "None"
+	healthCheck := ""
+	requestPath := ""
 
-	if proto == "tcp" {
-		if checkTimeout == 0 {
-			timeout = "2000"
-		} else {
-			timeout = strconv.Itoa(checkTimeout)
+	if strings.ToUpper(proto) == "TCP" {
+		switch checkType {
+		case "", "tcp":
+			healthCheck = "TCP"
+		case "http":
+			healthCheck = "HTTP"
+			requestPath = checkRequestPath
+		case "none":
+			healthCheck = ""
+		default:
+			healthCheck = "HTTP"
+			requestPath = checkRequestPath
 		}
 
-		if checkType == "tcp" || checkType == "" {
-			healthCheck = "TCP"
-		} else {
-			healthCheck = "HTTP"
+		if healthCheck != "" {
+			if checkTimeout == 0 {
+				timeout = "2000"
+			} else {
+				timeout = strconv.Itoa(checkTimeout)
+			}
 		}
 	}
 
@@ -452,7 +472,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		IP:          frontendIP,
 		Port:        d.Get("port").(int),
 		Status:      state,
-		RequestPath: checkRequestPath,
+		RequestPath: requestPath,
 		Timeout:     timeout,
 		BackendIPs:  lbBackends,
 		Vpc:         &l4lb.IDName{ID: vpcid},
