@@ -39,6 +39,18 @@ resource "netris_inventory_profile" "my-profile" {
     qosandroce           = true
     roceadaptiverouting  = true
   }
+  snmpv2 {
+    enabled   = true
+    community = "MY_COMMUNITY"
+    ipv4_list = ["192.168.122.112/29"]
+    contact   = "ops@company.com"
+    location  = "dc1-rack2"
+  }
+  ztpsettings {
+    nos_image        = "NOS_IMAGE.bin"
+    password         = "supersecret"
+    confirm_password = "supersecret"
+  }
 }
 ```
 
@@ -56,6 +68,8 @@ resource "netris_inventory_profile" "my-profile" {
 - **customrule** (Block List) Custom Rules configuration block. User defined rules to allow certain traffic. (see [below for nested schema](#nestedblock--customrule))
 - **fabricsettings** (Block List) Fabric Settings. (see [below for nested schema](#nestedblock--fabricsettings))
 - **gpuclustersettings** (Block List) GPU Cluster Specific Settings. Switch Fabric optimizations for GPU clusters. (see [below for nested schema](#nestedblock--gpuclustersettings))
+- **snmpv2** (Block List) SNMPv2 Settings. (see [below for nested schema](#nestedblock--snmpv2))
+- **ztpsettings** (Block List) ZTP settings for inventory profile. (see [below for nested schema](#nestedblock--ztpsettings))
 - **description** (String) Inventory profile description
 - **dnsservers** (List of String) List of IP addresses of DNS servers. Example `["1.1.1.1", "8.8.8.8"]`
 - **ipv6ssh** (List of String) List of IPv6 subnets allowed to ssh. Example `["2001:DB8::/32"]`
@@ -99,3 +113,23 @@ Optional:
 - **congestioncontrol** (Boolean) Enable Zero Touch RoCE Congestion Control. Default value is `false`.
 - **asicmonitoring** (Boolean) Enable ASIC monitoring: Histograms and Telemetry Snapshots. Default value is `false`.
 - **aggregatel3vpnprefix** (Boolean) Minimize prefix updates over BGP Overlay for L3VPN p2p links in rail-optimized topology and IP addressing schemes. Default value is `false`.
+
+<a id="nestedblock--snmpv2"></a>
+### Nested Schema for `snmpv2`
+
+Optional:
+
+- **enabled** (Boolean) Enable SNMPv2 on inventory devices.
+- **community** (String) SNMPv2 read-only community string.
+- **ipv4_list** (List of String) List of IPv4 addresses/prefixes allowed to poll SNMPv2.
+- **contact** (String) SNMPv2 contact field.
+- **location** (String) SNMPv2 location field.
+
+<a id="nestedblock--ztpsettings"></a>
+### Nested Schema for `ztpsettings`
+
+Optional:
+
+- **nos_image** (String) NOS image file name.
+- **password** (String, Sensitive) NOS admin password for ZTP.
+- **confirm_password** (String, Sensitive) Confirmation value for NOS admin password.

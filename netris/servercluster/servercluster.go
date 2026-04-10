@@ -111,10 +111,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	sort.Ints(servers)
-	sortedServers := []servercluster.IDName{}
+	sortedServers := []servercluster.Servers{}
 
 	for _, sortedServer := range servers {
-		sortedServers = append(sortedServers, servercluster.IDName{ID: sortedServer})
+		sortedServers = append(sortedServers, servercluster.Servers{ID: sortedServer})
 	}
 
 	serverclusterAdd := &servercluster.ServerClusterW{
@@ -238,10 +238,10 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	sort.Ints(servers)
-	sortedServers := []servercluster.IDName{}
+	sortedServers := []servercluster.Servers{}
 
 	for _, sortedServer := range servers {
-		sortedServers = append(sortedServers, servercluster.IDName{ID: sortedServer})
+		sortedServers = append(sortedServers, servercluster.Servers{ID: sortedServer})
 	}
 
 	serverclusterUpdate := &servercluster.ServerClusterU{
