@@ -252,12 +252,6 @@ func Resource() *schema.Resource {
 							Sensitive:   true,
 							Description: "NOS admin password for ZTP.",
 						},
-						"confirm_password": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Sensitive:   true,
-							Description: "Confirmation value for NOS admin password.",
-						},
 					},
 				},
 			},
@@ -409,10 +403,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		ztpsettingstmp = ztpsettingsList[0].(map[string]interface{})
 	}
 	nosAdminPassword := getString("password", ztpsettingstmp, "")
-	nosAdminConfirmPassword := getString("confirm_password", ztpsettingstmp, "")
-	if nosAdminConfirmPassword != "" && nosAdminPassword != nosAdminConfirmPassword {
-		return fmt.Errorf("ztpsettings.confirm_password must match ztpsettings.password")
-	}
 	ztpsettings := inventoryprofile.ZTPProps{
 		NOSImage: getString("nos_image", ztpsettingstmp, ""),
 		Password: nosAdminPassword,
@@ -722,10 +712,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		ztpsettingstmp = ztpsettingsList[0].(map[string]interface{})
 	}
 	nosAdminPassword := getString("password", ztpsettingstmp, "")
-	nosAdminConfirmPassword := getString("confirm_password", ztpsettingstmp, "")
-	if nosAdminConfirmPassword != "" && nosAdminPassword != nosAdminConfirmPassword {
-		return fmt.Errorf("ztpsettings.confirm_password must match ztpsettings.password")
-	}
 	ztpsettings := inventoryprofile.ZTPProps{
 		NOSImage: getString("nos_image", ztpsettingstmp, ""),
 		Password: nosAdminPassword,

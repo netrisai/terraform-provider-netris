@@ -47,9 +47,8 @@ resource "netris_inventory_profile" "my-profile" {
     location  = "dc1-rack2"
   }
   ztpsettings {
-    nos_image        = "NOS_IMAGE.bin"
-    password         = "supersecret"
-    confirm_password = "supersecret"
+    nos_image = "NOS_IMAGE.bin"
+    password  = "supersecret"
   }
 }
 ```
@@ -132,4 +131,3 @@ Optional:
 
 - **nos_image** (String) NOS image file name.
 - **password** (String, Sensitive) NOS admin password for ZTP.
-- **confirm_password** (String, Sensitive) Confirmation value for NOS admin password.
