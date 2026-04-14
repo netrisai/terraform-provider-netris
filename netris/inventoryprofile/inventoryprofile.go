@@ -195,6 +195,66 @@ func Resource() *schema.Resource {
 					},
 				},
 			},
+			"snmpv2": {
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Description: "SNMPv2 Settings",
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enable SNMPv2 on inventory devices.",
+						},
+						"community": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "SNMPv2 read-only community string.",
+						},
+						"ipv4_list": {
+							Optional:    true,
+							Type:        schema.TypeList,
+							Description: "List of IPv4 addresses/prefixes allowed to poll SNMPv2.",
+							Elem: &schema.Schema{
+								ValidateFunc: validateIPPrefix,
+								Type:         schema.TypeString,
+							},
+						},
+						"contact": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "SNMPv2 contact field.",
+						},
+						"location": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "SNMPv2 location field.",
+						},
+					},
+				},
+			},
+			"ztpsettings": {
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Description: "ZTP settings for inventory profile.",
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"nos_image": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "NOS image file name.",
+						},
+						"password": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Sensitive:   true,
+							Description: "NOS admin password for ZTP.",
+						},
+					},
+				},
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -303,6 +363,51 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		AggregateL3VpnPrefix: getBool("aggregatel3vpnprefix", gpuclustersettingstmp, false),
 	}
 
+	getString := func(key string, inter map[string]interface{}, defaultVal string) string {
+		if val, ok := inter[key]; ok {
+			if strVal, ok := val.(string); ok {
+				return strVal
+			}
+		}
+		return defaultVal
+	}
+
+	snmpv2List := d.Get("snmpv2").(*schema.Set).List()
+	var snmpv2tmp map[string]interface{}
+	if len(snmpv2List) > 0 {
+		if len(snmpv2List) > 1 {
+			return fmt.Errorf("please specify only one snmpv2")
+		}
+		snmpv2tmp = snmpv2List[0].(map[string]interface{})
+	}
+	snmpv2AllowIPv4 := []string{}
+	if rawAllowIPv4, ok := snmpv2tmp["ipv4_list"].([]interface{}); ok {
+		for _, s := range rawAllowIPv4 {
+			snmpv2AllowIPv4 = append(snmpv2AllowIPv4, s.(string))
+		}
+	}
+	snmpv2 := inventoryprofile.SNMPv2Props{
+		Enabled:   getBool("enabled", snmpv2tmp, false),
+		Community: getString("community", snmpv2tmp, ""),
+		Contact:   getString("contact", snmpv2tmp, ""),
+		Location:  getString("location", snmpv2tmp, ""),
+		Ipv4List:  snmpv2AllowIPv4,
+	}
+
+	ztpsettingsList := d.Get("ztpsettings").(*schema.Set).List()
+	var ztpsettingstmp map[string]interface{}
+	if len(ztpsettingsList) > 0 {
+		if len(ztpsettingsList) > 1 {
+			return fmt.Errorf("please specify only one ztpsettings")
+		}
+		ztpsettingstmp = ztpsettingsList[0].(map[string]interface{})
+	}
+	nosAdminPassword := getString("password", ztpsettingstmp, "")
+	ztpsettings := inventoryprofile.ZTPProps{
+		NOSImage: getString("nos_image", ztpsettingstmp, ""),
+		Password: nosAdminPassword,
+	}
+
 	profileAdd := &inventoryprofile.ProfileW{
 		Name:            name,
 		Description:     description,
@@ -314,6 +419,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		CustomRules:     customRules,
 		FabricProps:     fabricsettings,
 		GpuClusterProps: gpuclustersettings,
+		SNMPv2Props:     snmpv2,
+		ZTPProps:        ztpsettings,
 	}
 
 	js, _ := json.Marshal(profileAdd)
@@ -429,6 +536,21 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	gpuclustersettings["aggregatel3vpnprefix"] = profile.GpuClusterProps.AggregateL3VpnPrefix
 	gpuclustersettingsList = append(gpuclustersettingsList, gpuclustersettings)
 
+	var snmpv2List []map[string]interface{}
+	snmpv2 := make(map[string]interface{})
+	snmpv2["enabled"] = profile.SNMPv2Props.Enabled
+	snmpv2["community"] = profile.SNMPv2Props.Community
+	snmpv2["contact"] = profile.SNMPv2Props.Contact
+	snmpv2["location"] = profile.SNMPv2Props.Location
+	snmpv2["ipv4_list"] = profile.SNMPv2Props.Ipv4List
+	snmpv2List = append(snmpv2List, snmpv2)
+
+	var ztpsettingsList []map[string]interface{}
+	ztpsettings := make(map[string]interface{})
+	ztpsettings["nos_image"] = profile.ZTPProps.NOSImage
+	ztpsettings["password"] = profile.ZTPProps.Password
+	ztpsettingsList = append(ztpsettingsList, ztpsettings)
+
 	err = d.Set("customrule", customRules)
 	if err != nil {
 		return err
@@ -443,6 +565,14 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	err = d.Set("gpuclustersettings", gpuclustersettingsList)
+	if err != nil {
+		return err
+	}
+	err = d.Set("snmpv2", snmpv2List)
+	if err != nil {
+		return err
+	}
+	err = d.Set("ztpsettings", ztpsettingsList)
 	if err != nil {
 		return err
 	}
@@ -542,6 +672,51 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		AggregateL3VpnPrefix: getBool("aggregatel3vpnprefix", gpuclustersettingstmp, false),
 	}
 
+	getString := func(key string, inter map[string]interface{}, defaultVal string) string {
+		if val, ok := inter[key]; ok {
+			if strVal, ok := val.(string); ok {
+				return strVal
+			}
+		}
+		return defaultVal
+	}
+
+	snmpv2List := d.Get("snmpv2").(*schema.Set).List()
+	var snmpv2tmp map[string]interface{}
+	if len(snmpv2List) > 0 {
+		if len(snmpv2List) > 1 {
+			return fmt.Errorf("please specify only one snmpv2")
+		}
+		snmpv2tmp = snmpv2List[0].(map[string]interface{})
+	}
+	snmpv2AllowIPv4 := []string{}
+	if rawAllowIPv4, ok := snmpv2tmp["ipv4_list"].([]interface{}); ok {
+		for _, s := range rawAllowIPv4 {
+			snmpv2AllowIPv4 = append(snmpv2AllowIPv4, s.(string))
+		}
+	}
+	snmpv2 := inventoryprofile.SNMPv2Props{
+		Enabled:   getBool("enabled", snmpv2tmp, false),
+		Community: getString("community", snmpv2tmp, ""),
+		Contact:   getString("contact", snmpv2tmp, ""),
+		Location:  getString("location", snmpv2tmp, ""),
+		Ipv4List:  snmpv2AllowIPv4,
+	}
+
+	ztpsettingsList := d.Get("ztpsettings").(*schema.Set).List()
+	var ztpsettingstmp map[string]interface{}
+	if len(ztpsettingsList) > 0 {
+		if len(ztpsettingsList) > 1 {
+			return fmt.Errorf("please specify only one ztpsettings")
+		}
+		ztpsettingstmp = ztpsettingsList[0].(map[string]interface{})
+	}
+	nosAdminPassword := getString("password", ztpsettingstmp, "")
+	ztpsettings := inventoryprofile.ZTPProps{
+		NOSImage: getString("nos_image", ztpsettingstmp, ""),
+		Password: nosAdminPassword,
+	}
+
 	id, _ := strconv.Atoi(d.Id())
 	profileUpdate := &inventoryprofile.ProfileW{
 		ID:              id,
@@ -555,6 +730,8 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		CustomRules:     customRules,
 		FabricProps:     fabricsettings,
 		GpuClusterProps: gpuclustersettings,
+		SNMPv2Props:     snmpv2,
+		ZTPProps:        ztpsettings,
 	}
 
 	js, _ := json.Marshal(profileUpdate)

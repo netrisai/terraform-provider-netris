@@ -30,6 +30,8 @@ data "netris_inventory_profile" "my-profile" {
 
 - **id** (String) The ID of this resource.
 - **customrule** (Block List) Custom Rules configuration block. User defined rules to allow certain traffic. (see [below for nested schema](#nestedblock--customrule))
+- **snmpv2** (Block List) SNMPv2 Settings. (see [below for nested schema](#nestedblock--snmpv2))
+- **ztpsettings** (Block List) ZTP settings for inventory profile. (see [below for nested schema](#nestedblock--ztpsettings))
 - **description** (String) Inventory profile description
 - **dnsservers** (List of String) List of IP addresses of DNS servers.
 - **ipv4ssh** (List of String) List of IPv4 subnets allowed to ssh.
@@ -47,3 +49,22 @@ Attribute Reference:
 - **protocol** (String) Protocol.
 - **sourcesubnet** (String) Source Subnet.
 - **srcport** (String) Source port. 1-65535, or empty for any.
+
+<a id="nestedblock--snmpv2"></a>
+### Nested Schema for `snmpv2`
+
+Attribute Reference:
+
+- **enabled** (Boolean) Enable SNMPv2 on inventory devices.
+- **community** (String) SNMPv2 read-only community string.
+- **ipv4_list** (List of String) List of IPv4 addresses/prefixes allowed to poll SNMPv2.
+- **contact** (String) SNMPv2 contact field.
+- **location** (String) SNMPv2 location field.
+
+<a id="nestedblock--ztpsettings"></a>
+### Nested Schema for `ztpsettings`
+
+Attribute Reference:
+
+- **nos_image** (String) NOS image file name.
+- **password** (String, Sensitive) NOS admin password for ZTP.

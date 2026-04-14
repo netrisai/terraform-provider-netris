@@ -122,6 +122,66 @@ func DataResource() *schema.Resource {
 					},
 				},
 			},
+			"snmpv2": {
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Description: "SNMPv2 Settings",
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enable SNMPv2 on inventory devices.",
+						},
+						"community": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "SNMPv2 read-only community string.",
+						},
+						"ipv4_list": {
+							Optional:    true,
+							Type:        schema.TypeList,
+							Description: "List of IPv4 addresses/prefixes allowed to poll SNMPv2.",
+							Elem: &schema.Schema{
+								ValidateFunc: validateIPPrefix,
+								Type:         schema.TypeString,
+							},
+						},
+						"contact": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "SNMPv2 contact field.",
+						},
+						"location": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "SNMPv2 location field.",
+						},
+					},
+				},
+			},
+			"ztpsettings": {
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Description: "ZTP settings for inventory profile.",
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"nos_image": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "NOS image file name.",
+						},
+						"password": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Sensitive:   true,
+							Description: "NOS admin password for ZTP.",
+						},
+					},
+				},
+			},
 		},
 		Read:   dataResourceRead,
 		Exists: dataResourceExists,
@@ -187,6 +247,30 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	err = d.Set("customrule", customRules)
+	if err != nil {
+		return err
+	}
+
+	var snmpv2List []map[string]interface{}
+	snmpv2 := make(map[string]interface{})
+	snmpv2["enabled"] = profile.SNMPv2Props.Enabled
+	snmpv2["community"] = profile.SNMPv2Props.Community
+	snmpv2["contact"] = profile.SNMPv2Props.Contact
+	snmpv2["location"] = profile.SNMPv2Props.Location
+	snmpv2["ipv4_list"] = profile.SNMPv2Props.Ipv4List
+	snmpv2List = append(snmpv2List, snmpv2)
+
+	var ztpsettingsList []map[string]interface{}
+	ztpsettings := make(map[string]interface{})
+	ztpsettings["nos_image"] = profile.ZTPProps.NOSImage
+	ztpsettings["password"] = profile.ZTPProps.Password
+	ztpsettingsList = append(ztpsettingsList, ztpsettings)
+
+	err = d.Set("snmpv2", snmpv2List)
+	if err != nil {
+		return err
+	}
+	err = d.Set("ztpsettings", ztpsettingsList)
 	if err != nil {
 		return err
 	}
