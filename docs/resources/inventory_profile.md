@@ -38,6 +38,7 @@ resource "netris_inventory_profile" "my-profile" {
     congestioncontrol    = false
     qosandroce           = true
     roceadaptiverouting  = true
+    refarch              = "none"
   }
   snmpv2 {
     enabled   = true
@@ -112,6 +113,7 @@ Optional:
 - **congestioncontrol** (Boolean) Enable Zero Touch RoCE Congestion Control. Default value is `false`.
 - **asicmonitoring** (Boolean) Enable ASIC monitoring: Histograms and Telemetry Snapshots. Default value is `false`.
 - **aggregatel3vpnprefix** (Boolean) Minimize prefix updates over BGP Overlay for L3VPN p2p links in rail-optimized topology and IP addressing schemes. Default value is `false`.
+- **refarch** (String) GPU cluster reference architecture (API field `gpuClusterProps.refArch`). Must be one of the supported enum values, for example `none`, `b300_spx_2_tier_single_plane`, or `gb300_spx_2_tier_dual_plane`. Omit the argument or leave it empty to send an unset value to the API.
 
 <a id="nestedblock--snmpv2"></a>
 ### Nested Schema for `snmpv2`

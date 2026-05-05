@@ -122,6 +122,81 @@ func DataResource() *schema.Resource {
 					},
 				},
 			},
+			"fabricsettings": {
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Description: "Fabric Settings.",
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"optimisebgpoverlay": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Optimize BGP Overlay for leaf-spine topology.",
+						},
+						"optimisebgpoverlayhypervisor": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Required for BGP/EVPN VXLAN integration with compute hypervisor networking.",
+						},
+						"unnumberedbgpunderlay": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "BGP underlay using p2p IPv4 from link objects versus unnumbered.",
+						},
+						"automaticlinkaggregation": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Automatic single-legged link aggregation on non-backbone ports.",
+						},
+						"mclag": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enable MC-LAG (disables EVPN-MH on the same switches).",
+						},
+					},
+				},
+			},
+			"gpuclustersettings": {
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Description: "GPU cluster specific settings.",
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"qosandroce": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Optimize for RDMA over Converged Ethernet.",
+						},
+						"roceadaptiverouting": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enable Adaptive Routing for RoCE.",
+						},
+						"congestioncontrol": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enable Zero Touch RoCE Congestion Control.",
+						},
+						"asicmonitoring": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enable ASIC monitoring.",
+						},
+						"aggregatel3vpnprefix": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Minimize prefix updates over BGP overlay for L3VPN p2p links.",
+						},
+						"refarch": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "GPU cluster reference architecture (gpuClusterProps.refArch).",
+						},
+					},
+				},
+			},
 			"snmpv2": {
 				Optional:    true,
 				Type:        schema.TypeSet,
@@ -222,7 +297,7 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	err = d.Set("timezone", unmarshalTimezone(profile.Timezone).TzCode)
+	err = d.Set("timezone", effectiveTimezoneForState(profile.Timezone))
 	if err != nil {
 		return err
 	}
@@ -247,6 +322,34 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	err = d.Set("customrule", customRules)
+	if err != nil {
+		return err
+	}
+
+	var fabricsettingsList []map[string]interface{}
+	fabricsettings := make(map[string]interface{})
+	fabricsettings["optimisebgpoverlay"] = profile.FabricProps.OptimiseBgpOverlay
+	fabricsettings["optimisebgpoverlayhypervisor"] = profile.FabricProps.OptimiseBgpOverlayHypervisor
+	fabricsettings["unnumberedbgpunderlay"] = profile.FabricProps.UnnumberedBgpUnderlay
+	fabricsettings["automaticlinkaggregation"] = profile.FabricProps.AutomaticLinkAggregation
+	fabricsettings["mclag"] = profile.FabricProps.MCLag
+	fabricsettingsList = append(fabricsettingsList, fabricsettings)
+
+	var gpuclustersettingsList []map[string]interface{}
+	gpuclustersettings := make(map[string]interface{})
+	gpuclustersettings["qosandroce"] = profile.GpuClusterProps.Roce
+	gpuclustersettings["roceadaptiverouting"] = profile.GpuClusterProps.RoceAdaptiveRouting
+	gpuclustersettings["congestioncontrol"] = profile.GpuClusterProps.CongestionControl
+	gpuclustersettings["asicmonitoring"] = profile.GpuClusterProps.AsicMonitoring
+	gpuclustersettings["aggregatel3vpnprefix"] = profile.GpuClusterProps.AggregateL3VpnPrefix
+	gpuclustersettings["refarch"] = profile.GpuClusterProps.RefArch
+	gpuclustersettingsList = append(gpuclustersettingsList, gpuclustersettings)
+
+	err = d.Set("fabricsettings", fabricsettingsList)
+	if err != nil {
+		return err
+	}
+	err = d.Set("gpuclustersettings", gpuclustersettingsList)
 	if err != nil {
 		return err
 	}

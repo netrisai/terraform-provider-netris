@@ -38,6 +38,25 @@ data "netris_inventory_profile" "my-profile" {
 - **ipv6ssh** (List of String) List of IPv6 subnets allowed to ssh.
 - **ntpservers** (List of String) List of domain names or IP addresses of NTP servers.
 - **timezone** (String) Devices using this inventory profile will adjust their system time to the selected timezone. Valid value is a name from the TZ [database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
+- **fabricsettings** (Block List) Fabric settings reported by the API.
+- **gpuclustersettings** (Block List) GPU cluster settings (`gpuClusterProps`) including `refarch`.
+
+<a id="nestedblock--fabricsettings"></a>
+### Nested Schema for `fabricsettings`
+
+Attribute Reference entries mirror the corresponding resource block (optimise BGP overlay, MC-LAG, etc.).
+
+<a id="nestedblock--gpuclustersettings"></a>
+### Nested Schema for `gpuclustersettings`
+
+Attribute Reference:
+
+- **qosandroce** (Boolean) RoCE / QoS optimization.
+- **roceadaptiverouting** (Boolean) Adaptive routing.
+- **congestioncontrol** (Boolean) Congestion control.
+- **asicmonitoring** (Boolean) ASIC monitoring.
+- **aggregatel3vpnprefix** (Boolean) Aggregate L3VPN prefix behavior.
+- **refarch** (String) GPU reference architecture enum.
 
 <a id="nestedblock--customrule"></a>
 ### Nested Schema for `customrule`

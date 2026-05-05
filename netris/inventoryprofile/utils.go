@@ -18,6 +18,8 @@ package inventoryprofile
 
 import (
 	"encoding/json"
+	"strings"
+	"unicode"
 
 	"github.com/netrisai/netriswebapi/v1/types/inventoryprofile"
 	api "github.com/netrisai/netriswebapi/v2"
@@ -53,4 +55,60 @@ func unmarshalTimezone(s string) *inventoryprofile.Timezone {
 	timezone := &inventoryprofile.Timezone{}
 	_ = json.Unmarshal([]byte(s), timezone)
 	return timezone
+}
+
+// normalizeTimezoneString trims spaces plus zero‑width/BOM runes controllers sometimes emit.
+func normalizeTimezoneString(s string) string {
+	return strings.TrimFunc(s, func(r rune) bool {
+		return unicode.IsSpace(r) || r == '\u200b' || r == '\u200c' || r == '\u200d' || r == '\ufeff'
+	})
+}
+
+// effectiveTimezoneForState maps the API timezone field to the value we store in Terraform.
+// The controller may return JSON with only label, a JSON string, or a plain zone name.
+func effectiveTimezoneForState(apiField string) string {
+	s := normalizeTimezoneString(apiField)
+	if s == "" {
+		return ""
+	}
+	t := unmarshalTimezone(s)
+	var out string
+	if tc := normalizeTimezoneString(strings.TrimSpace(t.TzCode)); tc != "" {
+		out = tc
+	} else if lb := normalizeTimezoneString(strings.TrimSpace(t.Label)); lb != "" {
+		out = lb
+	} else {
+		var decoded string
+		if err := json.Unmarshal([]byte(s), &decoded); err == nil {
+			out = normalizeTimezoneString(decoded)
+		}
+		// JSON object (e.g. {"label":"","offset":"","tzCode":""}) with no usable fields — treat as unset.
+		if out == "" && strings.HasPrefix(s, "{") {
+			return ""
+		}
+		if out == "" {
+			out = s
+		}
+	}
+	out = normalizeTimezoneString(out)
+	if out == "" {
+		return ""
+	}
+	return out
+}
+
+// getStringFromMap returns a trimmed string for key from m, or empty if missing or not a string.
+func getStringFromMap(key string, m map[string]interface{}) string {
+	if m == nil {
+		return ""
+	}
+	val, ok := m[key]
+	if !ok || val == nil {
+		return ""
+	}
+	s, ok := val.(string)
+	if !ok {
+		return ""
+	}
+	return strings.TrimSpace(s)
 }
