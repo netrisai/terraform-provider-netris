@@ -21,6 +21,7 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 func validateIPPrefix(val interface{}, key string) (warns []string, errs []error) {
@@ -59,9 +60,20 @@ func validateNTP(val interface{}, key string) (warns []string, errs []error) {
 }
 
 func validateTimeZone(val interface{}, key string) (warns []string, errs []error) {
-	v := val.(string)
+	if val == nil {
+		return warns, errs
+	}
+	v, ok := val.(string)
+	if !ok {
+		errs = append(errs, fmt.Errorf("invalid %s: expected string, got %T", key, val))
+		return warns, errs
+	}
+	v = normalizeTimezoneString(v)
+	if v == "" {
+		return warns, errs
+	}
 	if _, ok := timezones[v]; !ok {
-		errs = append(errs, fmt.Errorf("invalid %s: %s", key, v))
+		errs = append(errs, fmt.Errorf("invalid %s: %q", key, v))
 	}
 	return warns, errs
 }
@@ -90,6 +102,49 @@ func validateProtocol(val interface{}, key string) (warns []string, errs []error
 		errs = append(errs, fmt.Errorf("invalid protocol. Available values are (any, tcp, udp)"))
 	}
 	return warns, errs
+}
+
+// validateRefArch checks gpuClusterProps.refArch against the API enum. An empty
+// string is allowed (API may interpret it as unset; use "none" explicitly if
+// you want the documented default).
+func validateRefArch(val interface{}, key string) (warns []string, errs []error) {
+	if val == nil {
+		return warns, errs
+	}
+	v, ok := val.(string)
+	if !ok {
+		errs = append(errs, fmt.Errorf("invalid %s: expected string", key))
+		return warns, errs
+	}
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return warns, errs
+	}
+	if _, ok := validRefArchValues[v]; !ok {
+		errs = append(errs, fmt.Errorf("invalid %s: %q is not a valid GPU reference architecture", key, v))
+	}
+	return warns, errs
+}
+
+// validRefArchValues matches the Netris API / swagger enum for gpuClusterProps.refArch.
+var validRefArchValues = map[string]struct{}{
+	"none":                          {},
+	"h100_h200_b200_spx_2_tier":     {},
+	"h100_h200_b200_spx_3_tier":     {},
+	"gb200_spx_2_tier":              {},
+	"gb200_spx_3_tier":              {},
+	"b300_spx_2_tier_single_plane":  {},
+	"b300_spx_3_tier_single_plane":  {},
+	"b300_spx_2_tier_dual_plane":    {},
+	"b300_spx_3_tier_dual_plane":    {},
+	"b300_spx_2_tier_quad_plane":    {},
+	"b300_spx_3_tier_quad_plane":    {},
+	"gb300_spx_2_tier_single_plane": {},
+	"gb300_spx_3_tier_single_plane": {},
+	"gb300_spx_2_tier_dual_plane":   {},
+	"gb300_spx_3_tier_dual_plane":   {},
+	"gb300_spx_2_tier_quad_plane":   {},
+	"gb300_spx_3_tier_quad_plane":   {},
 }
 
 var timezones = map[string]int{

@@ -26,5 +26,6 @@ resource "netris_inventory_profile" "my-profile" {
     congestioncontrol    = false
     qosandroce           = true
     roceadaptiverouting  = true
+    refarch              = "none"
   }
 }

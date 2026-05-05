@@ -192,6 +192,12 @@ func Resource() *schema.Resource {
 							Optional:    true,
 							Description: "Minimize prefix updates over BGP Overlay for L3VPN p2p links in rail-optimized topology and IP addressing schemes.",
 						},
+						"refarch": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validateRefArch,
+							Description:  "GPU cluster reference architecture (API enum gpuClusterProps.refArch). Use `none` when no architecture applies; leave unset or empty to omit.",
+						},
 					},
 				},
 			},
@@ -361,6 +367,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		CongestionControl:    getBool("congestioncontrol", gpuclustersettingstmp, false),
 		AsicMonitoring:       getBool("asicmonitoring", gpuclustersettingstmp, false),
 		AggregateL3VpnPrefix: getBool("aggregatel3vpnprefix", gpuclustersettingstmp, false),
+		RefArch:              getStringFromMap("refarch", gpuclustersettingstmp),
 	}
 
 	getString := func(key string, inter map[string]interface{}, defaultVal string) string {
@@ -495,7 +502,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	err = d.Set("timezone", unmarshalTimezone(profile.Timezone).TzCode)
+	err = d.Set("timezone", effectiveTimezoneForState(profile.Timezone))
 	if err != nil {
 		return err
 	}
@@ -534,6 +541,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	gpuclustersettings["congestioncontrol"] = profile.GpuClusterProps.CongestionControl
 	gpuclustersettings["asicmonitoring"] = profile.GpuClusterProps.AsicMonitoring
 	gpuclustersettings["aggregatel3vpnprefix"] = profile.GpuClusterProps.AggregateL3VpnPrefix
+	gpuclustersettings["refarch"] = profile.GpuClusterProps.RefArch
 	gpuclustersettingsList = append(gpuclustersettingsList, gpuclustersettings)
 
 	var snmpv2List []map[string]interface{}
@@ -670,6 +678,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		CongestionControl:    getBool("congestioncontrol", gpuclustersettingstmp, false),
 		AsicMonitoring:       getBool("asicmonitoring", gpuclustersettingstmp, false),
 		AggregateL3VpnPrefix: getBool("aggregatel3vpnprefix", gpuclustersettingstmp, false),
+		RefArch:              getStringFromMap("refarch", gpuclustersettingstmp),
 	}
 
 	getString := func(key string, inter map[string]interface{}, defaultVal string) string {
