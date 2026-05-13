@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/netrisai/netriswebapi/http"
 	api "github.com/netrisai/netriswebapi/v2"
@@ -104,6 +105,13 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"role": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  "The switch's role in the fabric hierarchy",
+				Default:      "generic",
+				ValidateFunc: validateSwRole,
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -168,6 +176,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Links:       []inventory.HWLink{},
 		Breakout:    d.Get("breakout").(string),
 		Tags:        tags,
+		SwRole:      d.Get("role").(string),
 	}
 
 	js, _ := json.Marshal(swAdd)
@@ -279,6 +288,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	err = d.Set("role", sw.SWRole)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -336,6 +350,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Type:        "switch",
 		Links:       sw.Links,
 		Tags:        tags,
+		SwRole:      d.Get("role").(string),
 	}
 
 	js, _ := json.Marshal(swUpdate)
@@ -408,4 +423,35 @@ func resourceImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceDa
 	}
 
 	return []*schema.ResourceData{d}, nil
+}
+
+func validateSwRole(val interface{}, key string) (warns []string, errs []error) {
+	validRoles := map[string]struct{}{
+		"generic":     {},
+		"spine":       {},
+		"leaf":        {},
+		"super-spine": {},
+	}
+	if val == nil {
+		return warns, errs
+	}
+	v, ok := val.(string)
+	if !ok {
+		errs = append(errs, fmt.Errorf("invalid %s: expected string", key))
+		return warns, errs
+	}
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return warns, errs
+	}
+	if _, ok := validRoles[v]; !ok {
+		errs = append(errs, fmt.Errorf("invalid %s: %q is not a valid role", key, v))
+		str := []string{}
+		for v := range validRoles {
+			str = append(str, v)
+		}
+		errs = append(errs, fmt.Errorf("allowed valued: %v", strings.Join(str, ", ")))
+
+	}
+	return warns, errs
 }

@@ -17,11 +17,12 @@ resource "netris_inventory_profile" "my-profile" {
     # optimisebgpoverlay    = true
     # optimisebgpoverlayhypervisor = true
     # unnumberedbgpunderlay = false
-    # automaticlinkaggregation = false
+    # automaticlinkaggregation = true
     mclag = true
+    fabrictype = "ew-plane1"
   }
   gpuclustersettings {
-    aggregatel3vpnprefix = true
+    # aggregatel3vpnprefix = true
     asicmonitoring       = false
     congestioncontrol    = false
     qosandroce           = true

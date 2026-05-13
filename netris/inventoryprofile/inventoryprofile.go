@@ -127,34 +127,46 @@ func Resource() *schema.Resource {
 			},
 			"fabricsettings": {
 				Optional:    true,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
+				MaxItems:    1,
 				Description: "Fabric Settings",
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"fabrictype": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "generic",
+							Description: "Determine how devices using profile are placed and treated within the overall fabric topology.",
+						},
 						"optimisebgpoverlay": {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     false,
 							Description: "Optimize BGP Overlay for leaf-spine topology. When checked, overlay BGP updates will be optimized for large scale. Each leaf switch (based on name) will form its overlay BGP sessions only with two spine switches (with the lowest IDs). Otherwise, Overlay BGP sessions will be configured on p2p links alongside underlay.",
 						},
 						"optimisebgpoverlayhypervisor": {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     false,
 							Description: "Required for BGP/EVPN VXLAN integration with compute hypervisor networking. This optimization makes sure that a large number of hypervisor virtual networking EVPN prefixes do not overflow switch TCAM.",
 						},
 						"unnumberedbgpunderlay": {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     false,
 							Description: "When checked, BGP underlay sessions will be configured using p2p IPv4 addresses configured on link objects in the Netris controller. Otherwise, BGP unnumbered method is used and p2p ipv6 link-local addresses are used for BGP sessions.",
 						},
 						"automaticlinkaggregation": {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     false,
 							Description: "Automatically configure non-backbone switch ports under a single legged link aggregation (agg) interface. This allows for active/standby multihoming if LACP is enabled on the server side. Active/Active multihoming with EVPN-MH will be automatically configured on Nvidia Spectrum-2 and higher switch models.",
 						},
 						"mclag": {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     false,
 							Description: "Enabling MC-LAG functionality will disable any EVPN-MH functionality. Two multihoming methods are not supported simultaneously on the same switches.",
 						},
 					},
@@ -162,7 +174,8 @@ func Resource() *schema.Resource {
 			},
 			"gpuclustersettings": {
 				Optional:    true,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
+				MaxItems:    1,
 				Description: "GPU Cluster Specific Settings. Switch Fabric optimizations for GPU clusters.",
 				Computed:    true,
 				Elem: &schema.Resource{
@@ -170,31 +183,37 @@ func Resource() *schema.Resource {
 						"qosandroce": {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     false,
 							Description: "Optimize for RDMA over Converged Ethernet.",
 						},
 						"roceadaptiverouting": {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     false,
 							Description: "Enable Adaptive Routing for RoCE.",
 						},
 						"congestioncontrol": {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     false,
 							Description: "Enable Zero Touch RoCE Congestion Control.",
 						},
 						"asicmonitoring": {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     false,
 							Description: "Enable ASIC monitoring: Histograms and Telemetry Snapshots.",
 						},
 						"aggregatel3vpnprefix": {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     false,
 							Description: "Minimize prefix updates over BGP Overlay for L3VPN p2p links in rail-optimized topology and IP addressing schemes.",
 						},
 						"refarch": {
 							Type:         schema.TypeString,
 							Optional:     true,
+							Default:      "none",
 							ValidateFunc: validateRefArch,
 							Description:  "GPU cluster reference architecture (API enum gpuClusterProps.refArch). Use `none` when no architecture applies; leave unset or empty to omit.",
 						},
@@ -335,12 +354,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return defaultVal
 	}
 
-	fabricsettingsList := d.Get("fabricsettings").(*schema.Set).List()
+	fabricsettingsList := d.Get("fabricsettings").([]interface{})
 	var fabricsettingstmp map[string]interface{}
 	if len(fabricsettingsList) > 0 {
-		if len(fabricsettingsList) > 1 {
-			return fmt.Errorf("please specify only one fabricsettings")
-		}
 		fabricsettingstmp = fabricsettingsList[0].(map[string]interface{})
 	}
 
@@ -350,14 +366,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		UnnumberedBgpUnderlay:        getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
 		AutomaticLinkAggregation:     getBool("automaticlinkaggregation", fabricsettingstmp, false),
 		MCLag:                        getBool("mclag", fabricsettingstmp, false),
+		FabricType:                   getStringFromMap("fabrictype", fabricsettingstmp),
 	}
 
-	gpuclustersettingsList := d.Get("gpuclustersettings").(*schema.Set).List()
+	gpuclustersettingsList := d.Get("gpuclustersettings").([]interface{})
 	var gpuclustersettingstmp map[string]interface{}
 	if len(gpuclustersettingsList) > 0 {
-		if len(gpuclustersettingsList) > 1 {
-			return fmt.Errorf("please specify only one gpuclustersettings")
-		}
 		gpuclustersettingstmp = gpuclustersettingsList[0].(map[string]interface{})
 	}
 
@@ -527,6 +541,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 	var fabricsettingsList []map[string]interface{}
 	fabricsettings := make(map[string]interface{})
+	fabricsettings["fabrictype"] = profile.FabricProps.FabricType
 	fabricsettings["optimisebgpoverlay"] = profile.FabricProps.OptimiseBgpOverlay
 	fabricsettings["optimisebgpoverlayhypervisor"] = profile.FabricProps.OptimiseBgpOverlayHypervisor
 	fabricsettings["unnumberedbgpunderlay"] = profile.FabricProps.UnnumberedBgpUnderlay
@@ -637,12 +652,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		})
 	}
 
-	fabricsettingsList := d.Get("fabricsettings").(*schema.Set).List()
+	fabricsettingsList := d.Get("fabricsettings").([]interface{})
 	var fabricsettingstmp map[string]interface{}
 	if len(fabricsettingsList) > 0 {
-		if len(fabricsettingsList) > 1 {
-			return fmt.Errorf("please specify only one fabricsettings")
-		}
 		fabricsettingstmp = fabricsettingsList[0].(map[string]interface{})
 	}
 
@@ -661,14 +673,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		UnnumberedBgpUnderlay:        getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
 		AutomaticLinkAggregation:     getBool("automaticlinkaggregation", fabricsettingstmp, false),
 		MCLag:                        getBool("mclag", fabricsettingstmp, false),
+		FabricType:                   getStringFromMap("fabrictype", fabricsettingstmp),
 	}
 
-	gpuclustersettingsList := d.Get("gpuclustersettings").(*schema.Set).List()
+	gpuclustersettingsList := d.Get("gpuclustersettings").([]interface{})
 	var gpuclustersettingstmp map[string]interface{}
 	if len(gpuclustersettingsList) > 0 {
-		if len(gpuclustersettingsList) > 1 {
-			return fmt.Errorf("please specify only one gpuclustersettings")
-		}
 		gpuclustersettingstmp = gpuclustersettingsList[0].(map[string]interface{})
 	}
 

@@ -36,6 +36,7 @@ resource "netris_switch" "my-switch" {
   mainip = "auto"
   mgmtip = "auto"
   portcount = 16
+  role = "spine"
   # tags  = ["foo", "bar"]
   depends_on = [
     netris_subnet.my-subnet-mgmt,
@@ -65,3 +66,4 @@ resource "netris_switch" "my-switch" {
 - **profileid** (Number) An inventory profile ID to define global configuration (NTP, DNS, timezone, etc...)
 - **breakout** (String) Initial Break Out applies to all switch ports of this switch. Possible values: `off`, `disabled`, `1x10`,`1x25`,`1x40`,`1x50`,`1x100`,`1x200`,`1x400`,`1x800`,`2x10`,`2x25`,`2x40`,`2x50`,`2x100`,`2x200`,`2x400`,`4x10`,`4x25`,`4x50`,`4x100`,`4x200`,`8x10`,`8x25`,`8x50`,`8x100`
 - **tags** (List of String) List of tags. Example `["foo", "bar"]`
+- **role** (String) The switch's role in the fabric heirarchy
