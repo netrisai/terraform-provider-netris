@@ -30,6 +30,7 @@ resource "netris_inventory_profile" "my-profile" {
     # optimisebgpoverlay    = true
     # unnumberedbgpunderlay = false
     # automaticlinkaggregation = false
+    # fabrictype = "generic"
     mclag = true
   }
   gpuclustersettings {
@@ -96,6 +97,7 @@ Optional:
 
 Optional:
 
+- **fabrictype** (String) Determine how devices using profile are placed and treated within the overall fabric topology.
 - **optimisebgpoverlay** (Boolean) Optimize BGP Overlay for leaf-spine topology. When checked, overlay BGP updates will be optimized for large scale. Each leaf switch (based on name) will form its overlay BGP sessions only with two spine switches (with the lowest IDs). Otherwise, Overlay BGP sessions will be configured on p2p links alongside underlay. Default value is `false`.
 - **optimisebgpoverlayhypervisor** (Boolean) Required for BGP/EVPN VXLAN integration with compute hypervisor networking. This optimization makes sure that a large number of hypervisor virtual networking EVPN prefixes do not overflow switch TCAM. Default value is `false`.
 - **unnumberedbgpunderlay** (Boolean) When checked, BGP underlay sessions will be configured using p2p IPv4 addresses configured on link objects in the Netris controller. Otherwise, BGP unnumbered method is used and p2p ipv6 link-local addresses are used for BGP sessions. Default value is `false`.

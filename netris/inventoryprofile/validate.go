@@ -122,6 +122,12 @@ func validateRefArch(val interface{}, key string) (warns []string, errs []error)
 	}
 	if _, ok := validRefArchValues[v]; !ok {
 		errs = append(errs, fmt.Errorf("invalid %s: %q is not a valid GPU reference architecture", key, v))
+		str := []string{}
+		for v := range validRefArchValues {
+			str = append(str, v)
+		}
+		errs = append(errs, fmt.Errorf("allowed values: %v", strings.Join(str, ", ")))
+
 	}
 	return warns, errs
 }

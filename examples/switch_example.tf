@@ -27,6 +27,7 @@ resource "netris_switch" "my-switch02" {
   mainip      = "auto"
   mgmtip      = "auto"
   portcount   = 16
+  role        = "spine"
   depends_on = [
     netris_subnet.my-subnet-mgmt,
     netris_subnet.my-subnet-loopback,
