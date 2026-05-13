@@ -126,7 +126,7 @@ func validateRefArch(val interface{}, key string) (warns []string, errs []error)
 		for v := range validRefArchValues {
 			str = append(str, v)
 		}
-		errs = append(errs, fmt.Errorf("allowed valued: %v", strings.Join(str, ", ")))
+		errs = append(errs, fmt.Errorf("allowed values: %v", strings.Join(str, ", ")))
 
 	}
 	return warns, errs
