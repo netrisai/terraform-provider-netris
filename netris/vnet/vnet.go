@@ -55,6 +55,13 @@ func Resource() *schema.Resource {
 				Type:         schema.TypeString,
 				Description:  "V-Net state. Allowed values: `active` or `disabled`. Default value is `active`",
 			},
+			"ipfamily": {
+				Optional:     true,
+				Default:      "dual",
+				ValidateFunc: validateIPFamily,
+				Type:         schema.TypeString,
+				Description:  "IP address family for the V-Net. Allowed values: `dual`, `ipv4`, or `ipv6`. Default value is `dual`.",
+			},
 			"vlanid": {
 				Optional:     true,
 				ValidateFunc: validateVlanID,
@@ -392,6 +399,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		GuestTenants: []vnet.VNetAddTenant{},
 		Sites:        siteIDs,
 		State:        d.Get("state").(string),
+		IPFamily:     d.Get("ipfamily").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
 		Vlan:         vlanidInterface,
@@ -465,6 +473,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("state", vnetresp.State)
+	if err != nil {
+		return err
+	}
+	err = d.Set("ipfamily", vnetresp.IPFamily)
 	if err != nil {
 		return err
 	}
@@ -867,6 +879,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		GuestTenants: []vnet.VNetUpdateGuestTenant{},
 		Sites:        siteIDs,
 		State:        d.Get("state").(string),
+		IPFamily:     d.Get("ipfamily").(string),
 		Gateways:     gatewayList,
 		Ports:        members,
 		Vlan:         vlanidInterface,
