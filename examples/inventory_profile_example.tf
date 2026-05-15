@@ -25,6 +25,7 @@ resource "netris_inventory_profile" "my-profile" {
     # aggregatel3vpnprefix = true
     asicmonitoring       = false
     congestioncontrol    = false
+    hwmp                 = false
     qosandroce           = true
     roceadaptiverouting  = true
     refarch              = "none"
