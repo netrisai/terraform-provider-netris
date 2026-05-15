@@ -30,6 +30,14 @@ func validateState(val interface{}, key string) (warns []string, errs []error) {
 	return warns, errs
 }
 
+func validateIPFamily(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if !(v == "dual" || v == "ipv4" || v == "ipv6") {
+		errs = append(errs, fmt.Errorf("'%s' must be dual, ipv4, or ipv6, got: %s", key, v))
+	}
+	return warns, errs
+}
+
 func validateVlanID(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
 	if v == "auto" || v == "disabled" {

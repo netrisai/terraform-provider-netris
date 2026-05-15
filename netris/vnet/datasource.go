@@ -51,6 +51,12 @@ func DataResource() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "V-Net state.",
 			},
+			"ipfamily": {
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeString,
+				Description: "IP address family for the V-Net.",
+			},
 			"sites": {
 				Computed:    true,
 				Optional:    true,
@@ -155,6 +161,10 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("state", vnet.State)
+	if err != nil {
+		return err
+	}
+	err = d.Set("ipfamily", vnet.IPFamily)
 	if err != nil {
 		return err
 	}
