@@ -55,6 +55,7 @@ Attribute Reference:
 - **roceadaptiverouting** (Boolean) Adaptive routing.
 - **congestioncontrol** (Boolean) Congestion control.
 - **asicmonitoring** (Boolean) ASIC monitoring.
+- **hwmp** (Boolean) HWMP (Hardware Multi Plane).
 - **aggregatel3vpnprefix** (Boolean) Aggregate L3VPN prefix behavior.
 - **refarch** (String) GPU reference architecture enum.
 

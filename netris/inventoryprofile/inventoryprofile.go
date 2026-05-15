@@ -204,6 +204,12 @@ func Resource() *schema.Resource {
 							Default:     false,
 							Description: "Enable ASIC monitoring: Histograms and Telemetry Snapshots.",
 						},
+						"hwmp": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Enable HWMP (Hardware Multi Plane).",
+						},
 						"aggregatel3vpnprefix": {
 							Type:        schema.TypeBool,
 							Optional:    true,
@@ -380,6 +386,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		RoceAdaptiveRouting:  getBool("roceadaptiverouting", gpuclustersettingstmp, false),
 		CongestionControl:    getBool("congestioncontrol", gpuclustersettingstmp, false),
 		AsicMonitoring:       getBool("asicmonitoring", gpuclustersettingstmp, false),
+		Hwmp:                 getBool("hwmp", gpuclustersettingstmp, false),
 		AggregateL3VpnPrefix: getBool("aggregatel3vpnprefix", gpuclustersettingstmp, false),
 		RefArch:              getStringFromMap("refarch", gpuclustersettingstmp),
 	}
@@ -555,6 +562,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	gpuclustersettings["roceadaptiverouting"] = profile.GpuClusterProps.RoceAdaptiveRouting
 	gpuclustersettings["congestioncontrol"] = profile.GpuClusterProps.CongestionControl
 	gpuclustersettings["asicmonitoring"] = profile.GpuClusterProps.AsicMonitoring
+	gpuclustersettings["hwmp"] = profile.GpuClusterProps.Hwmp
 	gpuclustersettings["aggregatel3vpnprefix"] = profile.GpuClusterProps.AggregateL3VpnPrefix
 	gpuclustersettings["refarch"] = profile.GpuClusterProps.RefArch
 	gpuclustersettingsList = append(gpuclustersettingsList, gpuclustersettings)
@@ -687,6 +695,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		RoceAdaptiveRouting:  getBool("roceadaptiverouting", gpuclustersettingstmp, false),
 		CongestionControl:    getBool("congestioncontrol", gpuclustersettingstmp, false),
 		AsicMonitoring:       getBool("asicmonitoring", gpuclustersettingstmp, false),
+		Hwmp:                 getBool("hwmp", gpuclustersettingstmp, false),
 		AggregateL3VpnPrefix: getBool("aggregatel3vpnprefix", gpuclustersettingstmp, false),
 		RefArch:              getStringFromMap("refarch", gpuclustersettingstmp),
 	}
