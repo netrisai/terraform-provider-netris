@@ -98,13 +98,20 @@ Optional:
 
 Optional:
 
-- **fabrictype** (String) Determine how devices using profile are placed and treated within the overall fabric topology.
 - **optimisebgpoverlay** (Boolean) Optimize BGP Overlay for leaf-spine topology. When checked, overlay BGP updates will be optimized for large scale. Each leaf switch (based on name) will form its overlay BGP sessions only with two spine switches (with the lowest IDs). Otherwise, Overlay BGP sessions will be configured on p2p links alongside underlay. Default value is `false`.
 - **optimisebgpoverlayhypervisor** (Boolean) Required for BGP/EVPN VXLAN integration with compute hypervisor networking. This optimization makes sure that a large number of hypervisor virtual networking EVPN prefixes do not overflow switch TCAM. Default value is `false`.
 - **unnumberedbgpunderlay** (Boolean) When checked, BGP underlay sessions will be configured using p2p IPv4 addresses configured on link objects in the Netris controller. Otherwise, BGP unnumbered method is used and p2p ipv6 link-local addresses are used for BGP sessions. Default value is `false`.
 - **automaticlinkaggregation** (Boolean) Automatically configure non-backbone switch ports under a single legged link aggregation (agg) interface. This allows for active/standby multihoming if LACP is enabled on the server side. Active/Active multihoming with EVPN-MH will be automatically configured on Nvidia Spectrum-2 and higher switch models. Default value is `false`.
 - **mclag** (Boolean) Enabling MC-LAG functionality will disable any EVPN-MH functionality. Two multihoming methods are not supported simultaneously on the same switches. Default value is `false`.
-
+- **fabrictype** (String) Determine how devices using profile are placed and treated within the overall fabric topology. Must be one of supported enum values:
+  - generic
+  - ew
+  - ew-plane1
+  - ew-plane2
+  - ew-plane3
+  - ew-plane4
+  - ns
+  - oob
 
 <a id="nestedblock--gpuclustersettings"></a>
 ### Nested Schema for `gpuclustersettings`
@@ -117,7 +124,24 @@ Optional:
 - **asicmonitoring** (Boolean) Enable ASIC monitoring: Histograms and Telemetry Snapshots. Default value is `false`.
 - **hwmp** (Boolean) Enable HWMP (Hardware Multi Plane). Default value is `false`.
 - **aggregatel3vpnprefix** (Boolean) Minimize prefix updates over BGP Overlay for L3VPN p2p links in rail-optimized topology and IP addressing schemes. Default value is `false`.
-- **refarch** (String) GPU cluster reference architecture (API field `gpuClusterProps.refArch`). Must be one of the supported enum values, for example `none`, `b300_spx_2_tier_single_plane`, or `gb300_spx_2_tier_dual_plane`. Omit the argument or leave it empty to send an unset value to the API.
+- **refarch** (String) GPU cluster reference architecture (API field `gpuClusterProps.refArch`). Must be one of the supported enum values:
+  - none
+  - h100_h200_b200_spx_2_tier
+  - h100_h200_b200_spx_3_tier
+  - gb200_spx_2_tier
+  - gb200_spx_3_tier
+  - b300_spx_2_tier_single_plane
+  - b300_spx_3_tier_single_plane
+  - b300_spx_2_tier_dual_plane
+  - b300_spx_3_tier_dual_plane
+  - b300_spx_2_tier_quad_plane
+  - b300_spx_3_tier_quad_plane
+  - gb300_spx_2_tier_single_plane
+  - gb300_spx_3_tier_single_plane
+  - gb300_spx_2_tier_dual_plane
+  - gb300_spx_3_tier_dual_plane
+  - gb300_spx_2_tier_quad_plane
+  - gb300_spx_3_tier_quad_plane
 
 <a id="nestedblock--snmpv2"></a>
 ### Nested Schema for `snmpv2`
