@@ -46,6 +46,7 @@ resource "netris_vnet" "my-vnet-in-my-vpc" {
   # tags  = ["foo", "bar"]
   vpcid   = netris_vpc.my-vpc.id
   vxlanid = 456
+  ipfamily = "ipv4"
   sites {
     id = netris_site.santa-clara.id
     gateways {
