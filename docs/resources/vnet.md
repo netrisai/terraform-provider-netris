@@ -25,10 +25,11 @@ data "netris_tenant" "admin" {
 }
 
 resource "netris_vnet" "my-vnet" {
-  name = "my-vnet"
+  name     = "my-vnet"
   tenantid = data.netris_tenant.admin.id
-  # vlanid = "auto"
-  state = "active"
+  # vlanid   = "auto"
+  state    = "active"
+  ipfamily = "dual"
   sites {
     id = data.netris_site.santa-clara.id
     gateways {
@@ -73,6 +74,7 @@ resource "netris_vnet" "my-vnet" {
 
 ### Optional
 
+- **ipfamily** (String) IP address family for the V-Net. Allowed values: `dual`, `ipv4`, or `ipv6`. Default value is `dual`.
 - **state** (String) V-Net state. Allowed values: `active` or `disabled`. Default value is `active`
 - **tags** (List of String) List of tags. Example `["foo", "bar"]`
 - **vlanid** (String) VLAN tag for all network interfaces of the vnet. Also can be `auto`, or `disabled`. If set `auto` the controller will assign a vlan ID  automatically.
