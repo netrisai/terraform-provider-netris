@@ -29,6 +29,7 @@ data "netris_vnet" "my-vnet" {
 ### Attribute Reference
 
 - **id** (String) The ID of this resource.
+- **ipfamily** (String) IP address family for the V-Net (`dual`, `ipv4`, or `ipv6`).
 - **sites** (Block List) Block of per site vnet configuration. (see [below for nested schema](#nestedblock--sites))
 - **state** (String) V-Net state.
 - **tenantid** (Number) ID of tenant. Users of this tenant will be permitted to edit this unit.
