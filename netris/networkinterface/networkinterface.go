@@ -122,16 +122,20 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	var hwPort *port.Port
 	switchID := d.Get("nodeid").(int)
-
-	ports, err := clientset.Port().GetBySwId(switchID)
-	if err != nil {
-		return err
-	}
-
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	breakout := d.Get("breakout").(string)
 	tenantID := d.Get("tenantid").(int)
+
+	opts := port.GetPortsOptions{
+		SwitchID:   switchID,
+		FilterPort: name,
+	}
+
+	ports, _, err := clientset.Port().GetByParams(opts)
+	if err != nil {
+		return err
+	}
 
 	for _, p := range ports {
 		if p.Port == name && p.Switch.ID == switchID {
