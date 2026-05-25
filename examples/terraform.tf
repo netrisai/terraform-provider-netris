@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "netris" {
-  address  = "https://localhost" # overwrite env: NETRIS_ADDRESS
+  address  = "https://ntrs-acs-rc.8399ca9b.nip.io" # overwrite env: NETRIS_ADDRESS
   login    = "netris"                              # overwrite env: NETRIS_LOGIN
   password = "newNet0ps"                           # overwrite env: NETRIS_PASSWORD
 }
