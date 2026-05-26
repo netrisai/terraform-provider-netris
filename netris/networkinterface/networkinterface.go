@@ -128,8 +128,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	tenantID := d.Get("tenantid").(int)
 
 	opts := port.GetPortsOptions{
-		SwitchID:   switchID,
-		FilterPort: name,
+		SwitchID: switchID,
+		PortName: name,
 	}
 
 	ports, _, err := clientset.Port().GetByParams(opts)
