@@ -34,6 +34,7 @@ data "netris_network_interface" "swp5_sw1"{
 - **breakout** (String) Toggle breakout.
 - **description** (String) Network Interface desired description
 - **extension** (Map of String) Network Interface extension configurations.
+- **fec** (String) Forward Error Correction (FEC) mode for the network interface.
 - **mtu** (Number) MTU must be integer between 68 and 9216.
 - **speed** (String) Toggle interface speed, make sure that current node supports the configured speed.
 - **nodeid** (Number) The node ID to whom this network interface belongs
