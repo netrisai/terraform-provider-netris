@@ -26,6 +26,7 @@ func portDefault() *port.PortUpdate {
 		Duplex:    "full",
 		Mtu:       9000,
 		Speed:     "auto",
+		Fec:       "auto",
 	}
 	return portDefault
 }

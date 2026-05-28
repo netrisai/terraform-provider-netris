@@ -80,6 +80,13 @@ func Resource() *schema.Resource {
 				Optional:     true,
 				Description:  "Toggle interface speed, make sure that current node supports the configured speed. Possibe values: `auto`, `1g`, `10g`, `25g`, `40g`, `50g`, `100g`, `200g`, `400g`. Default value is `auto`",
 			},
+			"fec": {
+				Default:      "auto",
+				ValidateFunc: validateFec,
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  "Forward Error Correction (FEC) mode. Possible values: `auto`, `base-r`, `rs`, `off`. Default value is `auto`. FEC cannot be configured on aggregated (LAG) ports, extension sub-ports, or broken-out ports.",
+			},
 			"extension": {
 				Optional:     true,
 				Type:         schema.TypeMap,
@@ -162,6 +169,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			autoneg = "none"
 		}
 		speed := d.Get("speed").(string)
+		fec := d.Get("fec").(string)
 
 		extension := port.PortUpdateExtenstion{}
 		ext := d.Get("extension").(map[string]interface{})
@@ -184,6 +192,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		portUpdate.Mtu = mtu
 		portUpdate.AutoNeg = autoneg
 		portUpdate.Speed = speedMap[speed]
+		portUpdate.Fec = fec
 		portUpdate.Extension = extension
 	}
 
@@ -252,6 +261,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return err
 		}
+		err = d.Set("fec", hwPort.Fec)
+		if err != nil {
+			return err
+		}
 
 		var ext *port.PortExtension
 		list, err := clientset.Port().GetExtenstion()
@@ -308,6 +321,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			autoneg = "none"
 		}
 		speed := d.Get("speed").(string)
+		fec := d.Get("fec").(string)
 
 		extension := port.PortUpdateExtenstion{}
 		ext := d.Get("extension").(map[string]interface{})
@@ -330,6 +344,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		portUpdate.Mtu = mtu
 		portUpdate.AutoNeg = autoneg
 		portUpdate.Speed = speedMap[speed]
+		portUpdate.Fec = fec
 		portUpdate.Extension = extension
 	}
 

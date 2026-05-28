@@ -66,6 +66,14 @@ func validateSpeed(val interface{}, key string) (warns []string, errs []error) {
 	return warns, errs
 }
 
+func validateFec(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if !(v == "auto" || v == "base-r" || v == "rs" || v == "off") {
+		errs = append(errs, fmt.Errorf("FEC available values are (auto, base-r, rs, off)"))
+	}
+	return warns, errs
+}
+
 func validatePort(val interface{}, key string) (warns []string, errs []error) {
 	if err := valPort(val.(string)); err != nil {
 		errs = append(errs, fmt.Errorf(`Invalid value "%s". %s`, val.(string), err))
