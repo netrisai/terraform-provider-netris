@@ -28,6 +28,7 @@ resource "netris_network_interface" "swp10_my-switch" {
   mtu = 9005
   autoneg = "on"
   speed = "10g"
+  fec = "auto"
   # extension = {
   #   extensionname = "vlans10-14"
   #   vlanrange = "10-14"
@@ -50,5 +51,6 @@ resource "netris_network_interface" "swp10_my-switch" {
 - **breakout** (String) Toggle breakout. Possible values: `off`, `disabled`, `1x10`,`1x25`,`1x40`,`1x50`,`1x100`,`1x200`,`1x400`,`1x800`,`2x10`,`2x25`,`2x40`,`2x50`,`2x100`,`2x200`,`2x400`,`4x10`,`4x25`,`4x50`,`4x100`,`4x200`,`8x10`,`8x25`,`8x50`,`8x100`. Default value is `off`.
 - **description** (String) Network Interface desired description
 - **extension** (Map of String) Network Interface extension configurations.
+- **fec** (String) Forward Error Correction (FEC) mode. Possible values: `auto`, `base-r`, `rs`, `off`. Default value is `auto`. FEC cannot be configured on aggregated (LAG) ports, extension sub-ports, or broken-out ports.
 - **mtu** (Number) MTU must be integer between 68 and 9216. Default value is `9000`
 - **speed** (String) Toggle interface speed, make sure that current node supports the configured speed. Possibe values: `auto`, `1g`, `10g`, `25g`, `40g`, `50g`, `100g`, `200g`, `400g`. Default value is `auto`

@@ -77,6 +77,12 @@ func DataResource() *schema.Resource {
 				Optional:    true,
 				Description: "Toggle interface speed, make sure that current node supports the configured speed.",
 			},
+			"fec": {
+				Computed:    true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Forward Error Correction (FEC) mode for the network interface.",
+			},
 			"extension": {
 				Computed:    true,
 				Optional:    true,
@@ -155,6 +161,10 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 			return err
 		}
 		err = d.Set("speed", speedMapReversed[hwPort.DesiredSpeed])
+		if err != nil {
+			return err
+		}
+		err = d.Set("fec", hwPort.Fec)
 		if err != nil {
 			return err
 		}
