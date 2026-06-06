@@ -59,7 +59,7 @@ The provider supports the following arguments:
   | `v3.6`           | `v4.4+`            |
   | `v3.6.8`         | `v4.9.0+`          |
   | `v3.6.9`         | `v4.10.0+`         |
-  | `v3.6.12`        | `v4.11.0+`         |
+  | `v3.6.13+`        | `v4.11.0+`         |
 
 ## A simple infrastructure creation example
 
