@@ -30,4 +30,10 @@ resource "netris_inventory_profile" "my-profile" {
     roceadaptiverouting  = true
     refarch              = "none"
   }
+
+  ztpsettings {
+    nos_image = "cumulus-linux-5.16.1-mlx-amd64.bin"
+    password = "JiKqjtMxDFowRgfMmPMvj_Hw8ivHu6Y!Qym"
+  }
+
 }

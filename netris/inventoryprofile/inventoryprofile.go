@@ -580,6 +580,18 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	ztpsettings := make(map[string]interface{})
 	ztpsettings["nos_image"] = profile.ZTPProps.NOSImage
 	ztpsettings["password"] = profile.ZTPProps.Password
+	// The controller does not return the ZTP password on read (it's a
+	// sensitive credential, returned empty or masked). Since ztpsettings is
+	// a TypeSet, a password read back from the API that differs from config
+	// would rehash the set element and produce a perpetual diff. Preserve
+	// the value already in state/config, which is the source of truth.
+	if oldZTP := d.Get("ztpsettings").(*schema.Set).List(); len(oldZTP) > 0 {
+		if old, ok := oldZTP[0].(map[string]interface{}); ok {
+			if pw, ok := old["password"].(string); ok && pw != "" {
+				ztpsettings["password"] = pw
+			}
+		}
+	}
 	ztpsettingsList = append(ztpsettingsList, ztpsettings)
 
 	err = d.Set("customrule", customRules)
