@@ -117,6 +117,36 @@ func DataResource() *schema.Resource {
 				Type:        schema.TypeInt,
 				Description: "ID of VPC.",
 			},
+			"dhcprelay": {
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Description: "DHCP Relay configuration. Enabling DHCP Relay disables DHCP configuration under Gateways.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Computed:    true,
+							Description: "Whether DHCP Relay is enabled for this V-Net.",
+						},
+						"vpcid": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "ID of the VPC where the DHCP Relay servers reside.",
+						},
+						"primaryaddr": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "Primary DHCP Relay address.",
+						},
+						"secondaryaddr": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "Secondary DHCP Relay address.",
+						},
+					},
+				},
+			},
 		},
 		Read:   dataResourceRead,
 		Exists: dataResourceExists,
@@ -233,6 +263,24 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	err = d.Set("vpcid", vnet.Vpc.ID)
+	if err != nil {
+		return err
+	}
+
+	var dhcpRelay []map[string]interface{}
+	if vnet.DhcpRelay != nil {
+		vpcID := 0
+		if vnet.DhcpRelay.Vpc != nil {
+			vpcID = vnet.DhcpRelay.Vpc.ID
+		}
+		dhcpRelay = append(dhcpRelay, map[string]interface{}{
+			"enabled":       vnet.DhcpRelay.Enabled,
+			"vpcid":         vpcID,
+			"primaryaddr":   strVal(vnet.DhcpRelay.PrimaryAddr),
+			"secondaryaddr": strVal(vnet.DhcpRelay.SecondaryAddr),
+		})
+	}
+	err = d.Set("dhcprelay", dhcpRelay)
 	if err != nil {
 		return err
 	}
