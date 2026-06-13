@@ -242,6 +242,38 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeInt,
 				Description: "VXLAN ID. If not specified will be generated automatically.",
 			},
+			"dhcprelay": {
+				Optional:    true,
+				Computed:    true,
+				MaxItems:    1,
+				Type:        schema.TypeList,
+				Description: "DHCP Relay configuration. Enabling DHCP Relay disables DHCP configuration under Gateways.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Enable DHCP Relay for this V-Net. Enabling it disables DHCP configuration under Gateways. Default value is `false`.",
+						},
+						"vpcid": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "ID of the VPC where the DHCP Relay servers reside.",
+						},
+						"primaryaddr": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Primary DHCP Relay address.",
+						},
+						"secondaryaddr": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Secondary DHCP Relay address.",
+						},
+					},
+				},
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -251,11 +283,70 @@ func Resource() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: resourceImport,
 		},
+		CustomizeDiff: customizeDiff,
 	}
+}
+
+// strVal dereferences a *string, returning "" for a nil pointer.
+func strVal(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// customizeDiff normalizes a disabled dhcprelay block. When enabled = false the
+// other properties are meaningless, so they are forced to their zero values in
+// the plan. This matches what read stores and what getDhcpRelay sends (the
+// relay object with enabled = false and null properties), so a disabled block
+// left in the configuration - even with stale vpcid/addresses - does not
+// produce a perpetual diff. dhcprelay is Computed so SetNew is permitted on it.
+func customizeDiff(d *schema.ResourceDiff, m interface{}) error {
+	relays := d.Get("dhcprelay").([]interface{})
+	if len(relays) == 0 || relays[0] == nil {
+		return nil
+	}
+	r := relays[0].(map[string]interface{})
+	if !r["enabled"].(bool) {
+		return d.SetNew("dhcprelay", []interface{}{
+			map[string]interface{}{
+				"enabled":       false,
+				"vpcid":         0,
+				"primaryaddr":   "",
+				"secondaryaddr": "",
+			},
+		})
+	}
+	return nil
 }
 
 func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 	return true
+}
+
+// getDhcpRelay builds a DHCP Relay payload from the resource data. It returns
+// nil only when no dhcprelay block is configured at all (the field is then
+// omitted from the request). When the block is present but disabled, it returns
+// an object with enabled = false and all other properties set to null, which is
+// how the controller is told to disable the relay - sending the field as null
+// (omitting it) does not disable anything.
+func getDhcpRelay(d *schema.ResourceData) *vnet.VNetDhcpRelay {
+	relays := d.Get("dhcprelay").([]interface{})
+	if len(relays) == 0 || relays[0] == nil {
+		return nil
+	}
+	r := relays[0].(map[string]interface{})
+	if !r["enabled"].(bool) {
+		return &vnet.VNetDhcpRelay{Enabled: false}
+	}
+	primary := r["primaryaddr"].(string)
+	secondary := r["secondaryaddr"].(string)
+	return &vnet.VNetDhcpRelay{
+		Enabled:       true,
+		Vpc:           &vnet.IDName{ID: r["vpcid"].(int)},
+		PrimaryAddr:   &primary,
+		SecondaryAddr: &secondary,
+	}
 }
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
@@ -411,6 +502,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	if vpcid > 0 {
 		vnetAdd.Vpc = &vnet.IDName{ID: vpcid}
 	}
+
+	vnetAdd.DhcpRelay = getDhcpRelay(d)
 
 	js, _ := json.Marshal(vnetAdd)
 	log.Println("[DEBUG]", string(js))
@@ -688,6 +781,37 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	var dhcpRelay []map[string]interface{}
+	if vnetresp.DhcpRelay != nil {
+		relayConfigured := len(d.Get("dhcprelay").([]interface{})) > 0
+		if vnetresp.DhcpRelay.Enabled {
+			vpcID := 0
+			if vnetresp.DhcpRelay.Vpc != nil {
+				vpcID = vnetresp.DhcpRelay.Vpc.ID
+			}
+			dhcpRelay = append(dhcpRelay, map[string]interface{}{
+				"enabled":       true,
+				"vpcid":         vpcID,
+				"primaryaddr":   strVal(vnetresp.DhcpRelay.PrimaryAddr),
+				"secondaryaddr": strVal(vnetresp.DhcpRelay.SecondaryAddr),
+			})
+		} else if relayConfigured {
+			// Relay is disabled but a block is present in the configuration.
+			// Store it normalized (other properties zeroed) so it matches the
+			// planned value and does not produce a perpetual diff.
+			dhcpRelay = append(dhcpRelay, map[string]interface{}{
+				"enabled":       false,
+				"vpcid":         0,
+				"primaryaddr":   "",
+				"secondaryaddr": "",
+			})
+		}
+	}
+	err = d.Set("dhcprelay", dhcpRelay)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -886,6 +1010,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Tags:         tags,
 		VxlanID:      vxlanid,
 		PortTags:     portTagsList,
+		DhcpRelay:    getDhcpRelay(d),
 	}
 
 	js, _ := json.Marshal(vnetUpdate)

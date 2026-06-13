@@ -28,6 +28,12 @@ resource "netris_allocation" "my-allocation-vnet" {
   tenantid = data.netris_tenant.admin.id
 }
 
+resource "netris_allocation" "my-allocation-vnet2" {
+  name     = "my-allocation-vnet2"
+  prefix   = "198.18.52.0/24"
+  tenantid = data.netris_tenant.admin.id
+}
+
 resource "netris_allocation" "my-allocation-vnetv6" {
   name     = "my-allocation-vnetV6"
   prefix   = "2001:db8:acad::/64"

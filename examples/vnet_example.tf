@@ -71,3 +71,36 @@ resource "netris_vnet" "my-vnet-in-my-vpc" {
     netris_subnet.my-subnet-vnetv6-in-my-vpc,
   ]
 }
+
+resource "netris_vnet" "my-vnet2" {
+  name     = "my-vnet2"
+  tenantid = data.netris_tenant.admin.id
+  state    = "active"
+  # tags  = ["foo", "bar"]
+  # vpcid   = netris_vpc.my-vpc.id
+  # vxlanid = 0
+  ipfamily = "ipv4"
+  dhcprelay {
+    enabled = true
+    vpcid = 1
+    primaryaddr = "192.168.10.1"
+    secondaryaddr = "192.168.12.1"
+  }
+  sites {
+    id = netris_site.santa-clara.id
+    gateways {
+      prefix = "198.18.52.1/24"
+      # dhcp   = "enabled"
+    }
+    interface {
+      name   = "swp12@my-switch02"
+      vlanid = 1058
+    }
+  }
+  depends_on = [
+    netris_switch.my-switch01,
+    netris_switch.my-switch02,
+    netris_subnet.my-subnet-vnet2,
+  ]
+}
+ 

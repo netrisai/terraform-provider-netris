@@ -33,6 +33,7 @@ data "netris_vnet" "my-vnet" {
 - **sites** (Block List) Block of per site vnet configuration. (see [below for nested schema](#nestedblock--sites))
 - **state** (String) V-Net state.
 - **tenantid** (Number) ID of tenant. Users of this tenant will be permitted to edit this unit.
+- **dhcprelay** (Block List) DHCP Relay configuration for the V-Net. Enabling DHCP Relay disables DHCP configuration under Gateways. (see [below for nested schema](#nestedblock--dhcprelay))
 
 <a id="nestedblock--sites"></a>
 ### Nested Schema for `sites`
@@ -57,3 +58,13 @@ Attribute Reference
 
 - **name** (String) Switch port name.
 - **vlanid** (String) VLAN tag for current port.
+
+<a id="nestedblock--dhcprelay"></a>
+### Nested Schema for `dhcprelay`
+
+Attribute Reference
+
+- **enabled** (Boolean) Whether DHCP Relay is enabled for this V-Net.
+- **vpcid** (Number) ID of the VPC where the DHCP Relay servers reside.
+- **primaryaddr** (String) Primary DHCP Relay address.
+- **secondaryaddr** (String) Secondary DHCP Relay address.

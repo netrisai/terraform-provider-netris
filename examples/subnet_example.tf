@@ -76,6 +76,17 @@ resource "netris_subnet" "my-subnet-vnet" {
   ]
 }
 
+resource "netris_subnet" "my-subnet-vnet2" {
+  name     = "my-subnet-vnet2"
+  prefix   = "198.18.52.0/24"
+  tenantid = data.netris_tenant.admin.id
+  purpose  = "common"
+  siteids  = [netris_site.santa-clara.id]
+  depends_on = [
+    netris_allocation.my-allocation-vnet2,
+  ]
+}
+
 resource "netris_subnet" "my-subnet-vnetv6" {
   name     = "my-subnet-vnetV6"
   prefix   = "2001:db8:acad::/64"
