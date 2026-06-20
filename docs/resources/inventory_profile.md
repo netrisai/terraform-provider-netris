@@ -53,6 +53,10 @@ resource "netris_inventory_profile" "my-profile" {
     nos_image = "NOS_IMAGE.bin"
     password  = "supersecret"
   }
+  netqsettings {
+    server_addrs = ["192.0.2.10"]
+    server_port  = 32708
+  }
 }
 ```
 
@@ -72,6 +76,7 @@ resource "netris_inventory_profile" "my-profile" {
 - **gpuclustersettings** (Block List) GPU Cluster Specific Settings. Switch Fabric optimizations for GPU clusters. (see [below for nested schema](#nestedblock--gpuclustersettings))
 - **snmpv2** (Block List) SNMPv2 Settings. (see [below for nested schema](#nestedblock--snmpv2))
 - **ztpsettings** (Block List) ZTP settings for inventory profile. (see [below for nested schema](#nestedblock--ztpsettings))
+- **netqsettings** (Block List) NetQ settings for inventory profile. (see [below for nested schema](#nestedblock--netqsettings))
 - **description** (String) Inventory profile description
 - **dnsservers** (List of String) List of IP addresses of DNS servers. Example `["1.1.1.1", "8.8.8.8"]`
 - **ipv6ssh** (List of String) List of IPv6 subnets allowed to ssh. Example `["2001:DB8::/32"]`
@@ -161,3 +166,12 @@ Optional:
 
 - **nos_image** (String) NOS image file name.
 - **password** (String, Sensitive) NOS admin password for ZTP.
+
+<a id="nestedblock--netqsettings"></a>
+### Nested Schema for `netqsettings`
+
+Optional:
+
+- **enabled** (Boolean) Whether NetQ is enabled. Defaults to `true` when a `netqsettings` block is present. Set to `false` to keep the configuration but disable NetQ. If the controller reports NetQ as disabled while a `netqsettings` block is configured, Terraform will re-enable it. Default value is `true`.
+- **server_addrs** (List of String) List of NetQ server addresses (IP addresses or domain names).
+- **server_port** (Number) NetQ server port. 1-65535.

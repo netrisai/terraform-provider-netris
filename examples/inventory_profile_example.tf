@@ -36,4 +36,9 @@ resource "netris_inventory_profile" "my-profile" {
     password = "JiKqjtMxDFowRgfMmPMvj_Hw8ivHu6Y!Qym"
   }
 
+  netqsettings {
+    server_addrs = ["192.0.2.11"]
+    server_port  = 32708
+  }
+
 }

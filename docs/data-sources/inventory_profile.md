@@ -32,6 +32,7 @@ data "netris_inventory_profile" "my-profile" {
 - **customrule** (Block List) Custom Rules configuration block. User defined rules to allow certain traffic. (see [below for nested schema](#nestedblock--customrule))
 - **snmpv2** (Block List) SNMPv2 Settings. (see [below for nested schema](#nestedblock--snmpv2))
 - **ztpsettings** (Block List) ZTP settings for inventory profile. (see [below for nested schema](#nestedblock--ztpsettings))
+- **netqsettings** (Block List) NetQ settings for inventory profile. (see [below for nested schema](#nestedblock--netqsettings))
 - **description** (String) Inventory profile description
 - **dnsservers** (List of String) List of IP addresses of DNS servers.
 - **ipv4ssh** (List of String) List of IPv4 subnets allowed to ssh.
@@ -88,3 +89,12 @@ Attribute Reference:
 
 - **nos_image** (String) NOS image file name.
 - **password** (String, Sensitive) NOS admin password for ZTP.
+
+<a id="nestedblock--netqsettings"></a>
+### Nested Schema for `netqsettings`
+
+Attribute Reference:
+
+- **enabled** (Boolean) Whether NetQ is enabled.
+- **server_addrs** (List of String) List of NetQ server addresses (IP addresses or domain names).
+- **server_port** (Number) NetQ server port.

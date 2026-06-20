@@ -286,6 +286,37 @@ func Resource() *schema.Resource {
 					},
 				},
 			},
+			"netqsettings": {
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Description: "NetQ settings for inventory profile.",
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     true,
+							Description: "Whether NetQ is enabled. Defaults to `true` when a netqsettings block is present. Set to `false` to keep the configuration but disable NetQ. If the controller reports NetQ as disabled while a netqsettings block is configured, Terraform will re-enable it.",
+						},
+						"server_addrs": {
+							Optional:    true,
+							Type:        schema.TypeList,
+							Description: "List of NetQ server addresses (IP addresses or domain names).",
+							Elem: &schema.Schema{
+								ValidateFunc: validateNTP,
+								Type:         schema.TypeString,
+							},
+						},
+						"server_port": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validatePortNumber,
+							Description:  "NetQ server port. 1-65535.",
+						},
+					},
+				},
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -436,6 +467,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		Password: nosAdminPassword,
 	}
 
+	netq, err := parseNetQSettings(d)
+	if err != nil {
+		return err
+	}
+
 	profileAdd := &inventoryprofile.ProfileW{
 		Name:            name,
 		Description:     description,
@@ -449,6 +485,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		GpuClusterProps: gpuclustersettings,
 		SNMPv2Props:     snmpv2,
 		ZTPProps:        ztpsettings,
+		NetQProps:       netq,
 	}
 
 	js, _ := json.Marshal(profileAdd)
@@ -594,6 +631,15 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 	ztpsettingsList = append(ztpsettingsList, ztpsettings)
 
+	var netqsettingsList []map[string]interface{}
+	if profile.NetQProps.Enabled || len(profile.NetQProps.ServerAddrs) > 0 {
+		netqsettings := make(map[string]interface{})
+		netqsettings["enabled"] = profile.NetQProps.Enabled
+		netqsettings["server_addrs"] = profile.NetQProps.ServerAddrs
+		netqsettings["server_port"] = int(profile.NetQProps.ServerPort)
+		netqsettingsList = append(netqsettingsList, netqsettings)
+	}
+
 	err = d.Set("customrule", customRules)
 	if err != nil {
 		return err
@@ -616,6 +662,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("ztpsettings", ztpsettingsList)
+	if err != nil {
+		return err
+	}
+	err = d.Set("netqsettings", netqsettingsList)
 	if err != nil {
 		return err
 	}
@@ -757,6 +807,11 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		Password: nosAdminPassword,
 	}
 
+	netq, err := parseNetQSettings(d)
+	if err != nil {
+		return err
+	}
+
 	id, _ := strconv.Atoi(d.Id())
 	profileUpdate := &inventoryprofile.ProfileW{
 		ID:              id,
@@ -772,6 +827,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		GpuClusterProps: gpuclustersettings,
 		SNMPv2Props:     snmpv2,
 		ZTPProps:        ztpsettings,
+		NetQProps:       netq,
 	}
 
 	js, _ := json.Marshal(profileUpdate)

@@ -18,9 +18,11 @@ package inventoryprofile
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"unicode"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/netrisai/netriswebapi/v1/types/inventoryprofile"
 	api "github.com/netrisai/netriswebapi/v2"
 )
@@ -95,6 +97,38 @@ func effectiveTimezoneForState(apiField string) string {
 		return ""
 	}
 	return out
+}
+
+// parseNetQSettings reads the netqsettings block and builds the NetQProps payload.
+func parseNetQSettings(d *schema.ResourceData) (inventoryprofile.NetQProps, error) {
+	netq := inventoryprofile.NetQProps{ServerAddrs: []string{}}
+	netqList := d.Get("netqsettings").(*schema.Set).List()
+	if len(netqList) == 0 {
+		// No netqsettings block defined: NetQ is disabled.
+		return netq, nil
+	}
+	if len(netqList) > 1 {
+		return netq, fmt.Errorf("please specify only one netqsettings")
+	}
+	netqtmp, ok := netqList[0].(map[string]interface{})
+	if !ok {
+		return netq, nil
+	}
+	// A netqsettings block defaults to enabled (schema Default is true); an
+	// explicit enabled = false keeps the config but turns NetQ off.
+	netq.Enabled = true
+	if v, ok := netqtmp["enabled"].(bool); ok {
+		netq.Enabled = v
+	}
+	if rawAddrs, ok := netqtmp["server_addrs"].([]interface{}); ok {
+		for _, s := range rawAddrs {
+			netq.ServerAddrs = append(netq.ServerAddrs, s.(string))
+		}
+	}
+	if port, ok := netqtmp["server_port"].(int); ok {
+		netq.ServerPort = int32(port)
+	}
+	return netq, nil
 }
 
 // getStringFromMap returns a trimmed string for key from m, or empty if missing or not a string.
