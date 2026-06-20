@@ -85,6 +85,18 @@ func validatePort(val interface{}, key string) (warns []string, errs []error) {
 	return warns, errs
 }
 
+func validatePortNumber(val interface{}, key string) (warns []string, errs []error) {
+	v, ok := val.(int)
+	if !ok {
+		errs = append(errs, fmt.Errorf("%s should be a number", key))
+		return warns, errs
+	}
+	if v != 0 && !(v >= 1 && v <= 65535) {
+		errs = append(errs, fmt.Errorf("%s should be in range 1-65535", key))
+	}
+	return warns, errs
+}
+
 func valPort(port string) (int, error) {
 	log.Println("[DEBUG] port", port)
 	v, err := strconv.Atoi(port)

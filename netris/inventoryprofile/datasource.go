@@ -262,6 +262,34 @@ func DataResource() *schema.Resource {
 					},
 				},
 			},
+			"netqsettings": {
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Description: "NetQ settings for inventory profile.",
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether NetQ is enabled.",
+						},
+						"server_addrs": {
+							Optional:    true,
+							Type:        schema.TypeList,
+							Description: "List of NetQ server addresses (IP addresses or domain names).",
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"server_port": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "NetQ server port.",
+						},
+					},
+				},
+			},
 		},
 		Read:   dataResourceRead,
 		Exists: dataResourceExists,
@@ -375,11 +403,24 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 	ztpsettings["password"] = profile.ZTPProps.Password
 	ztpsettingsList = append(ztpsettingsList, ztpsettings)
 
+	var netqsettingsList []map[string]interface{}
+	if profile.NetQProps.Enabled || len(profile.NetQProps.ServerAddrs) > 0 {
+		netqsettings := make(map[string]interface{})
+		netqsettings["enabled"] = profile.NetQProps.Enabled
+		netqsettings["server_addrs"] = profile.NetQProps.ServerAddrs
+		netqsettings["server_port"] = int(profile.NetQProps.ServerPort)
+		netqsettingsList = append(netqsettingsList, netqsettings)
+	}
+
 	err = d.Set("snmpv2", snmpv2List)
 	if err != nil {
 		return err
 	}
 	err = d.Set("ztpsettings", ztpsettingsList)
+	if err != nil {
+		return err
+	}
+	err = d.Set("netqsettings", netqsettingsList)
 	if err != nil {
 		return err
 	}

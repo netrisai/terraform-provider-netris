@@ -344,8 +344,8 @@ github.com/mitchellh/reflectwalk v1.0.0/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx
 github.com/mitchellh/reflectwalk v1.0.1/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zxSIeXaQ=
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
-github.com/netrisai/netriswebapi v0.0.0-20260612224825-75004eb26538 h1:PJ8cDGqbjszb5vkaoTVFUy9ZrdPhliGg2JUkjWn90OQ=
-github.com/netrisai/netriswebapi v0.0.0-20260612224825-75004eb26538/go.mod h1:Nrt/11GBm0SB0nTzhLPRIuLdM02J50lDpvapHVOQ244=
+github.com/netrisai/netriswebapi v0.0.0-20260620094329-a59fb5e3551f h1:d3AKIc2Jeq6AqZW997f2SOO30UTHKl5hqExhpyKxdaQ=
+github.com/netrisai/netriswebapi v0.0.0-20260620094329-a59fb5e3551f/go.mod h1:Nrt/11GBm0SB0nTzhLPRIuLdM02J50lDpvapHVOQ244=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
