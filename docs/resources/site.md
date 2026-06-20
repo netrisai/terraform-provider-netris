@@ -15,9 +15,6 @@ Each separate deployment (each data center) should be defined as a Site. All net
 resource "netris_site" "santa-clara" {
   name              = "Santa Clara"
   publicasn         = 65001
-  rohasn            = 65502
-  vmasn             = 65503
-  rohroutingprofile = "default"
   sitemesh          = "hub"
   acldefaultpolicy  = "permit"
 }
@@ -27,9 +24,6 @@ resource "netris_site" "santa-clara" {
 resource "netris_site" "pnap-sea" {
   name              = "phoenixNAP Seattle"
   publicasn         = 65000
-  rohasn            = 65500
-  vmasn             = 65501
-  rohroutingprofile = "default"
   sitemesh          = "disabled"
   acldefaultpolicy  = "permit"
   switchfabric      = "phoenixnap_bmc"
@@ -51,10 +45,7 @@ resource "netris_site" "pnap-sea" {
 - **acldefaultpolicy** (String) Possible values: `permit` or `deny`. Deny - Layer-3 packet forwarding is denied by default. ACLs are required to permit necessary traffic flows. Deny ACLs will be applied before Permit ACLs. Permit - Layer-3 packet forwarding is allowed by default. ACLs are required to deny unwanted traffic flows. Permit ACLs will be applied before Deny ACLs.
 - **name** (String) The name of the site
 - **publicasn** (Number) Site public ASN that should be used for external bgp peer configuration
-- **rohasn** (Number) ASN for ROH (Routing on the Host) compute instances, should be unique within the scope of a site, can be same for different sites
-- **rohroutingprofile** (String) ROH Routing profile defines set of routing prefixes to be advertised to ROH instances. Possible values: `default`, `default_agg`, `full`. Default route only - Will advertise 0.0.0.0/0 + loopback address of physically connected switch. Default + Aggregate - Will add prefixes of defined subnets + `Default` profile. Full - Will advertise all prefixes available in the routing table of the connected switch
 - **sitemesh** (String) Site to site VPN mode. Site mesh available values are: `disabled`, `hub`, `spoke`, `dspoke`
-- **vmasn** (Number) ASN for ROH (Routing on the Host) virtual compute instances, should be unique within the scope of a site, can be same for different sites
 
 ### Optional
 

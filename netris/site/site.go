@@ -44,20 +44,20 @@ func Resource() *schema.Resource {
 				Description: "Site public ASN that should be used for external bgp peer configuration",
 			},
 			"rohasn": {
-				Required:    true,
-				Type:        schema.TypeInt,
-				Description: "ASN for ROH (Routing on the Host) compute instances, should be unique within the scope of a site, can be same for different sites",
+				Optional:   true,
+				Type:       schema.TypeInt,
+				Deprecated: "ROH (Routing on the Host) is obsolete and no longer used. This field will be removed in a future release.",
 			},
 			"vmasn": {
-				Required:    true,
-				Type:        schema.TypeInt,
-				Description: "ASN for ROH (Routing on the Host) virtual compute instances, should be unique within the scope of a site, can be same for different sites",
+				Optional:   true,
+				Type:       schema.TypeInt,
+				Deprecated: "ROH (Routing on the Host) is obsolete and no longer used. This field will be removed in a future release.",
 			},
 			"rohroutingprofile": {
 				ValidateFunc: validateRoutingProfile,
-				Required:     true,
+				Optional:     true,
 				Type:         schema.TypeString,
-				Description:  "ROH Routing profile defines set of routing prefixes to be advertised to ROH instances. Possible values: `default`, `default_agg`, `full`. Default route only - Will advertise 0.0.0.0/0 + loopback address of physically connected switch. Default + Aggregate - Will add prefixes of defined subnets + `Default` profile. Full - Will advertise all prefixes available in the routing table of the connected switch",
+				Deprecated:   "ROH (Routing on the Host) is obsolete and no longer used. This field will be removed in a future release.",
 			},
 			"sitemesh": {
 				ValidateFunc: validateSiteMesh,
@@ -176,10 +176,15 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		PublicAsn:    publicasn,
 		RohAsn:       rohasn,
 		VMAsn:        vmasn,
-		RohProfile:   &site.RohProfile{ID: routingProfiles[d.Get("rohroutingprofile").(string)]},
 		SiteMesh:     site.IDName{Value: d.Get("sitemesh").(string)},
 		AclPolicy:    d.Get("acldefaultpolicy").(string),
 		SwitchFabric: fabric,
+	}
+
+	// rohroutingprofile is deprecated (ROH is obsolete). Only send the profile
+	// when explicitly set to avoid the controller rejecting an empty profile.
+	if rp, ok := d.GetOk("rohroutingprofile"); ok {
+		siteW.RohProfile = &site.RohProfile{ID: routingProfiles[rp.(string)]}
 	}
 
 	providersList := d.Get("switchfabricproviders").(*schema.Set).List()
@@ -411,10 +416,15 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		PublicAsn:    publicasn,
 		RohAsn:       rohasn,
 		VMAsn:        vmasn,
-		RohProfile:   &site.RohProfile{ID: routingProfiles[d.Get("rohroutingprofile").(string)]},
 		SiteMesh:     site.IDName{Value: d.Get("sitemesh").(string)},
 		AclPolicy:    d.Get("acldefaultpolicy").(string),
 		SwitchFabric: fabric,
+	}
+
+	// rohroutingprofile is deprecated (ROH is obsolete). Only send the profile
+	// when explicitly set to avoid the controller rejecting an empty profile.
+	if rp, ok := d.GetOk("rohroutingprofile"); ok {
+		siteW.RohProfile = &site.RohProfile{ID: routingProfiles[rp.(string)]}
 	}
 
 	providersList := d.Get("switchfabricproviders").(*schema.Set).List()
