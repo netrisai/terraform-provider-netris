@@ -113,6 +113,12 @@ func Resource() *schema.Resource {
 				Default:      "generic",
 				ValidateFunc: validateSwRole,
 			},
+			"enable_evpn_route_server": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Enable EVPN Route Server on this switch.",
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -176,8 +182,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		PortCount:   d.Get("portcount").(int),
 		Links:       []inventory.HWLink{},
 		Breakout:    d.Get("breakout").(string),
-		Tags:        tags,
-		SwRole:      d.Get("role").(string),
+		Tags:                  tags,
+		SwRole:                d.Get("role").(string),
+		EnableEvpnRouteServer: d.Get("enable_evpn_route_server").(bool),
 	}
 
 	js, _ := json.Marshal(swAdd)
@@ -294,6 +301,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	err = d.Set("enable_evpn_route_server", sw.EnableEvpnRouteServer)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -350,8 +362,9 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		PortCount:   d.Get("portcount").(int),
 		Type:        "switch",
 		Links:       sw.Links,
-		Tags:        tags,
-		SwRole:      d.Get("role").(string),
+		Tags:                  tags,
+		SwRole:                d.Get("role").(string),
+		EnableEvpnRouteServer: d.Get("enable_evpn_route_server").(bool),
 	}
 
 	js, _ := json.Marshal(swUpdate)
