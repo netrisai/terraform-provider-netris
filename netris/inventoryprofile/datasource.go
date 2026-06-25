@@ -154,6 +154,11 @@ func DataResource() *schema.Resource {
 							Optional:    true,
 							Description: "Enable MC-LAG (disables EVPN-MH on the same switches).",
 						},
+						"serverbasedesi": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enable server based ESI generation.",
+						},
 					},
 				},
 			},
@@ -366,6 +371,7 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 	fabricsettings["unnumberedbgpunderlay"] = profile.FabricProps.UnnumberedBgpUnderlay
 	fabricsettings["automaticlinkaggregation"] = profile.FabricProps.AutomaticLinkAggregation
 	fabricsettings["mclag"] = profile.FabricProps.MCLag
+	fabricsettings["serverbasedesi"] = profile.FabricProps.ServerBasedESI
 	fabricsettingsList = append(fabricsettingsList, fabricsettings)
 
 	var gpuclustersettingsList []map[string]interface{}

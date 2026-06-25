@@ -108,6 +108,7 @@ Optional:
 - **unnumberedbgpunderlay** (Boolean) When checked, BGP underlay sessions will be configured using p2p IPv4 addresses configured on link objects in the Netris controller. Otherwise, BGP unnumbered method is used and p2p ipv6 link-local addresses are used for BGP sessions. Default value is `false`.
 - **automaticlinkaggregation** (Boolean) Automatically configure non-backbone switch ports under a single legged link aggregation (agg) interface. This allows for active/standby multihoming if LACP is enabled on the server side. Active/Active multihoming with EVPN-MH will be automatically configured on Nvidia Spectrum-2 and higher switch models. Default value is `false`.
 - **mclag** (Boolean) Enabling MC-LAG functionality will disable any EVPN-MH functionality. Two multihoming methods are not supported simultaneously on the same switches. Default value is `false`.
+- **serverbasedesi** (Boolean) When enabled, the ESI is derived from the server's system identifier instead of the LACP partner MAC. Default value is `false`.
 - **fabrictype** (String) Determine how devices using profile are placed and treated within the overall fabric topology. Must be one of supported enum values:
   - generic
   - ew

@@ -19,6 +19,7 @@ resource "netris_inventory_profile" "my-profile" {
     # unnumberedbgpunderlay = false
     # automaticlinkaggregation = true
     mclag = true
+    # serverbasedesi = false
     fabrictype = "ew-plane1"
   }
   gpuclustersettings {
