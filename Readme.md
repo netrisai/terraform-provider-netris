@@ -35,7 +35,6 @@ Compatibility with Netris-Controller
   | `v3.6.15+`        | `v4.12.0+`        |
 
 
-
 Manual Build and Install
 ------------
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.20+ is *required*).

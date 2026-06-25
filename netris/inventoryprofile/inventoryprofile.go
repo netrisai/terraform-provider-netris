@@ -169,6 +169,12 @@ func Resource() *schema.Resource {
 							Default:     false,
 							Description: "Enabling MC-LAG functionality will disable any EVPN-MH functionality. Two multihoming methods are not supported simultaneously on the same switches.",
 						},
+						"serverbasedesi": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Enable server based ESI generation.",
+						},
 					},
 				},
 			},
@@ -403,6 +409,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		UnnumberedBgpUnderlay:        getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
 		AutomaticLinkAggregation:     getBool("automaticlinkaggregation", fabricsettingstmp, false),
 		MCLag:                        getBool("mclag", fabricsettingstmp, false),
+		ServerBasedESI:               getBool("serverbasedesi", fabricsettingstmp, false),
 		FabricType:                   getStringFromMap("fabrictype", fabricsettingstmp),
 	}
 
@@ -591,6 +598,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	fabricsettings["unnumberedbgpunderlay"] = profile.FabricProps.UnnumberedBgpUnderlay
 	fabricsettings["automaticlinkaggregation"] = profile.FabricProps.AutomaticLinkAggregation
 	fabricsettings["mclag"] = profile.FabricProps.MCLag
+	fabricsettings["serverbasedesi"] = profile.FabricProps.ServerBasedESI
 	fabricsettingsList = append(fabricsettingsList, fabricsettings)
 
 	var gpuclustersettingsList []map[string]interface{}
@@ -743,6 +751,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		UnnumberedBgpUnderlay:        getBool("unnumberedbgpunderlay", fabricsettingstmp, false),
 		AutomaticLinkAggregation:     getBool("automaticlinkaggregation", fabricsettingstmp, false),
 		MCLag:                        getBool("mclag", fabricsettingstmp, false),
+		ServerBasedESI:               getBool("serverbasedesi", fabricsettingstmp, false),
 		FabricType:                   getStringFromMap("fabrictype", fabricsettingstmp),
 	}
 
