@@ -147,6 +147,36 @@ func DataResource() *schema.Resource {
 					},
 				},
 			},
+			"dhcpv6relay": {
+				Computed:    true,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Description: "DHCPv6 Relay configuration. Enabling DHCPv6 Relay requires an IPv6 Gateway on the V-Net.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Computed:    true,
+							Description: "Whether DHCPv6 Relay is enabled for this V-Net.",
+						},
+						"vpcid": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "ID of the VPC where the DHCPv6 Relay servers reside.",
+						},
+						"primaryaddr": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "Primary DHCPv6 Relay address.",
+						},
+						"secondaryaddr": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "Secondary DHCPv6 Relay address.",
+						},
+					},
+				},
+			},
 		},
 		Read:   dataResourceRead,
 		Exists: dataResourceExists,
@@ -281,6 +311,24 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 		})
 	}
 	err = d.Set("dhcprelay", dhcpRelay)
+	if err != nil {
+		return err
+	}
+
+	var dhcpv6Relay []map[string]interface{}
+	if vnet.Dhcpv6Relay != nil {
+		vpcID := 0
+		if vnet.Dhcpv6Relay.Vpc != nil {
+			vpcID = vnet.Dhcpv6Relay.Vpc.ID
+		}
+		dhcpv6Relay = append(dhcpv6Relay, map[string]interface{}{
+			"enabled":       vnet.Dhcpv6Relay.Enabled,
+			"vpcid":         vpcID,
+			"primaryaddr":   strVal(vnet.Dhcpv6Relay.PrimaryAddr),
+			"secondaryaddr": strVal(vnet.Dhcpv6Relay.SecondaryAddr),
+		})
+	}
+	err = d.Set("dhcpv6relay", dhcpv6Relay)
 	if err != nil {
 		return err
 	}

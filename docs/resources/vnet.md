@@ -75,6 +75,7 @@ resource "netris_vnet" "my-vnet" {
 ### Optional
 
 - **dhcprelay** (Block List, Max: 1) DHCP Relay configuration. Enabling DHCP Relay disables DHCP configuration under Gateways. (see [below for nested schema](#nestedblock--dhcprelay))
+- **dhcpv6relay** (Block List, Max: 1) DHCPv6 Relay configuration. Enabling DHCPv6 Relay requires an IPv6 Gateway on the V-Net. (see [below for nested schema](#nestedblock--dhcpv6relay))
 - **ipfamily** (String) IP address family for the V-Net. Allowed values: `dual`, `ipv4`, or `ipv6`. Default value is `dual`.
 - **state** (String) V-Net state. Allowed values: `active` or `disabled`. Default value is `active`
 - **tags** (List of String) List of tags. Example `["foo", "bar"]`
@@ -91,6 +92,17 @@ Optional:
 - **vpcid** (Number) ID of the VPC where the DHCP Relay servers reside.
 - **primaryaddr** (String) Primary DHCP Relay address.
 - **secondaryaddr** (String) Secondary DHCP Relay address.
+
+
+<a id="nestedblock--dhcpv6relay"></a>
+### Nested Schema for `dhcpv6relay`
+
+Optional:
+
+- **enabled** (Boolean) Enable DHCPv6 Relay for this V-Net. Requires an IPv6 Gateway on the V-Net. Default value is `false`.
+- **vpcid** (Number) ID of the VPC where the DHCPv6 Relay servers reside.
+- **primaryaddr** (String) Primary DHCPv6 Relay address.
+- **secondaryaddr** (String) Secondary DHCPv6 Relay address.
 
 
 <a id="nestedblock--sites"></a>
