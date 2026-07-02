@@ -86,6 +86,12 @@ resource "netris_vnet" "my-vnet2" {
     primaryaddr = "192.168.10.1"
     secondaryaddr = "192.168.12.1"
   }
+  # dhcpv6relay {
+  #   enabled = true
+  #   vpcid = 1
+  #   primaryaddr = "2001:db8::1"
+  #   secondaryaddr = "2001:db8::2"
+  # }
   sites {
     id = netris_site.santa-clara.id
     gateways {

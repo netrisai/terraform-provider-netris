@@ -274,6 +274,38 @@ func Resource() *schema.Resource {
 					},
 				},
 			},
+			"dhcpv6relay": {
+				Optional:    true,
+				Computed:    true,
+				MaxItems:    1,
+				Type:        schema.TypeList,
+				Description: "DHCPv6 Relay configuration. Enabling DHCPv6 Relay requires an IPv6 Gateway on the V-Net.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Enable DHCPv6 Relay for this V-Net. Requires an IPv6 Gateway on the V-Net. Default value is `false`.",
+						},
+						"vpcid": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "ID of the VPC where the DHCPv6 Relay servers reside.",
+						},
+						"primaryaddr": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Primary DHCPv6 Relay address.",
+						},
+						"secondaryaddr": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Secondary DHCPv6 Relay address.",
+						},
+					},
+				},
+			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -295,27 +327,33 @@ func strVal(s *string) string {
 	return *s
 }
 
-// customizeDiff normalizes a disabled dhcprelay block. When enabled = false the
-// other properties are meaningless, so they are forced to their zero values in
-// the plan. This matches what read stores and what getDhcpRelay sends (the
-// relay object with enabled = false and null properties), so a disabled block
-// left in the configuration - even with stale vpcid/addresses - does not
-// produce a perpetual diff. dhcprelay is Computed so SetNew is permitted on it.
+// customizeDiff normalizes a disabled dhcprelay/dhcpv6relay block. When
+// enabled = false the other properties are meaningless, so they are forced to
+// their zero values in the plan. This matches what read stores and what
+// getDhcpRelay/getDhcpv6Relay send (the relay object with enabled = false and
+// null properties), so a disabled block left in the configuration - even with
+// stale vpcid/addresses - does not produce a perpetual diff. The blocks are
+// Computed so SetNew is permitted on them.
 func customizeDiff(d *schema.ResourceDiff, m interface{}) error {
-	relays := d.Get("dhcprelay").([]interface{})
-	if len(relays) == 0 || relays[0] == nil {
-		return nil
-	}
-	r := relays[0].(map[string]interface{})
-	if !r["enabled"].(bool) {
-		return d.SetNew("dhcprelay", []interface{}{
-			map[string]interface{}{
-				"enabled":       false,
-				"vpcid":         0,
-				"primaryaddr":   "",
-				"secondaryaddr": "",
-			},
-		})
+	for _, key := range []string{"dhcprelay", "dhcpv6relay"} {
+		relays := d.Get(key).([]interface{})
+		if len(relays) == 0 || relays[0] == nil {
+			continue
+		}
+		r := relays[0].(map[string]interface{})
+		if !r["enabled"].(bool) {
+			err := d.SetNew(key, []interface{}{
+				map[string]interface{}{
+					"enabled":       false,
+					"vpcid":         0,
+					"primaryaddr":   "",
+					"secondaryaddr": "",
+				},
+			})
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -342,6 +380,30 @@ func getDhcpRelay(d *schema.ResourceData) *vnet.VNetDhcpRelay {
 	primary := r["primaryaddr"].(string)
 	secondary := r["secondaryaddr"].(string)
 	return &vnet.VNetDhcpRelay{
+		Enabled:       true,
+		Vpc:           &vnet.IDName{ID: r["vpcid"].(int)},
+		PrimaryAddr:   &primary,
+		SecondaryAddr: &secondary,
+	}
+}
+
+// getDhcpv6Relay builds a DHCPv6 Relay payload from the resource data. It
+// behaves exactly like getDhcpRelay but for the dhcpv6relay block: it returns
+// nil only when no block is configured, an object with enabled = false and null
+// properties when the block is present but disabled, and a fully populated
+// object when enabled.
+func getDhcpv6Relay(d *schema.ResourceData) *vnet.VNetDhcpv6Relay {
+	relays := d.Get("dhcpv6relay").([]interface{})
+	if len(relays) == 0 || relays[0] == nil {
+		return nil
+	}
+	r := relays[0].(map[string]interface{})
+	if !r["enabled"].(bool) {
+		return &vnet.VNetDhcpv6Relay{Enabled: false}
+	}
+	primary := r["primaryaddr"].(string)
+	secondary := r["secondaryaddr"].(string)
+	return &vnet.VNetDhcpv6Relay{
 		Enabled:       true,
 		Vpc:           &vnet.IDName{ID: r["vpcid"].(int)},
 		PrimaryAddr:   &primary,
@@ -504,6 +566,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	vnetAdd.DhcpRelay = getDhcpRelay(d)
+	vnetAdd.Dhcpv6Relay = getDhcpv6Relay(d)
 
 	js, _ := json.Marshal(vnetAdd)
 	log.Println("[DEBUG]", string(js))
@@ -812,6 +875,37 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	var dhcpv6Relay []map[string]interface{}
+	if vnetresp.Dhcpv6Relay != nil {
+		relayConfigured := len(d.Get("dhcpv6relay").([]interface{})) > 0
+		if vnetresp.Dhcpv6Relay.Enabled {
+			vpcID := 0
+			if vnetresp.Dhcpv6Relay.Vpc != nil {
+				vpcID = vnetresp.Dhcpv6Relay.Vpc.ID
+			}
+			dhcpv6Relay = append(dhcpv6Relay, map[string]interface{}{
+				"enabled":       true,
+				"vpcid":         vpcID,
+				"primaryaddr":   strVal(vnetresp.Dhcpv6Relay.PrimaryAddr),
+				"secondaryaddr": strVal(vnetresp.Dhcpv6Relay.SecondaryAddr),
+			})
+		} else if relayConfigured {
+			// Relay is disabled but a block is present in the configuration.
+			// Store it normalized (other properties zeroed) so it matches the
+			// planned value and does not produce a perpetual diff.
+			dhcpv6Relay = append(dhcpv6Relay, map[string]interface{}{
+				"enabled":       false,
+				"vpcid":         0,
+				"primaryaddr":   "",
+				"secondaryaddr": "",
+			})
+		}
+	}
+	err = d.Set("dhcpv6relay", dhcpv6Relay)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1011,6 +1105,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		VxlanID:      vxlanid,
 		PortTags:     portTagsList,
 		DhcpRelay:    getDhcpRelay(d),
+		Dhcpv6Relay:  getDhcpv6Relay(d),
 	}
 
 	js, _ := json.Marshal(vnetUpdate)
