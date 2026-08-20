@@ -20,18 +20,11 @@ resource "netris_site" "santa-clara" {
 ```
 
 ```hcl
-resource "netris_site" "pnap-sea" {
-  name              = "phoenixNAP Seattle"
+resource "netris_site" "seattle" {
+  name              = "Seattle"
   publicasn         = 65000
   acldefaultpolicy  = "permit"
-  switchfabric      = "phoenixnap_bmc"
-  switchfabricproviders {
-    phoenixnapbmc {
-      clientid     = "yyyy"
-      clientsecret = "xxxx"
-      location     = "sea"
-    }
-  }
+  vlanrange         = "1-4094"
 }
 ```
 
@@ -47,11 +40,11 @@ resource "netris_site" "pnap-sea" {
 ### Optional
 
 - **sitemesh** (String, Deprecated) Site to site VPN mode. Site Mesh is obsolete and no longer used, the only available value is `disabled`. Legacy values (`hub`, `spoke`, `dspoke`) are still accepted but ignored. This field will be removed in a future release.
-- **switchfabric** (String) Type of switch fabric. Possible values: `netris`, `equinix_metal`, `dot1q_trunk`, `phoenixnap_bmc`. Default value is `netris`. 
-- **vlanrange** (String) Range of VLAN IDs allowed for use at this site. Ignoring when switch fabric is set to `netris`. Default value is `2-3999` when switch fabric is set to `equinix_metal`, and `2-4094` when switch fabric is set to `dot1q_trunk` or `phoenixnap_bmc`.
- - **vlanrangeautoassign** (String) The range of VLAN IDs for automatic VLAN assignment. If no specific range is provided and the switch fabric is set to `phoenixnap_bmc` the default range will be `3000-4094`. For all other switch fabric types, the range will match that of the `vlanRange` value."
+- **switchfabric** (String, Deprecated) Switch fabric selection is obsolete and no longer used, every site is managed as `netris`. Legacy values (`equinix_metal`, `dot1q_trunk`, `phoenixnap_bmc`) are still accepted but ignored. This field will be removed in a future release.
+- **vlanrange** (String) Range of VLAN IDs allowed for use at this site.
+ - **vlanrangeautoassign** (String) The range of VLAN IDs for automatic VLAN assignment. If not specified it will be the same value as `vlanrange`.
 
-- **switchfabricproviders** (Block List) Block of switch fabric providers parameters. Only when switchfabric == `equinix_metal`, or `phoenixnap_bmc`. (see [below for nested schema](#nestedblock--switchfabricproviders))
+- **switchfabricproviders** (Block List, Deprecated) Switch fabric providers are obsolete and no longer used. This field will be removed in a future release. (see [below for nested schema](#nestedblock--switchfabricproviders))
 
 <a id="nestedblock--switchfabricproviders"></a>
 ### Nested Schema for `switchfabricproviders`

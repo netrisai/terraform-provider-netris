@@ -81,11 +81,13 @@ func Resource() *schema.Resource {
 				Description:  "Possible values: `permit` or `deny`. Deny - Layer-3 packet forwarding is denied by default. ACLs are required to permit necessary traffic flows. Deny ACLs will be applied before Permit ACLs. Permit - Layer-3 packet forwarding is allowed by default. ACLs are required to deny unwanted traffic flows. Permit ACLs will be applied before Deny ACLs.",
 			},
 			"switchfabric": {
-				ValidateFunc: validateSwitchFabric,
-				Default:      "netris",
-				Optional:     true,
-				Type:         schema.TypeString,
-				Description:  "Possible values: `equinix_metal`, `phoenixnap_bmc`, `dot1q_trunk`, `netris`.",
+				ValidateFunc:     validateSwitchFabric,
+				DiffSuppressFunc: DiffSuppress,
+				Optional:         true,
+				Computed:         true,
+				Type:             schema.TypeString,
+				Description:      "Switch fabric selection is obsolete and no longer used, every site is managed as `netris`. Possible values (accepted but ignored): `equinix_metal`, `phoenixnap_bmc`, `dot1q_trunk`, `netris`.",
+				Deprecated:       "Switch fabric selection is obsolete and no longer used. Every site is now managed as `netris`. This field will be removed in a future release.",
 			},
 			"vlanrange": {
 				Computed:     true,
@@ -102,9 +104,11 @@ func Resource() *schema.Resource {
 				Description:  "The range of VLAN IDs for automatic VLAN assignment. If not specified it will be the same value as vlanrange.",
 			},
 			"switchfabricproviders": {
-				Optional:    true,
-				Type:        schema.TypeSet,
-				Description: "",
+				Optional:         true,
+				Type:             schema.TypeSet,
+				Description:      "Switch fabric providers are obsolete and no longer used.",
+				DiffSuppressFunc: DiffSuppress,
+				Deprecated:       "Switch fabric providers are obsolete and no longer used. This field will be removed in a future release.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"equinixmetal": {
@@ -176,6 +180,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	rohasn := d.Get("rohasn").(int)
 	vmasn := d.Get("vmasn").(int)
 	fabric := d.Get("switchfabric").(string)
+	// switchfabric is deprecated and Computed: on a brand new resource where
+	// it isn't set in config, d.Get returns "" here. Default it so older
+	// controllers, which still validate this field, accept the request.
+	if fabric == "" {
+		fabric = "netris"
+	}
 	vlanRange := d.Get("vlanrange").(string)
 	vlanRangeAA := d.Get("vlanrangeautoassign").(string)
 
@@ -365,7 +375,14 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("switchfabric", site.SwitchFabric)
+	// Switch fabric is obsolete. Newer controllers don't return it at all, so
+	// fall back to "netris" (the only fabric that still exists) instead of an
+	// empty value to avoid a permanent diff.
+	switchFabric := site.SwitchFabric
+	if switchFabric == "" {
+		switchFabric = "netris"
+	}
+	err = d.Set("switchfabric", switchFabric)
 	if err != nil {
 		return err
 	}
@@ -418,6 +435,12 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 	rohasn := d.Get("rohasn").(int)
 	vmasn := d.Get("vmasn").(int)
 	fabric := d.Get("switchfabric").(string)
+	// switchfabric is deprecated and Computed: on a brand new resource where
+	// it isn't set in config, d.Get returns "" here. Default it so older
+	// controllers, which still validate this field, accept the request.
+	if fabric == "" {
+		fabric = "netris"
+	}
 	vlanRange := d.Get("vlanrange").(string)
 	vlanRangeAA := d.Get("vlanrangeautoassign").(string)
 
