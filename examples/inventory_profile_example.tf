@@ -61,4 +61,30 @@ resource "netris_inventory_profile" "my-profile" {
     }
   }
 
+  aaa {
+    authorder = ["radius", "local"]
+
+    radius {
+      enabled = true
+
+      server {
+        host     = "192.0.2.20"
+        port     = 1812
+        priority = 1
+        secret   = "supersecretradiuskey"
+      }
+
+      server {
+        host     = "192.0.2.21"
+        port     = 1812
+        priority = 2
+        secret   = "supersecretradiuskeybackup"
+      }
+    }
+
+    local {
+      enabled = true
+    }
+  }
+
 }

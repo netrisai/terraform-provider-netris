@@ -34,6 +34,7 @@ data "netris_inventory_profile" "my-profile" {
 - **ztpsettings** (Block List) ZTP settings for inventory profile. (see [below for nested schema](#nestedblock--ztpsettings))
 - **netqsettings** (Block List) NetQ settings for inventory profile. (see [below for nested schema](#nestedblock--netqsettings))
 - **syslog_destinations** (Block List) Syslog Destinations settings for inventory profile. (see [below for nested schema](#nestedblock--syslog_destinations))
+- **aaa** (Block List) AAA (RADIUS) login authentication configuration for devices that use this inventory profile. (see [below for nested schema](#nestedblock--aaa))
 - **description** (String) Inventory profile description
 - **dnsservers** (List of String) List of IP addresses of DNS servers.
 - **ipv4ssh** (List of String) List of IPv4 subnets allowed to ssh.
@@ -118,3 +119,38 @@ Attribute Reference:
 - **port** (Number) Syslog destination port.
 - **protocol** (String) Transport protocol (`syslogDestinationItem.protocol`).
 - **severity** (String) Minimum severity level to forward (`syslogDestinationItem.severity`).
+
+<a id="nestedblock--aaa"></a>
+### Nested Schema for `aaa`
+
+Attribute Reference:
+
+- **authorder** (List of String) Order in which authentication backends are attempted.
+- **radius** (Block List) RADIUS authentication settings. (see [below for nested schema](#nestedblock--aaa--radius))
+- **local** (Block List) Local admin-account authentication settings. (see [below for nested schema](#nestedblock--aaa--local))
+
+<a id="nestedblock--aaa--radius"></a>
+### Nested Schema for `aaa.radius`
+
+Attribute Reference:
+
+- **enabled** (Boolean) Whether RADIUS authentication is enabled.
+- **server** (Block List) RADIUS server. (see [below for nested schema](#nestedblock--aaa--radius--server))
+
+<a id="nestedblock--aaa--radius--server"></a>
+### Nested Schema for `aaa.radius.server`
+
+Attribute Reference:
+
+- **host** (String) IPv4 address or Fully Qualified Domain Name of the RADIUS server.
+- **port** (Number) RADIUS server port.
+- **priority** (Number) Priority of this RADIUS server relative to others on the profile.
+- **authtype** (String) RADIUS authentication protocol.
+- **secret** (String, Sensitive) Shared secret used to authenticate with this RADIUS server. Write-only: never returned in cleartext by the API.
+
+<a id="nestedblock--aaa--local"></a>
+### Nested Schema for `aaa.local`
+
+Attribute Reference:
+
+- **enabled** (Boolean) Whether local admin-account authentication is enabled.

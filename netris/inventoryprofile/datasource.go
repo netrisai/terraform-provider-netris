@@ -345,6 +345,86 @@ func DataResource() *schema.Resource {
 					},
 				},
 			},
+			"aaa": {
+				Optional:    true,
+				Type:        schema.TypeList,
+				Description: "AAA (RADIUS) login authentication configuration for devices that use this inventory profile.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"authorder": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							Description: "Order in which authentication backends are attempted.",
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"radius": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							Description: "RADIUS authentication settings.",
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"enabled": {
+										Type:        schema.TypeBool,
+										Optional:    true,
+										Description: "Whether RADIUS authentication is enabled.",
+									},
+									"server": {
+										Type:        schema.TypeList,
+										Optional:    true,
+										Description: "RADIUS server.",
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"host": {
+													Type:        schema.TypeString,
+													Optional:    true,
+													Description: "IPv4 address or Fully Qualified Domain Name of the RADIUS server.",
+												},
+												"port": {
+													Type:        schema.TypeInt,
+													Optional:    true,
+													Description: "RADIUS server port.",
+												},
+												"priority": {
+													Type:        schema.TypeInt,
+													Optional:    true,
+													Description: "Priority of this RADIUS server relative to others on the profile.",
+												},
+												"authtype": {
+													Type:        schema.TypeString,
+													Optional:    true,
+													Description: "RADIUS authentication protocol.",
+												},
+												"secret": {
+													Type:        schema.TypeString,
+													Optional:    true,
+													Sensitive:   true,
+													Description: "Shared secret used to authenticate with this RADIUS server. Write-only: never returned in cleartext by the API.",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						"local": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							Description: "Local admin-account authentication settings.",
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"enabled": {
+										Type:        schema.TypeBool,
+										Optional:    true,
+										Description: "Whether local admin-account authentication is enabled.",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 		Read:   dataResourceRead,
 		Exists: dataResourceExists,
@@ -486,6 +566,12 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("syslog_destinations", syslogDestinationsList)
+	if err != nil {
+		return err
+	}
+
+	aaaList := []map[string]interface{}{aaaToMap(profile.AAAProps, existingRadiusServersByHostPort(d))}
+	err = d.Set("aaa", aaaList)
 	if err != nil {
 		return err
 	}
