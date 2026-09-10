@@ -203,7 +203,6 @@ type dataGetter interface {
 func defaultAAAProps() inventoryprofile.AAAProps {
 	return inventoryprofile.AAAProps{
 		AuthOrder: []string{"local"},
-		Radius:    inventoryprofile.RadiusProps{PriorityServers: []inventoryprofile.RadiusServer{}},
 		Local:     inventoryprofile.LocalAuthProps{Enabled: true},
 	}
 }
@@ -330,7 +329,7 @@ func aaaToMap(aaa inventoryprofile.AAAProps, existingServers map[string]map[stri
 	for i, s := range aaa.Radius.PriorityServers {
 		hostPort := fmt.Sprintf("%s:%d", s.Host, s.Port)
 		priority := i + 1
-		secret := ""
+		secret := s.Secret
 		if existing, ok := existingServers[hostPort]; ok {
 			if p, ok := existing["priority"].(int); ok {
 				priority = p
