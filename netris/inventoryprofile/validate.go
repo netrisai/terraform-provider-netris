@@ -146,59 +146,6 @@ var validSyslogSeverities = map[string]struct{}{
 	"Debug":         {},
 }
 
-// validateAuthOrderMethod checks an aaa.authorder entry against the supported
-// authentication backends.
-func validateAuthOrderMethod(val interface{}, key string) (warns []string, errs []error) {
-	v := val.(string)
-	if v != "local" && v != "radius" {
-		errs = append(errs, fmt.Errorf("invalid %s: %q. Authentication order may only contain: local, radius", key, v))
-	}
-	return warns, errs
-}
-
-// validateRadiusAuthType checks a RADIUS server's authtype against the API enum.
-func validateRadiusAuthType(val interface{}, key string) (warns []string, errs []error) {
-	v := val.(string)
-	if _, ok := validRadiusAuthTypes[v]; !ok {
-		errs = append(errs, fmt.Errorf("invalid %s: %q. Available values are (Default, CHAP, PAP, MSCHAPv2)", key, v))
-	}
-	return warns, errs
-}
-
-var validRadiusAuthTypes = map[string]struct{}{
-	"Default":  {},
-	"CHAP":     {},
-	"PAP":      {},
-	"MSCHAPv2": {},
-}
-
-// validateRadiusPriority checks a RADIUS server's priority against the widest
-// range confirmed valid across supported platforms (Dell SONiC 1-64).
-// Profiles attached exclusively to Cumulus switches must additionally stay
-// within 1-8; that narrower, fleet-dependent bound cannot be enforced here
-// and is left to the controller (R12).
-func validateRadiusPriority(val interface{}, key string) (warns []string, errs []error) {
-	v, ok := val.(int)
-	if !ok {
-		errs = append(errs, fmt.Errorf("%s should be a number", key))
-		return warns, errs
-	}
-	if v < 1 || v > 64 {
-		errs = append(errs, fmt.Errorf("%s should be in range 1-64", key))
-	}
-	return warns, errs
-}
-
-// validateRadiusSecret enforces the minimal length called out in the AAA/RADIUS
-// HLD's validation table (R11: secret is required and non-empty).
-func validateRadiusSecret(val interface{}, key string) (warns []string, errs []error) {
-	v := val.(string)
-	if len(v) < 8 {
-		errs = append(errs, fmt.Errorf("%s must be at least 8 characters long", key))
-	}
-	return warns, errs
-}
-
 // validateRefArch checks gpuClusterProps.refArch against the API enum. An empty
 // string is allowed (API may interpret it as unset; use "none" explicitly if
 // you want the documented default).

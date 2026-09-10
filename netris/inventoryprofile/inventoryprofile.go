@@ -385,103 +385,6 @@ func Resource() *schema.Resource {
 					},
 				},
 			},
-			"aaa": {
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Computed:    true,
-				Description: "AAA (RADIUS) login authentication configuration for devices that use this inventory profile. Omitting this block preserves the default: local admin-account authentication only.",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"authorder": {
-							Type:        schema.TypeList,
-							Optional:    true,
-							Description: "Order in which authentication backends are attempted, e.g. `[\"radius\", \"local\"]`. Valid entries are `local` and `radius`, each may appear at most once, and at least one is required. A backend must be enabled below (`radius.0.enabled` / `local.0.enabled`) to appear here, and vice versa.",
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
-								ValidateFunc: validateAuthOrderMethod,
-							},
-						},
-						"radius": {
-							Type:        schema.TypeList,
-							Optional:    true,
-							MaxItems:    1,
-							Computed:    true,
-							Description: "RADIUS authentication settings.",
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"enabled": {
-										Type:        schema.TypeBool,
-										Optional:    true,
-										Default:     false,
-										Description: "Enable RADIUS authentication for devices that use this inventory profile. Must be `true` when `radius` is included in `authorder`, and `false` otherwise. Default value is `false`.",
-									},
-									"server": {
-										Type:        schema.TypeList,
-										Optional:    true,
-										MaxItems:    8,
-										Description: "RADIUS server. Up to 8 may be configured; each must have a unique `host`:`port` pair and a unique `priority`. Servers are tried in ascending priority order.",
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												"host": {
-													Type:         schema.TypeString,
-													Required:     true,
-													ValidateFunc: validateNTP,
-													Description:  "IPv4 address or Fully Qualified Domain Name of the RADIUS server.",
-												},
-												"port": {
-													Type:         schema.TypeInt,
-													Optional:     true,
-													Default:      1812,
-													ValidateFunc: validatePortNumber,
-													Description:  "RADIUS server port. 1-65535. Defaults to `1812`.",
-												},
-												"priority": {
-													Type:         schema.TypeInt,
-													Required:     true,
-													ValidateFunc: validateRadiusPriority,
-													Description:  "Priority of this RADIUS server relative to others on the profile; lower values are tried first. Must be unique per profile. Valid range is 1-64 (Dell SONiC); profiles attached to Cumulus Linux switches must additionally keep priorities within 1-8.",
-												},
-												"authtype": {
-													Type:         schema.TypeString,
-													Optional:     true,
-													Default:      "Default",
-													ValidateFunc: validateRadiusAuthType,
-													Description:  "RADIUS authentication protocol. Valid value is `Default`, `CHAP`, `PAP`, or `MSCHAPv2`. Defaults to `Default`.",
-												},
-												"secret": {
-													Type:         schema.TypeString,
-													Required:     true,
-													Sensitive:    true,
-													ValidateFunc: validateRadiusSecret,
-													Description:  "Shared secret used to authenticate with this RADIUS server. At least 8 characters. Write-only: never returned in cleartext by the API; the value already in state/config is preserved on read.",
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-						"local": {
-							Type:        schema.TypeList,
-							Optional:    true,
-							MaxItems:    1,
-							Computed:    true,
-							Description: "Local admin-account authentication settings.",
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"enabled": {
-										Type:        schema.TypeBool,
-										Optional:    true,
-										Default:     true,
-										Description: "Enable local admin-account authentication. Must be `true` when `local` is included in `authorder`, and `false` otherwise. Default value is `true`.",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
@@ -490,10 +393,6 @@ func Resource() *schema.Resource {
 		Exists: resourceExists,
 		Importer: &schema.ResourceImporter{
 			State: resourceImport,
-		},
-		CustomizeDiff: func(diff *schema.ResourceDiff, m interface{}) error {
-			_, err := parseAAA(diff)
-			return err
 		},
 	}
 }
@@ -655,11 +554,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	aaa, err := parseAAA(d)
-	if err != nil {
-		return err
-	}
-
 	profileAdd := &inventoryprofile.ProfileW{
 		Name:               name,
 		Description:        description,
@@ -675,7 +569,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		ZTPProps:           ztpsettings,
 		NetQProps:          netq,
 		SyslogDestinations: syslogDestinations,
-		AAAProps:           aaa,
 	}
 
 	js, _ := json.Marshal(profileAdd)
@@ -836,8 +729,6 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		syslogDestinationsList = append(syslogDestinationsList, syslogDestinationsToMap(profile.SyslogDestinations))
 	}
 
-	aaaList := []map[string]interface{}{aaaToMap(profile.AAAProps, existingRadiusServersByHostPort(d))}
-
 	err = d.Set("customrule", customRules)
 	if err != nil {
 		return err
@@ -868,10 +759,6 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("syslog_destinations", syslogDestinationsList)
-	if err != nil {
-		return err
-	}
-	err = d.Set("aaa", aaaList)
 	if err != nil {
 		return err
 	}
@@ -1025,11 +912,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	aaa, err := parseAAA(d)
-	if err != nil {
-		return err
-	}
-
 	id, _ := strconv.Atoi(d.Id())
 	profileUpdate := &inventoryprofile.ProfileW{
 		ID:                 id,
@@ -1047,7 +929,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		ZTPProps:           ztpsettings,
 		NetQProps:          netq,
 		SyslogDestinations: syslogDestinations,
-		AAAProps:           aaa,
 	}
 
 	js, _ := json.Marshal(profileUpdate)

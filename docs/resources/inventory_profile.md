@@ -74,31 +74,6 @@ resource "netris_inventory_profile" "my-profile" {
       severity = "Error"
     }
   }
-  aaa {
-    authorder = ["radius", "local"]
-
-    radius {
-      enabled = true
-
-      server {
-        host     = "192.0.2.20"
-        port     = 1812
-        priority = 1
-        secret   = "supersecretradiuskey"
-      }
-
-      server {
-        host     = "192.0.2.21"
-        port     = 1812
-        priority = 2
-        secret   = "supersecretradiuskeybackup"
-      }
-    }
-
-    local {
-      enabled = true
-    }
-  }
 }
 ```
 
@@ -120,7 +95,6 @@ resource "netris_inventory_profile" "my-profile" {
 - **ztpsettings** (Block List) ZTP settings for inventory profile. (see [below for nested schema](#nestedblock--ztpsettings))
 - **netqsettings** (Block List) NetQ settings for inventory profile. (see [below for nested schema](#nestedblock--netqsettings))
 - **syslog_destinations** (Block List, Max: 1) Syslog Destinations settings for inventory profile. Devices using this profile forward logs to the configured destinations (up to 4). (see [below for nested schema](#nestedblock--syslog_destinations))
-- **aaa** (Block List, Max: 1) AAA (RADIUS) login authentication configuration for devices that use this inventory profile. Omitting this block preserves the default: local admin-account authentication only. (see [below for nested schema](#nestedblock--aaa))
 - **description** (String) Inventory profile description
 - **dnsservers** (List of String) List of IP addresses of DNS servers. Example `["1.1.1.1", "8.8.8.8"]`
 - **ipv6ssh** (List of String) List of IPv6 subnets allowed to ssh. Example `["2001:DB8::/32"]`
@@ -242,41 +216,3 @@ Optional:
 - **port** (Number) Syslog destination port. 1-65535. Defaults to `514`.
 - **protocol** (String) Transport protocol. Valid value is `TCP` or `UDP`. Defaults to `UDP`.
 - **severity** (String) Minimum severity level to forward. Valid values are `Emergency`, `Alert`, `Critical`, `Error`, `Warning`, `Notice`, `Informational`, `Debug`. Defaults to `Informational`.
-
-<a id="nestedblock--aaa"></a>
-### Nested Schema for `aaa`
-
-Optional:
-
-- **authorder** (List of String) Order in which authentication backends are attempted, e.g. `["radius", "local"]`. Valid entries are `local` and `radius`, each may appear at most once, and at least one is required. A backend must be enabled below (`radius.0.enabled` / `local.0.enabled`) to appear here, and vice versa.
-- **radius** (Block List, Max: 1) RADIUS authentication settings. (see [below for nested schema](#nestedblock--aaa--radius))
-- **local** (Block List, Max: 1) Local admin-account authentication settings. (see [below for nested schema](#nestedblock--aaa--local))
-
-<a id="nestedblock--aaa--radius"></a>
-### Nested Schema for `aaa.radius`
-
-Optional:
-
-- **enabled** (Boolean) Enable RADIUS authentication for devices that use this inventory profile. Must be `true` when `radius` is included in `authorder`, and `false` otherwise. Default value is `false`.
-- **server** (Block List, Max: 8) RADIUS server. Up to 8 may be configured; each must have a unique `host`:`port` pair and a unique `priority`. Servers are tried in ascending priority order. (see [below for nested schema](#nestedblock--aaa--radius--server))
-
-<a id="nestedblock--aaa--radius--server"></a>
-### Nested Schema for `aaa.radius.server`
-
-Required:
-
-- **host** (String) IPv4 address or Fully Qualified Domain Name of the RADIUS server.
-- **priority** (Number) Priority of this RADIUS server relative to others on the profile; lower values are tried first. Must be unique per profile. Valid range is 1-64 (Dell SONiC); profiles attached to Cumulus Linux switches must additionally keep priorities within 1-8.
-- **secret** (String, Sensitive) Shared secret used to authenticate with this RADIUS server. At least 8 characters. Write-only: never returned in cleartext by the API; the value already in state/config is preserved on read.
-
-Optional:
-
-- **port** (Number) RADIUS server port. 1-65535. Defaults to `1812`.
-- **authtype** (String) RADIUS authentication protocol. Valid value is `Default`, `CHAP`, `PAP`, or `MSCHAPv2`. Defaults to `Default`.
-
-<a id="nestedblock--aaa--local"></a>
-### Nested Schema for `aaa.local`
-
-Optional:
-
-- **enabled** (Boolean) Enable local admin-account authentication. Must be `true` when `local` is included in `authorder`, and `false` otherwise. Default value is `true`.
