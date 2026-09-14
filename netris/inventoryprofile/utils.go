@@ -19,6 +19,7 @@ package inventoryprofile
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"unicode"
 
@@ -186,6 +187,229 @@ func syslogDestinationsToMap(syslog inventoryprofile.SyslogDestinations) map[str
 		"use_rfc5424": syslog.UseRfc5424,
 		"servers":     servers,
 	}
+}
+
+// dataGetter is satisfied by both *schema.ResourceData and *schema.ResourceDiff,
+// letting parseAAA validate the aaa block during CustomizeDiff (so `terraform
+// plan` catches errors) and reuse the exact same logic to build the API
+// payload during Create/Update.
+type dataGetter interface {
+	Get(key string) interface{}
+}
+
+// defaultAAAProps is the backward-compatible default applied when no aaa
+// block is configured: local-only authentication, matching every profile's
+// behavior before this feature existed (HLD §6.2 "aaa Default").
+func defaultAAAProps() inventoryprofile.AAAProps {
+	return inventoryprofile.AAAProps{
+		AuthOrder: []string{"local"},
+		Radius:    inventoryprofile.RadiusProps{PriorityServers: []inventoryprofile.RadiusServer{}},
+		Local:     inventoryprofile.LocalAuthProps{Enabled: true},
+	}
+}
+
+// parseAAA reads the aaa block and builds the AAAProps payload, applying the
+// same validation the controller enforces (R10-R12 and the authorder/enabled
+// consistency rules in HLD §6.3) so a misconfiguration fails at `terraform
+// plan` instead of surfacing as an opaque API error at apply time.
+func parseAAA(d dataGetter) (inventoryprofile.AAAProps, error) {
+	aaaList, ok := d.Get("aaa").([]interface{})
+	if !ok || len(aaaList) == 0 {
+		return defaultAAAProps(), nil
+	}
+	aaatmp, ok := aaaList[0].(map[string]interface{})
+	if !ok {
+		return defaultAAAProps(), nil
+	}
+
+	authOrder := []string{}
+	seenOrder := map[string]bool{}
+	if raw, ok := aaatmp["authorder"].([]interface{}); ok {
+		for _, s := range raw {
+			method := s.(string)
+			if seenOrder[method] {
+				return inventoryprofile.AAAProps{}, fmt.Errorf("authentication order cannot contain duplicate methods: %q", method)
+			}
+			seenOrder[method] = true
+			authOrder = append(authOrder, method)
+		}
+	}
+	if len(authOrder) == 0 {
+		return inventoryprofile.AAAProps{}, fmt.Errorf("select at least one authentication method (local or radius)")
+	}
+
+	radiusList, _ := aaatmp["radius"].([]interface{})
+	var radiustmp map[string]interface{}
+	if len(radiusList) > 0 {
+		radiustmp, _ = radiusList[0].(map[string]interface{})
+	}
+	radiusEnabled := getBoolFromMap("enabled", radiustmp, false)
+
+	servers := []inventoryprofile.RadiusServer{}
+	seenHostPort := map[string]bool{}
+	seenPriority := map[int]bool{}
+	if rawServers, ok := radiustmp["server"].([]interface{}); ok {
+		for _, rs := range rawServers {
+			server, ok := rs.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			host := getStringFromMap("host", server)
+			port, _ := server["port"].(int)
+			priority, _ := server["priority"].(int)
+
+			hostPort := fmt.Sprintf("%s:%d", host, port)
+			if seenHostPort[hostPort] {
+				return inventoryprofile.AAAProps{}, fmt.Errorf("%q is already used by another RADIUS server in this profile; each RADIUS server must be unique", hostPort)
+			}
+			seenHostPort[hostPort] = true
+
+			if seenPriority[priority] {
+				return inventoryprofile.AAAProps{}, fmt.Errorf("duplicate RADIUS server priority %d; each RADIUS server must have a unique priority", priority)
+			}
+			seenPriority[priority] = true
+
+			servers = append(servers, inventoryprofile.RadiusServer{
+				Host:     host,
+				Port:     int32(port),
+				Priority: int32(priority),
+				AuthType: getStringFromMap("authtype", server),
+				Secret:   getStringFromMap("secret", server),
+			})
+		}
+	}
+	sort.Slice(servers, func(i, j int) bool { return servers[i].Priority < servers[j].Priority })
+
+	if radiusEnabled && len(servers) == 0 {
+		return inventoryprofile.AAAProps{}, fmt.Errorf("at least one radius server entry is required when radius is enabled")
+	}
+	if len(servers) > 8 {
+		return inventoryprofile.AAAProps{}, fmt.Errorf("maximum 8 radius servers are allowed per inventory profile")
+	}
+
+	localList, _ := aaatmp["local"].([]interface{})
+	var localtmp map[string]interface{}
+	if len(localList) > 0 {
+		localtmp, _ = localList[0].(map[string]interface{})
+	}
+	localEnabled := getBoolFromMap("enabled", localtmp, true)
+
+	if radiusEnabled != seenOrder["radius"] {
+		if seenOrder["radius"] {
+			return inventoryprofile.AAAProps{}, fmt.Errorf("radius auth must be enabled when it is selected in authorder")
+		}
+		return inventoryprofile.AAAProps{}, fmt.Errorf("radius auth must be disabled when it is not selected in authorder")
+	}
+	if localEnabled != seenOrder["local"] {
+		if seenOrder["local"] {
+			return inventoryprofile.AAAProps{}, fmt.Errorf("local auth must be enabled when it is selected in authorder")
+		}
+		return inventoryprofile.AAAProps{}, fmt.Errorf("local auth must be disabled when it is not selected in authorder")
+	}
+
+	return inventoryprofile.AAAProps{
+		AuthOrder: authOrder,
+		Radius: inventoryprofile.RadiusProps{
+			Enabled:         radiusEnabled,
+			PriorityServers: servers,
+		},
+		Local: inventoryprofile.LocalAuthProps{Enabled: localEnabled},
+	}, nil
+}
+
+// aaaToMap converts the API's AAAProps into the map shape expected by the aaa
+// Terraform block. existingServers, keyed by "host:port" from the prior
+// state/config, supplies the secret and priority for servers the API already
+// knows about: the API never returns the secret in cleartext (write-only,
+// matching the NOS Admin Password pattern), and priority is Terraform-only
+// (the API models order via the priorityServers list position, not a stored
+// field), so both must be preserved from what Terraform last wrote rather
+// than reconstructed from the read.
+func aaaToMap(aaa inventoryprofile.AAAProps, existingServers map[string]map[string]interface{}) map[string]interface{} {
+	var servers []map[string]interface{}
+	for i, s := range aaa.Radius.PriorityServers {
+		hostPort := fmt.Sprintf("%s:%d", s.Host, s.Port)
+		priority := i + 1
+		secret := ""
+		if existing, ok := existingServers[hostPort]; ok {
+			if p, ok := existing["priority"].(int); ok {
+				priority = p
+			}
+			if sec, ok := existing["secret"].(string); ok && sec != "" {
+				secret = sec
+			}
+		}
+		servers = append(servers, map[string]interface{}{
+			"host":     s.Host,
+			"port":     int(s.Port),
+			"priority": priority,
+			"authtype": s.AuthType,
+			"secret":   secret,
+		})
+	}
+
+	return map[string]interface{}{
+		"authorder": aaa.AuthOrder,
+		"radius": []map[string]interface{}{
+			{
+				"enabled": aaa.Radius.Enabled,
+				"server":  servers,
+			},
+		},
+		"local": []map[string]interface{}{
+			{"enabled": aaa.Local.Enabled},
+		},
+	}
+}
+
+// existingRadiusServersByHostPort indexes the aaa.radius.server blocks
+// currently in state/config by "host:port", for aaaToMap to preserve
+// Terraform-only or write-only fields across a read.
+func existingRadiusServersByHostPort(d dataGetter) map[string]map[string]interface{} {
+	out := map[string]map[string]interface{}{}
+	aaaList, ok := d.Get("aaa").([]interface{})
+	if !ok || len(aaaList) == 0 {
+		return out
+	}
+	aaatmp, ok := aaaList[0].(map[string]interface{})
+	if !ok {
+		return out
+	}
+	radiusList, _ := aaatmp["radius"].([]interface{})
+	if len(radiusList) == 0 {
+		return out
+	}
+	radiustmp, ok := radiusList[0].(map[string]interface{})
+	if !ok {
+		return out
+	}
+	rawServers, ok := radiustmp["server"].([]interface{})
+	if !ok {
+		return out
+	}
+	for _, rs := range rawServers {
+		server, ok := rs.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		host := getStringFromMap("host", server)
+		port, _ := server["port"].(int)
+		out[fmt.Sprintf("%s:%d", host, port)] = server
+	}
+	return out
+}
+
+// getBoolFromMap returns the bool for key from m, or defaultVal if missing or not a bool.
+func getBoolFromMap(key string, m map[string]interface{}, defaultVal bool) bool {
+	if m == nil {
+		return defaultVal
+	}
+	if val, ok := m[key]; ok {
+		if boolVal, ok := val.(bool); ok {
+			return boolVal
+		}
+	}
+	return defaultVal
 }
 
 // getStringFromMap returns a trimmed string for key from m, or empty if missing or not a string.
