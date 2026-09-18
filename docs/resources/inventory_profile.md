@@ -99,6 +99,22 @@ resource "netris_inventory_profile" "my-profile" {
       enabled = true
     }
   }
+  lanz {
+    enabled = true
+
+    high_threshold  = 200
+    low_threshold   = 100
+    update_interval = 5000
+
+    log_to_syslog = true
+
+    cpu_high_threshold = 200
+    cpu_low_threshold  = 100
+
+    streaming_enabled         = true
+    streaming_allowed_clients = ["10.0.0.0/24"]
+    streaming_max_clients     = 10
+  }
 }
 ```
 
@@ -121,6 +137,7 @@ resource "netris_inventory_profile" "my-profile" {
 - **netqsettings** (Block List) NetQ settings for inventory profile. (see [below for nested schema](#nestedblock--netqsettings))
 - **syslog_destinations** (Block List, Max: 1) Syslog Destinations settings for inventory profile. Devices using this profile forward logs to the configured destinations (up to 4). (see [below for nested schema](#nestedblock--syslog_destinations))
 - **aaa** (Block List, Max: 1) AAA (RADIUS) login authentication configuration for devices that use this inventory profile. Omitting this block preserves the default: local admin-account authentication only. (see [below for nested schema](#nestedblock--aaa))
+- **lanz** (Block List, Max: 1) Arista LANZ (Latency Analyzer) hardware queue-depth monitoring for devices using this inventory profile. Omitting this block leaves LANZ disabled. (see [below for nested schema](#nestedblock--lanz))
 - **description** (String) Inventory profile description
 - **dnsservers** (List of String) List of IP addresses of DNS servers. Example `["1.1.1.1", "8.8.8.8"]`
 - **ipv6ssh** (List of String) List of IPv6 subnets allowed to ssh. Example `["2001:DB8::/32"]`
@@ -280,3 +297,19 @@ Optional:
 Optional:
 
 - **enabled** (Boolean) Enable local admin-account authentication. Must be `true` when `local` is included in `authorder`, and `false` otherwise. Default value is `true`.
+
+<a id="nestedblock--lanz"></a>
+### Nested Schema for `lanz`
+
+Optional:
+
+- **enabled** (Boolean) Master switch for the feature. While false, no other LANZ setting has any effect. Default value is `false`.
+- **high_threshold** (Number) Queue depth that triggers an over-threshold congestion event on interfaces using the default thresholds. 8-16382. Omit (or 0) to use the platform default.
+- **low_threshold** (Number) Queue depth below which the queue is considered recovered. 1-16382, must be lower than `high_threshold`. Omit (or 0) to use the platform default.
+- **update_interval** (Number) Minimum time in microseconds between two successive congestion messages for the same queue, applying to both syslog and streaming. 80-10000000. Omit (or 0) to use the platform default.
+- **log_to_syslog** (Boolean) Send over-threshold and recovery events to the switch's syslog, in addition to CPU queue monitoring which is always tracked internally. Default value is `false`.
+- **cpu_high_threshold** (Number) High-water mark for CPU (control-plane) queue congestion events. 8-16382. CPU queue monitoring itself is always active once `lanz.enabled` is true; this only overrides its threshold. Omit (or 0) to use the platform default.
+- **cpu_low_threshold** (Number) Low-water mark for CPU queue recovery events. 1-16382, must be lower than `cpu_high_threshold`. Omit (or 0) to use the platform default.
+- **streaming_enabled** (Boolean) Enable the real-time LANZ streaming feed that external client applications connect to and pull queue telemetry from. Default value is `false`.
+- **streaming_allowed_clients** (List of String) IPv4 CIDR subnets permitted to connect to the streaming feed. A bare address with no prefix is rejected. Empty/omitted allows any client. Only enforced while `streaming_enabled` is true.
+- **streaming_max_clients** (Number) Maximum number of concurrent client applications that may connect to the streaming feed. 1-100. Only enforced while `streaming_enabled` is true. Omit (or 0) to use the platform default.

@@ -87,4 +87,21 @@ resource "netris_inventory_profile" "my-profile" {
     }
   }
 
+  lanz {
+    enabled = true
+
+    high_threshold  = 200
+    low_threshold   = 100
+    update_interval = 5000
+
+    log_to_syslog = true
+
+    cpu_high_threshold = 200
+    cpu_low_threshold  = 100
+
+    streaming_enabled         = true
+    streaming_allowed_clients = ["10.0.0.0/24"]
+    streaming_max_clients     = 10
+  }
+
 }
