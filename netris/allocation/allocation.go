@@ -45,10 +45,10 @@ func Resource() *schema.Resource {
 				Description: "Unique prefix for allocation, must not overlap with other allocations.",
 			},
 			"tenantid": {
-				ForceNew:    true,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeInt,
-				Description: "ID of tenant. Users of this tenant will be permitted to manage subnets under this allocation.",
+				Deprecated:  "Tenant is no longer used for allocations and this field has no effect. It will be removed in a future release.",
+				Description: "Deprecated: no longer used. Kept for backward compatibility with existing configurations.",
 			},
 			"vpcid": {
 				ForceNew:    true,
@@ -78,13 +78,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Get("name").(string)
 	prefix := d.Get("prefix").(string)
-	tenant := d.Get("tenantid").(int)
 	vpcid := d.Get("vpcid").(int)
 
 	allAdd := &ipam.Allocation{
 		Name:   name,
 		Prefix: prefix,
-		Tenant: ipam.IDName{ID: tenant},
 	}
 
 	if vpcid > 0 {
@@ -161,10 +159,6 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("tenantid", ipam.Tenant.ID)
-	if err != nil {
-		return err
-	}
 	if currentVpcId > 0 {
 		err = d.Set("vpcid", ipam.Vpc.ID)
 		if err != nil {
@@ -180,12 +174,10 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Get("name").(string)
 	prefix := d.Get("prefix").(string)
-	tenant := d.Get("tenantid").(int)
 
 	allUpdate := &ipam.Allocation{
 		Name:   name,
 		Prefix: prefix,
-		Tenant: ipam.IDName{ID: tenant},
 	}
 
 	js, _ := json.Marshal(allUpdate)
