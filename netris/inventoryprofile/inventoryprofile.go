@@ -389,8 +389,7 @@ func Resource() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
-				Description: "Arista LANZ (Latency Analyzer) hardware queue-depth monitoring for devices using this inventory profile. Omitting this block leaves LANZ disabled.",
-				Computed:    true,
+				Description: "Arista LANZ (Latency Analyzer) hardware queue-depth monitoring for devices using this inventory profile. Omitting this block leaves LANZ disabled; removing it disables LANZ and resets its settings to platform defaults.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"enabled": {
@@ -920,7 +919,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	aaaList := []map[string]interface{}{aaaToMap(profile.AAAProps, existingRadiusServersByHostPort(d))}
-	lanzList := []map[string]interface{}{lanzToMap(profile.LanzProps)}
+	var lanzList []map[string]interface{}
+	if existing, _ := d.Get("lanz").([]interface{}); len(existing) > 0 || !lanzIsDefault(profile.LanzProps) {
+		lanzList = append(lanzList, lanzToMap(profile.LanzProps))
+	}
 
 	err = d.Set("customrule", customRules)
 	if err != nil {

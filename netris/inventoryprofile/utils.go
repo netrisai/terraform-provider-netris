@@ -415,11 +415,12 @@ func parseLanz(d dataGetter) (inventoryprofile.LanzProps, error) {
 	lanz.LogToSyslog = getBoolFromMap("log_to_syslog", lanztmp, false)
 	lanz.StreamingEnabled = getBoolFromMap("streaming_enabled", lanztmp, false)
 
-	getInt := func(key string) int32 {
-		if v, ok := lanztmp[key].(int); ok {
-			return int32(v)
+	getInt := func(key string) *int32 {
+		if v, ok := lanztmp[key].(int); ok && v != 0 {
+			n := int32(v)
+			return &n
 		}
-		return 0
+		return nil
 	}
 
 	lanz.HighThreshold = getInt("high_threshold")
@@ -435,28 +436,41 @@ func parseLanz(d dataGetter) (inventoryprofile.LanzProps, error) {
 		}
 	}
 
-	if lanz.HighThreshold != 0 && lanz.LowThreshold != 0 && lanz.LowThreshold >= lanz.HighThreshold {
+	if lanz.HighThreshold != nil && lanz.LowThreshold != nil && *lanz.LowThreshold >= *lanz.HighThreshold {
 		return inventoryprofile.LanzProps{}, fmt.Errorf("lanz.low_threshold must be lower than lanz.high_threshold")
 	}
-	if lanz.CPUHighThreshold != 0 && lanz.CPULowThreshold != 0 && lanz.CPULowThreshold >= lanz.CPUHighThreshold {
+	if lanz.CPUHighThreshold != nil && lanz.CPULowThreshold != nil && *lanz.CPULowThreshold >= *lanz.CPUHighThreshold {
 		return inventoryprofile.LanzProps{}, fmt.Errorf("lanz.cpu_low_threshold must be lower than lanz.cpu_high_threshold")
 	}
 
 	return lanz, nil
 }
 
+func lanzIsDefault(lanz inventoryprofile.LanzProps) bool {
+	return !lanz.Enabled && !lanz.LogToSyslog && !lanz.StreamingEnabled &&
+		lanz.HighThreshold == nil && lanz.LowThreshold == nil && lanz.UpdateInterval == nil &&
+		lanz.CPUHighThreshold == nil && lanz.CPULowThreshold == nil && lanz.StreamingMaxClients == nil &&
+		len(lanz.StreamingAllowedClients) == 0
+}
+
 func lanzToMap(lanz inventoryprofile.LanzProps) map[string]interface{} {
+	intOf := func(v *int32) int {
+		if v == nil {
+			return 0
+		}
+		return int(*v)
+	}
 	return map[string]interface{}{
 		"enabled":                   lanz.Enabled,
-		"high_threshold":            int(lanz.HighThreshold),
-		"low_threshold":             int(lanz.LowThreshold),
-		"update_interval":           int(lanz.UpdateInterval),
+		"high_threshold":            intOf(lanz.HighThreshold),
+		"low_threshold":             intOf(lanz.LowThreshold),
+		"update_interval":           intOf(lanz.UpdateInterval),
 		"log_to_syslog":             lanz.LogToSyslog,
-		"cpu_high_threshold":        int(lanz.CPUHighThreshold),
-		"cpu_low_threshold":         int(lanz.CPULowThreshold),
+		"cpu_high_threshold":        intOf(lanz.CPUHighThreshold),
+		"cpu_low_threshold":         intOf(lanz.CPULowThreshold),
 		"streaming_enabled":         lanz.StreamingEnabled,
 		"streaming_allowed_clients": lanz.StreamingAllowedClients,
-		"streaming_max_clients":     int(lanz.StreamingMaxClients),
+		"streaming_max_clients":     intOf(lanz.StreamingMaxClients),
 	}
 }
 
