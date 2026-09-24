@@ -399,6 +399,81 @@ func existingRadiusServersByHostPort(d dataGetter) map[string]map[string]interfa
 	return out
 }
 
+func parseLanz(d dataGetter) (inventoryprofile.LanzProps, error) {
+	lanz := inventoryprofile.LanzProps{StreamingAllowedClients: []string{}}
+
+	lanzList, ok := d.Get("lanz").([]interface{})
+	if !ok || len(lanzList) == 0 {
+		return lanz, nil
+	}
+	lanztmp, ok := lanzList[0].(map[string]interface{})
+	if !ok {
+		return lanz, nil
+	}
+
+	lanz.Enabled = getBoolFromMap("enabled", lanztmp, false)
+	lanz.LogToSyslog = getBoolFromMap("log_to_syslog", lanztmp, false)
+	lanz.StreamingEnabled = getBoolFromMap("streaming_enabled", lanztmp, false)
+
+	getInt := func(key string) *int32 {
+		if v, ok := lanztmp[key].(int); ok && v != 0 {
+			n := int32(v)
+			return &n
+		}
+		return nil
+	}
+
+	lanz.HighThreshold = getInt("high_threshold")
+	lanz.LowThreshold = getInt("low_threshold")
+	lanz.UpdateInterval = getInt("update_interval")
+	lanz.CPUHighThreshold = getInt("cpu_high_threshold")
+	lanz.CPULowThreshold = getInt("cpu_low_threshold")
+	lanz.StreamingMaxClients = getInt("streaming_max_clients")
+
+	if rawClients, ok := lanztmp["streaming_allowed_clients"].([]interface{}); ok {
+		for _, c := range rawClients {
+			lanz.StreamingAllowedClients = append(lanz.StreamingAllowedClients, c.(string))
+		}
+	}
+
+	if lanz.HighThreshold != nil && lanz.LowThreshold != nil && *lanz.LowThreshold >= *lanz.HighThreshold {
+		return inventoryprofile.LanzProps{}, fmt.Errorf("lanz.low_threshold must be lower than lanz.high_threshold")
+	}
+	if lanz.CPUHighThreshold != nil && lanz.CPULowThreshold != nil && *lanz.CPULowThreshold >= *lanz.CPUHighThreshold {
+		return inventoryprofile.LanzProps{}, fmt.Errorf("lanz.cpu_low_threshold must be lower than lanz.cpu_high_threshold")
+	}
+
+	return lanz, nil
+}
+
+func lanzIsDefault(lanz inventoryprofile.LanzProps) bool {
+	return !lanz.Enabled && !lanz.LogToSyslog && !lanz.StreamingEnabled &&
+		lanz.HighThreshold == nil && lanz.LowThreshold == nil && lanz.UpdateInterval == nil &&
+		lanz.CPUHighThreshold == nil && lanz.CPULowThreshold == nil && lanz.StreamingMaxClients == nil &&
+		len(lanz.StreamingAllowedClients) == 0
+}
+
+func lanzToMap(lanz inventoryprofile.LanzProps) map[string]interface{} {
+	intOf := func(v *int32) int {
+		if v == nil {
+			return 0
+		}
+		return int(*v)
+	}
+	return map[string]interface{}{
+		"enabled":                   lanz.Enabled,
+		"high_threshold":            intOf(lanz.HighThreshold),
+		"low_threshold":             intOf(lanz.LowThreshold),
+		"update_interval":           intOf(lanz.UpdateInterval),
+		"log_to_syslog":             lanz.LogToSyslog,
+		"cpu_high_threshold":        intOf(lanz.CPUHighThreshold),
+		"cpu_low_threshold":         intOf(lanz.CPULowThreshold),
+		"streaming_enabled":         lanz.StreamingEnabled,
+		"streaming_allowed_clients": lanz.StreamingAllowedClients,
+		"streaming_max_clients":     intOf(lanz.StreamingMaxClients),
+	}
+}
+
 // getBoolFromMap returns the bool for key from m, or defaultVal if missing or not a bool.
 func getBoolFromMap(key string, m map[string]interface{}, defaultVal bool) bool {
 	if m == nil {

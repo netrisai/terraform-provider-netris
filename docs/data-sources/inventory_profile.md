@@ -35,6 +35,7 @@ data "netris_inventory_profile" "my-profile" {
 - **netqsettings** (Block List) NetQ settings for inventory profile. (see [below for nested schema](#nestedblock--netqsettings))
 - **syslog_destinations** (Block List) Syslog Destinations settings for inventory profile. (see [below for nested schema](#nestedblock--syslog_destinations))
 - **aaa** (Block List) AAA (RADIUS) login authentication configuration for devices that use this inventory profile. (see [below for nested schema](#nestedblock--aaa))
+- **lanz** (Block List) Arista LANZ (Latency Analyzer) hardware queue-depth monitoring for devices using this inventory profile. (see [below for nested schema](#nestedblock--lanz))
 - **description** (String) Inventory profile description
 - **dnsservers** (List of String) List of IP addresses of DNS servers.
 - **ipv4ssh** (List of String) List of IPv4 subnets allowed to ssh.
@@ -154,3 +155,19 @@ Attribute Reference:
 Attribute Reference:
 
 - **enabled** (Boolean) Whether local admin-account authentication is enabled.
+
+<a id="nestedblock--lanz"></a>
+### Nested Schema for `lanz`
+
+Attribute Reference:
+
+- **enabled** (Boolean) Whether LANZ is enabled.
+- **high_threshold** (Number) Queue depth that triggers an over-threshold congestion event.
+- **low_threshold** (Number) Queue depth below which the queue is considered recovered.
+- **update_interval** (Number) Minimum time in microseconds between two successive congestion messages for the same queue.
+- **log_to_syslog** (Boolean) Whether congestion/recovery events are sent to the switch's syslog.
+- **cpu_high_threshold** (Number) High-water mark for CPU (control-plane) queue congestion events.
+- **cpu_low_threshold** (Number) Low-water mark for CPU queue recovery events.
+- **streaming_enabled** (Boolean) Whether the real-time LANZ streaming feed is enabled.
+- **streaming_allowed_clients** (List of String) IPv4 CIDR subnets permitted to connect to the streaming feed.
+- **streaming_max_clients** (Number) Maximum number of concurrent client applications that may connect to the streaming feed.

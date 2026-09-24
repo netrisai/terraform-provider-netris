@@ -385,6 +385,79 @@ func Resource() *schema.Resource {
 					},
 				},
 			},
+			"lanz": {
+				Optional:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Description: "Arista LANZ (Latency Analyzer) hardware queue-depth monitoring for devices using this inventory profile. Omitting this block leaves LANZ disabled; removing it disables LANZ and resets its settings to platform defaults.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Master switch for the feature. While false, no other LANZ setting has any effect.",
+						},
+						"high_threshold": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validateLanzHighThreshold,
+							Description:  "Queue depth that triggers an over-threshold congestion event on interfaces using the default thresholds. 8-16382. Omit (or 0) to use the platform default.",
+						},
+						"low_threshold": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validateLanzLowThreshold,
+							Description:  "Queue depth below which the queue is considered recovered. 1-16382, must be lower than high_threshold. Omit (or 0) to use the platform default.",
+						},
+						"update_interval": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validateLanzUpdateInterval,
+							Description:  "Minimum time in microseconds between two successive congestion messages for the same queue, applying to both syslog and streaming. 80-10000000. Omit (or 0) to use the platform default.",
+						},
+						"log_to_syslog": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Send over-threshold and recovery events to the switch's syslog, in addition to CPU queue monitoring which is always tracked internally.",
+						},
+						"cpu_high_threshold": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validateLanzHighThreshold,
+							Description:  "High-water mark for CPU (control-plane) queue congestion events. 8-16382. CPU queue monitoring itself is always active once lanz.enabled is true; this only overrides its threshold. Omit (or 0) to use the platform default.",
+						},
+						"cpu_low_threshold": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validateLanzLowThreshold,
+							Description:  "Low-water mark for CPU queue recovery events. 1-16382, must be lower than cpu_high_threshold. Omit (or 0) to use the platform default.",
+						},
+						"streaming_enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Enable the real-time LANZ streaming feed that external client applications connect to and pull queue telemetry from.",
+						},
+						"streaming_allowed_clients": {
+							Optional:    true,
+							Type:        schema.TypeList,
+							Description: "IPv4 CIDR subnets permitted to connect to the streaming feed. A bare address with no prefix is rejected. Empty/omitted allows any client. Only enforced while streaming_enabled is true.",
+							Elem: &schema.Schema{
+								ValidateFunc: validateLanzStreamingClientCIDR,
+								Type:         schema.TypeString,
+							},
+						},
+						"streaming_max_clients": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validateLanzStreamingMaxClients,
+							Description:  "Maximum number of concurrent client applications that may connect to the streaming feed. 1-100. Only enforced while streaming_enabled is true. Omit (or 0) to use the platform default.",
+						},
+					},
+				},
+			},
 			"aaa": {
 				Optional:    true,
 				Type:        schema.TypeList,
@@ -492,7 +565,10 @@ func Resource() *schema.Resource {
 			State: resourceImport,
 		},
 		CustomizeDiff: func(diff *schema.ResourceDiff, m interface{}) error {
-			_, err := parseAAA(diff)
+			if _, err := parseAAA(diff); err != nil {
+				return err
+			}
+			_, err := parseLanz(diff)
 			return err
 		},
 	}
@@ -660,6 +736,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	lanz, err := parseLanz(d)
+	if err != nil {
+		return err
+	}
+
 	profileAdd := &inventoryprofile.ProfileW{
 		Name:               name,
 		Description:        description,
@@ -676,6 +757,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		NetQProps:          netq,
 		SyslogDestinations: syslogDestinations,
 		AAAProps:           aaa,
+		LanzProps:          lanz,
 	}
 
 	js, _ := json.Marshal(profileAdd)
@@ -837,6 +919,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	aaaList := []map[string]interface{}{aaaToMap(profile.AAAProps, existingRadiusServersByHostPort(d))}
+	var lanzList []map[string]interface{}
+	if existing, _ := d.Get("lanz").([]interface{}); len(existing) > 0 || !lanzIsDefault(profile.LanzProps) {
+		lanzList = append(lanzList, lanzToMap(profile.LanzProps))
+	}
 
 	err = d.Set("customrule", customRules)
 	if err != nil {
@@ -872,6 +958,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	err = d.Set("aaa", aaaList)
+	if err != nil {
+		return err
+	}
+	err = d.Set("lanz", lanzList)
 	if err != nil {
 		return err
 	}
@@ -1030,6 +1120,11 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	lanz, err := parseLanz(d)
+	if err != nil {
+		return err
+	}
+
 	id, _ := strconv.Atoi(d.Id())
 	profileUpdate := &inventoryprofile.ProfileW{
 		ID:                 id,
@@ -1048,6 +1143,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		NetQProps:          netq,
 		SyslogDestinations: syslogDestinations,
 		AAAProps:           aaa,
+		LanzProps:          lanz,
 	}
 
 	js, _ := json.Marshal(profileUpdate)

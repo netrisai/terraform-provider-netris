@@ -199,6 +199,77 @@ func validateRadiusSecret(val interface{}, key string) (warns []string, errs []e
 	return warns, errs
 }
 
+// validateLanzHighThreshold checks a LANZ high-threshold field (lanz.high_threshold
+// / lanz.cpu_high_threshold) against the API's 8-16382 range. 0 means "omitted,
+// use the platform default" and is always allowed.
+func validateLanzHighThreshold(val interface{}, key string) (warns []string, errs []error) {
+	v, ok := val.(int)
+	if !ok {
+		errs = append(errs, fmt.Errorf("%s should be a number", key))
+		return warns, errs
+	}
+	if v != 0 && (v < 8 || v > 16382) {
+		errs = append(errs, fmt.Errorf("%s should be 0 (platform default) or in range 8-16382", key))
+	}
+	return warns, errs
+}
+
+// validateLanzLowThreshold checks a LANZ low-threshold field (lanz.low_threshold
+// / lanz.cpu_low_threshold) against the API's 1-16382 range. 0 means "omitted,
+// use the platform default" and is always allowed.
+func validateLanzLowThreshold(val interface{}, key string) (warns []string, errs []error) {
+	v, ok := val.(int)
+	if !ok {
+		errs = append(errs, fmt.Errorf("%s should be a number", key))
+		return warns, errs
+	}
+	if v != 0 && (v < 1 || v > 16382) {
+		errs = append(errs, fmt.Errorf("%s should be 0 (platform default) or in range 1-16382", key))
+	}
+	return warns, errs
+}
+
+// validateLanzUpdateInterval checks lanz.update_interval against the API's
+// 80-10000000 microsecond range. 0 means "omitted, use the platform default".
+func validateLanzUpdateInterval(val interface{}, key string) (warns []string, errs []error) {
+	v, ok := val.(int)
+	if !ok {
+		errs = append(errs, fmt.Errorf("%s should be a number", key))
+		return warns, errs
+	}
+	if v != 0 && (v < 80 || v > 10000000) {
+		errs = append(errs, fmt.Errorf("%s should be 0 (platform default) or in range 80-10000000", key))
+	}
+	return warns, errs
+}
+
+// validateLanzStreamingMaxClients checks lanz.streaming_max_clients against the
+// API's 1-100 range. 0 means "omitted, use the platform default".
+func validateLanzStreamingMaxClients(val interface{}, key string) (warns []string, errs []error) {
+	v, ok := val.(int)
+	if !ok {
+		errs = append(errs, fmt.Errorf("%s should be a number", key))
+		return warns, errs
+	}
+	if v != 0 && (v < 1 || v > 100) {
+		errs = append(errs, fmt.Errorf("%s should be 0 (platform default) or in range 1-100", key))
+	}
+	return warns, errs
+}
+
+// validateLanzStreamingClientCIDR checks a lanz.streaming_allowed_clients entry.
+// Unlike validateIPPrefix (used by snmpv2's ipv4_list, which allows a bare
+// address), a bare IPv4 address with no /prefix is rejected here, matching
+// this field's HLD spec and the profile's existing "Allow SSH from IPv4" style.
+func validateLanzStreamingClientCIDR(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	re := regexp.MustCompile(`^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/([0-9]|[12][0-9]|3[0-2])$`)
+	if !re.MatchString(v) {
+		errs = append(errs, fmt.Errorf("invalid %s: %q must be a valid IPv4 CIDR subnet with an explicit prefix, e.g. 10.0.0.0/24", key, v))
+	}
+	return warns, errs
+}
+
 // validateRefArch checks gpuClusterProps.refArch against the API enum. An empty
 // string is allowed (API may interpret it as unset; use "none" explicitly if
 // you want the documented default).

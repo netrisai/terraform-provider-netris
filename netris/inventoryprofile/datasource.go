@@ -345,6 +345,68 @@ func DataResource() *schema.Resource {
 					},
 				},
 			},
+			"lanz": {
+				Optional:    true,
+				Type:        schema.TypeList,
+				Description: "Arista LANZ (Latency Analyzer) hardware queue-depth monitoring for devices using this inventory profile.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether LANZ is enabled.",
+						},
+						"high_threshold": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "Queue depth that triggers an over-threshold congestion event.",
+						},
+						"low_threshold": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "Queue depth below which the queue is considered recovered.",
+						},
+						"update_interval": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "Minimum time in microseconds between two successive congestion messages for the same queue.",
+						},
+						"log_to_syslog": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether congestion/recovery events are sent to the switch's syslog.",
+						},
+						"cpu_high_threshold": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "High-water mark for CPU (control-plane) queue congestion events.",
+						},
+						"cpu_low_threshold": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "Low-water mark for CPU queue recovery events.",
+						},
+						"streaming_enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether the real-time LANZ streaming feed is enabled.",
+						},
+						"streaming_allowed_clients": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							Description: "IPv4 CIDR subnets permitted to connect to the streaming feed.",
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"streaming_max_clients": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "Maximum number of concurrent client applications that may connect to the streaming feed.",
+						},
+					},
+				},
+			},
 			"aaa": {
 				Optional:    true,
 				Type:        schema.TypeList,
@@ -572,6 +634,12 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 
 	aaaList := []map[string]interface{}{aaaToMap(profile.AAAProps, existingRadiusServersByHostPort(d))}
 	err = d.Set("aaa", aaaList)
+	if err != nil {
+		return err
+	}
+
+	lanzList := []map[string]interface{}{lanzToMap(profile.LanzProps)}
+	err = d.Set("lanz", lanzList)
 	if err != nil {
 		return err
 	}
