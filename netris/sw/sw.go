@@ -81,10 +81,11 @@ func Resource() *schema.Resource {
 				Description: "A unique IP address to be used on out of band management interface. Valid value is ip address (example `192.0.2.21`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.",
 			},
 			"macaddress": {
-				Computed:    true,
-				Type:        schema.TypeString,
-				Description: "The MAC address is used for unit identification during zero touch provisioning of the operating system.",
-				Optional:    true,
+				Computed:         true,
+				Type:             schema.TypeString,
+				DiffSuppressFunc: macDiffSuppress,
+				Description:      "The MAC address is used for unit identification during zero touch provisioning of the operating system. Case-insensitive.",
+				Optional:         true,
 			},
 			"portcount": {
 				Type:        schema.TypeInt,
@@ -133,6 +134,10 @@ func Resource() *schema.Resource {
 
 func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 	return true
+}
+
+func macDiffSuppress(k, old, new string, d *schema.ResourceData) bool {
+	return strings.EqualFold(old, new)
 }
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
