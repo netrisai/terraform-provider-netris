@@ -29,6 +29,13 @@ import (
 	"github.com/netrisai/netriswebapi/v2/types/dynamicvpcgroup"
 )
 
+func validateName(value interface{}, key string) ([]string, []error) {
+	if len(utf16.Encode([]rune(value.(string)))) > 255 {
+		return nil, []error{fmt.Errorf("%s must contain at most 255 characters", key)}
+	}
+	return nil, nil
+}
+
 func validateUsername(value interface{}, key string) ([]string, []error) {
 	username := value.(string)
 	if !regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._@-]{0,62}$`).MatchString(username) || strings.EqualFold(username, "DEFAULT") {

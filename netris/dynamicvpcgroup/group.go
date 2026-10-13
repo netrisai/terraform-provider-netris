@@ -34,8 +34,9 @@ func Resource() *schema.Resource {
 		Description: "Creates and manages a Dynamic VPC Group.",
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validateName,
 			},
 			"resourcegroupid": {
 				Type:         schema.TypeInt,
