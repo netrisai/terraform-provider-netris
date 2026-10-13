@@ -32,6 +32,11 @@ func Resource() *schema.Resource {
 	return &schema.Resource{
 		Description: "Creates and manages VPC",
 		Schema: map[string]*schema.Schema{
+			"vrfname": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "VRF name supplied by the controller.",
+			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -145,7 +150,14 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.SetId(strconv.Itoa(idStruct.ID))
-	return nil
+	apiVPC, err := clientset.VPC().GetByID(idStruct.ID)
+	if err != nil {
+		return err
+	}
+	if apiVPC == nil || apiVPC.ID <= 0 {
+		return fmt.Errorf("VPC response is missing a valid ID")
+	}
+	return d.Set("vrfname", apiVPC.VrfName)
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
@@ -162,6 +174,9 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	d.SetId(strconv.Itoa(apiVPC.ID))
 	err = d.Set("name", apiVPC.Name)
 	if err != nil {
+		return err
+	}
+	if err := d.Set("vrfname", apiVPC.VrfName); err != nil {
 		return err
 	}
 	err = d.Set("tenantid", apiVPC.AdminTenant.ID)

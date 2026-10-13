@@ -22,6 +22,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"strings"
 
 	"github.com/netrisai/netriswebapi/http"
 	"github.com/netrisai/netriswebapi/v2/types/ipam"
@@ -31,6 +32,7 @@ import (
 	api "github.com/netrisai/netriswebapi/v2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func Resource() *schema.Resource {
@@ -229,6 +231,25 @@ func Resource() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+			},
+			"l3vpn": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+				Description: "Enable L3VPN. Required to be true when dynamicvpcgroupid is configured.",
+			},
+			"dynamicvpcgroupid": {
+				Type:          schema.TypeInt,
+				Optional:      true,
+				ForceNew:      true,
+				ValidateFunc:  validation.IntAtLeast(1),
+				ConflictsWith: []string{"vpcid"},
+				Description:   "Dynamic VPC Group ID. Requires an untagged L3VPN V-Net without gateways or DHCP relay. Conflicts with vpcid.",
+			},
+			"dynamicvrf": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Whether the controller enables dynamic VRF assignment.",
 			},
 			"vpcid": {
 				ForceNew:    true,
@@ -467,6 +488,25 @@ func strVal(s *string) string {
 // stale vpcid/addresses - does not produce a perpetual diff. The blocks are
 // Computed so SetNew is permitted on them.
 func customizeDiff(d *schema.ResourceDiff, m interface{}) error {
+	// SDK v1 can know a set while its nested access-mode values are unknown.
+	// Defer only the affected collection, without relying on internal set hashes.
+	known := func(key string) bool {
+		if !d.NewValueKnown(key) {
+			return false
+		}
+		for _, nestedKey := range d.GetChangedKeysPrefix(key + ".") {
+			if strings.HasSuffix(nestedKey, ".#") || strings.HasSuffix(nestedKey, ".vlanid") || strings.HasSuffix(nestedKey, ".untagged") || strings.HasSuffix(nestedKey, ".accessmode") {
+				if !d.NewValueKnown(nestedKey) {
+					return false
+				}
+			}
+		}
+		return true
+	}
+	if err := validateDynamicVPCGroup(d.Get, known); err != nil {
+		return err
+	}
+
 	for _, key := range []string{"dhcprelay", "dhcpv6relay"} {
 		relays := d.Get(key).([]interface{})
 		if len(relays) == 0 || relays[0] == nil {
@@ -768,6 +808,12 @@ func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 }
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
+	if err := validateDynamicVPCGroup(d.Get, func(string) bool { return true }); err != nil {
+		return err
+	}
+	l3vpn := d.Get("l3vpn").(bool)
+	groupID := d.Get("dynamicvpcgroupid").(int)
+
 	clientset := m.(*api.Clientset)
 
 	sites := d.Get("sites").([]interface{})
@@ -892,7 +938,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	var vlanidInterface any
 
-	if vnetTypeOne {
+	if vnetTypeOne || (groupID > 0 && vlanid == "" && len(members) == 0) {
 		vlanidInterface = 0
 	} else {
 		if vlanid == "disabled" {
@@ -902,7 +948,15 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	if groupID > 0 {
+		for _, port := range members {
+			if !port.AccessMode {
+				return fmt.Errorf("dynamicvpcgroupid requires untagged member ports")
+			}
+		}
+	}
 	vnetAdd := &vnet.VNetAdd{
+		L3VPN:        &l3vpn,
 		Name:         d.Get("name").(string),
 		Tenant:       vnet.VNetAddTenant{ID: d.Get("tenantid").(int)},
 		GuestTenants: []vnet.VNetAddTenant{},
@@ -917,7 +971,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		PortTags:     portTagsList,
 	}
 
-	if vpcid > 0 {
+	if groupID > 0 {
+		vnetAdd.DynamicVPCGroup = &vnet.DynamicVPCGroupRef{ID: groupID}
+	} else if vpcid > 0 {
 		vnetAdd.Vpc = &vnet.IDName{ID: vpcid}
 	}
 
@@ -962,7 +1018,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.SetId(strconv.Itoa(idStruct.ID))
-	return nil
+	if err := d.Set("l3vpn", l3vpn); err != nil {
+		return err
+	}
+	return d.Set("dynamicvrf", groupID > 0)
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
@@ -974,6 +1033,24 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
+	groupID := 0
+	if vnetresp.DynamicVPCGroup != nil {
+		groupID = vnetresp.DynamicVPCGroup.ID
+	}
+	if groupID > 0 || d.Get("dynamicvpcgroupid").(int) > 0 {
+		err = d.Set("dynamicvpcgroupid", groupID)
+		if err != nil {
+			return err
+		}
+	}
+	err = d.Set("l3vpn", vnetresp.L3VPN)
+	if err != nil {
+		return err
+	}
+	err = d.Set("dynamicvrf", vnetresp.DynamicVrf)
+	if err != nil {
+		return err
+	}
 	currentVpcId := d.Get("vpcid").(int)
 
 	d.SetId(strconv.Itoa(vnetresp.ID))
@@ -1021,7 +1098,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	tPorts := make(map[string]map[string]interface{})
 	tPortsId := make(map[int]map[string]interface{})
-	interfaces := false
+	interfaces := groupID > 0 && len(sitesT) == 0
 	gatewayMap := make(map[string]map[string]interface{})
 	ifaceTagsMap := make(map[string]map[string]interface{})
 
@@ -1088,11 +1165,22 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 						port.Vlan = "1"
 					}
 				}
+				if groupID > 0 && len(sitesT) == 0 {
+					m["id"] = port.ID
+					if port.Vlan != "1" && port.Untagged {
+						m["untagged"] = "yes"
+					}
+				}
 				m["vlanid"] = port.Vlan
 				m["lacp"] = "off"
 				if tPort, exists := tPorts[name]; exists {
 					if tPortUntagged, ok := tPort["untagged"]; ok && tPortUntagged != "" {
-						if port.Untagged {
+						if groupID > 0 && vnetresp.Vlan == 0 && port.Vlan == "1" {
+							m["untagged"] = tPortUntagged
+							if tPortUntagged == "yes" {
+								m["vlanid"] = tPort["vlanid"]
+							}
+						} else if port.Untagged {
 							m["untagged"] = "yes"
 						} else {
 							m["untagged"] = "no"
@@ -1101,7 +1189,12 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				}
 				if tPortid, exists := tPortsId[port.ID]; exists {
 					if tPortUntagged, ok := tPortid["untagged"]; ok && tPortUntagged != "" {
-						if port.Untagged {
+						if groupID > 0 && vnetresp.Vlan == 0 && port.Vlan == "1" {
+							m["untagged"] = tPortUntagged
+							if tPortUntagged == "yes" {
+								m["vlanid"] = tPortid["vlanid"]
+							}
+						} else if port.Untagged {
 							m["untagged"] = "yes"
 						} else {
 							m["untagged"] = "no"
@@ -1271,6 +1364,12 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
+	if err := validateDynamicVPCGroup(d.Get, func(string) bool { return true }); err != nil {
+		return err
+	}
+	l3vpn := d.Get("l3vpn").(bool)
+	groupID := d.Get("dynamicvpcgroupid").(int)
+
 	clientset := m.(*api.Clientset)
 
 	sites := d.Get("sites").([]interface{})
@@ -1443,7 +1542,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	var vlanidInterface any
 
-	if vnetTypeOne {
+	if vnetTypeOne || (groupID > 0 && vlanid == "" && len(members) == 0) {
 		vlanidInterface = 0
 	} else {
 		if vlanid == "disabled" {
@@ -1453,7 +1552,16 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	if groupID > 0 {
+		for i := range members {
+			if !members[i].AccessMode {
+				return fmt.Errorf("dynamicvpcgroupid requires untagged member ports")
+			}
+			members[i].Untagged = true
+		}
+	}
 	vnetUpdate := &vnet.VNetUpdate{
+		L3VPN:        &l3vpn,
 		Name:         d.Get("name").(string),
 		GuestTenants: []vnet.VNetUpdateGuestTenant{},
 		Sites:        siteIDs,

@@ -28,6 +28,8 @@ data "netris_vpc" "my-vpc" {
 
 ### Attribute Reference
 
+- **vrfname** (String) VRF name supplied by the controller; useful for external RADIUS VRF assignment.
+
 - **id** (Number) The ID of this resource.
 - **tenantid** (Number) ID of tenant. Users of this tenant will be permitted to edit this unit.
 - **guesttenantid** (Block List) Tenant allowed to add/remove services to the VPC but not allowed to manage other parameters of it. (see [below for nested schema](#nestedblock--guesttenantid))

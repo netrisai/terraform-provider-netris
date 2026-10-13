@@ -130,4 +130,17 @@ resource "netris_vnet" "my-vnet2" {
     netris_subnet.my-subnet-vnet2,
   ]
 }
- 
+
+# Dynamic VRF assignment uses a Dynamic VPC Group instead of vpcid.
+resource "netris_vnet" "dynamic-access" {
+  name              = "dynamic-access"
+  tenantid          = 1
+  l3vpn             = true
+  dynamicvpcgroupid = netris_dynamic_vpc_group.access.id
+  sites {
+    id = 1
+    interface {
+      id = 1201
+    }
+  }
+}

@@ -111,6 +111,21 @@ func DataResource() *schema.Resource {
 					},
 				},
 			},
+			"l3vpn": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Whether L3VPN is enabled.",
+			},
+			"dynamicvpcgroupid": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Dynamic VPC Group ID, or 0 for a classic V-Net.",
+			},
+			"dynamicvrf": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Whether the controller enables dynamic VRF assignment.",
+			},
 			"vpcid": {
 				ForceNew:    true,
 				Optional:    true,
@@ -297,6 +312,22 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	groupID := 0
+	if vnet.DynamicVPCGroup != nil {
+		groupID = vnet.DynamicVPCGroup.ID
+	}
+	err = d.Set("dynamicvpcgroupid", groupID)
+	if err != nil {
+		return err
+	}
+	err = d.Set("l3vpn", vnet.L3VPN)
+	if err != nil {
+		return err
+	}
+	err = d.Set("dynamicvrf", vnet.DynamicVrf)
+	if err != nil {
+		return err
+	}
 	err = d.Set("vpcid", vnet.Vpc.ID)
 	if err != nil {
 		return err

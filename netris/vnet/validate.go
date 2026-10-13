@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func validateState(val interface{}, key string) (warns []string, errs []error) {
@@ -102,4 +104,60 @@ func validateUntagged(val interface{}, key string) (warns []string, errs []error
 		errs = append(errs, fmt.Errorf("'%s' must be either 'yes' or 'no', got - %s", key, v))
 	}
 	return warns, errs
+}
+
+// validateDynamicVPCGroup checks the effective access mode using the same VLAN defaults
+// as the port writer. It runs again at apply once unknown values have resolved.
+func validateDynamicVPCGroup(get func(string) interface{}, known func(string) bool) error {
+	if !known("dynamicvpcgroupid") || get("dynamicvpcgroupid").(int) == 0 {
+		return nil
+	}
+	if known("vpcid") && get("vpcid").(int) > 0 {
+		return fmt.Errorf("dynamicvpcgroupid conflicts with vpcid")
+	}
+	if known("l3vpn") && !get("l3vpn").(bool) {
+		return fmt.Errorf("dynamicvpcgroupid requires l3vpn = true")
+	}
+	for _, key := range []string{"dhcprelay", "dhcpv6relay"} {
+		if !known(key) {
+			continue
+		}
+		for _, value := range get(key).([]interface{}) {
+			if value != nil && value.(map[string]interface{})["enabled"].(bool) {
+				return fmt.Errorf("dynamicvpcgroupid does not support enabled %s", key)
+			}
+		}
+	}
+	if !known("sites.#") {
+		return nil
+	}
+	vlanID := get("vlanid").(string)
+	for i, value := range get("sites").([]interface{}) {
+		site := value.(map[string]interface{})
+		if site["gateways"].(*schema.Set).Len() > 0 {
+			return fmt.Errorf("dynamicvpcgroupid does not support gateways")
+		}
+		portKey := fmt.Sprintf("sites.%d.interface", i)
+		portsKnown := known(portKey)
+		ports := site["interface"].(*schema.Set).List()
+		if portsKnown && len(ports) == 0 {
+			portKey = fmt.Sprintf("sites.%d.ports", i)
+			portsKnown = known(portKey)
+			ports = site["ports"].(*schema.Set).List()
+		}
+		if portsKnown && known("vlanid") {
+			for _, value := range ports {
+				port := value.(map[string]interface{})
+				untagged := port["untagged"].(string)
+				accessMode := untagged == "yes" || (vlanID == "" && port["vlanid"].(string) == "1") || (vlanID != "" && untagged != "no")
+				if !accessMode {
+					return fmt.Errorf("dynamicvpcgroupid requires untagged member ports")
+				}
+			}
+		}
+		if known(fmt.Sprintf("sites.%d.interfacetag.#", i)) && site["interfacetag"].(*schema.Set).Len() > 0 {
+			return fmt.Errorf("dynamicvpcgroupid does not support interface tags")
+		}
+	}
+	return nil
 }
