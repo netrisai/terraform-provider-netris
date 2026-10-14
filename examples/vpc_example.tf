@@ -6,3 +6,7 @@ resource "netris_vpc" "my-vpc" {
   }
   # tags = ["foo", "bar"]
 }
+
+output "vpc_vrf_name" {
+  value = netris_vpc.my-vpc.vrfname
+}

@@ -94,6 +94,9 @@ resource "netris_vnet" "my-vnet" {
 
 ### Optional
 
+- **l3vpn** (Boolean) Enable L3VPN. Omission adopts the current API value. Must be `true` with `dynamicvpcgroupid`.
+- **dynamicvpcgroupid** (Number) Dynamic VPC Group ID. Conflicts with `vpcid`. Changing either replaces the V-Net. Requires untagged member interfaces, no interface tags or gateways, and no enabled DHCP/DHCPv6 relay.
+
 - **dhcprelay** (Block List, Max: 1) DHCP Relay configuration. Enabling DHCP Relay disables DHCP configuration under Gateways. (see [below for nested schema](#nestedblock--dhcprelay))
 - **dhcpv6relay** (Block List, Max: 1) DHCPv6 Relay configuration. Enabling DHCPv6 Relay requires an IPv6 Gateway on the V-Net. (see [below for nested schema](#nestedblock--dhcpv6relay))
 - **ipfamily** (String) IP address family for the V-Net. Allowed values: `dual`, `ipv4`, or `ipv6`. Default value is `dual`.
@@ -103,6 +106,10 @@ resource "netris_vnet" "my-vnet" {
 - **vlanid** (String) VLAN tag for all network interfaces of the vnet. Also can be `auto`, or `disabled`. If set `auto` the controller will assign a vlan ID  automatically.
 - **vpcid** (Number) ID of VPC. If not specified, the vnet will be created in the VPC marked as a default.
 - **vxlanid** (Number) VXLAN ID. If not specified will be generated automatically.
+
+### Read-Only
+
+- **dynamicvrf** (Boolean) Whether the controller enables dynamic VRF assignment.
 
 <a id="nestedblock--dhcprelay"></a>
 ### Nested Schema for `dhcprelay`
@@ -216,3 +223,31 @@ Optional:
 
 - **tag** (String) Any tag. Example `"foo"`.
 - **accessmode** (Boolean) The default value is `false`. Valid value are `false` or `true`. When enabled the frames will be sent toward ports without a VLAN tag.
+
+## Dynamic VRF assignment
+
+```hcl
+resource "netris_vnet" "dynamic-access" {
+  name              = "dynamic-access"
+  tenantid          = 1
+  l3vpn             = true
+  dynamicvpcgroupid = netris_dynamic_vpc_group.access.id
+
+  sites {
+    id = 1
+    interface {
+      id = 1201
+    }
+  }
+}
+```
+
+Without a global VLAN ID, interface VLAN `1` is untagged; other VLANs require untagged mode.
+
+Import by V-Net name (or numeric API ID):
+
+```sh
+terraform import netris_vnet.dynamic-access dynamic-access
+```
+
+Configure `l3vpn = true`, the actual `dynamicvpcgroupid`, and the imported sites/interfaces. Imported interfaces use numeric IDs.

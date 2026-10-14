@@ -35,3 +35,30 @@ resource "netris_servercluster" "my-servercluster1" {
     vlan_id = 100
   }
 }
+
+resource "netris_servercluster" "dynamic-access" {
+  name              = "dynamic-access"
+  adminid           = 1
+  siteid            = 1
+  templateid        = 10
+  servers           = [101, 102]
+  dynamicvpcgroupid = netris_dynamic_vpc_group.access.id
+}
+
+resource "netris_servercluster" "mixed" {
+  name       = "mixed"
+  adminid    = 1
+  siteid     = 1
+  templateid = 11
+  servers    = [103, 104]
+  vpcmapping {
+    postfix           = "access"
+    dynamicvpcgroupid = netris_dynamic_vpc_group.access.id
+  }
+  vpcmapping {
+    postfix = "storage"
+    id      = 0
+    group   = "storage"
+    name    = "storage-vpc"
+  }
+}

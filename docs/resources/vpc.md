@@ -39,6 +39,10 @@ resource "netris_vpc" "my-vpc" {
 - **tags** (List of String) List of tags. Example `["foo", "bar"]`
 
 
+### Read-Only
+
+- **vrfname** (String) VRF name supplied by the controller; useful for external RADIUS VRF assignment.
+
 <a id="nestedblock--guesttenantid"></a>
 ### Nested Schema for `guesttenantid`
 

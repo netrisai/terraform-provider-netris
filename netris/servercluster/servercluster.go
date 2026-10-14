@@ -24,6 +24,7 @@ import (
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/netrisai/netriswebapi/http"
 	api "github.com/netrisai/netriswebapi/v2"
 	"github.com/netrisai/netriswebapi/v2/types/servercluster"
@@ -51,6 +52,15 @@ func Resource() *schema.Resource {
 				ForceNew:    true,
 				Description: "The site ID where this ServerCluster belongs.",
 			},
+			"dynamicvpcgroupid": {
+				Type:          schema.TypeInt,
+				Optional:      true,
+				Computed:      true,
+				ForceNew:      true,
+				ValidateFunc:  validation.IntAtLeast(1),
+				ConflictsWith: []string{"vpcid"},
+				Description:   "Dynamic VPC Group for untagged L3VPN template objects. Conflicts with vpcid and configured vpcmapping.",
+			},
 			"vpcid": {
 				ForceNew:    true,
 				Computed:    true,
@@ -72,6 +82,13 @@ func Resource() *schema.Resource {
 							Optional:    true,
 							Type:        schema.TypeInt,
 							Description: "VPC ID. Use an existing VPC ID, or 0 to create a new VPC.",
+						},
+						"dynamicvpcgroupid": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.IntAtLeast(1),
+							Description:  "Dynamic VPC Group for this untagged L3VPN template object. Conflicts with an existing VPC ID, group or name.",
 						},
 						"group": {
 							ForceNew:    true,
@@ -136,6 +153,14 @@ func Resource() *schema.Resource {
 				},
 			},
 		},
+		CustomizeDiff: func(d *schema.ResourceDiff, m interface{}) error {
+			// A read can derive the top-level group from per-object mappings.
+			// Validate this conflict on creation, when computed values are absent.
+			if d.Id() == "" && d.NewValueKnown("dynamicvpcgroupid") && d.Get("dynamicvpcgroupid").(int) > 0 && d.Get("vpcmapping").(*schema.Set).Len() > 0 {
+				return fmt.Errorf("dynamicvpcgroupid conflicts with configured vpcmapping")
+			}
+			return validateVPCMappings(d.Get("vpcmapping").(*schema.Set).List())
+		},
 		Create: resourceCreate,
 		Read:   resourceRead,
 		Update: resourceUpdate,
@@ -164,6 +189,16 @@ func expandVLANs(d *schema.ResourceData) []servercluster.VNetVLAN {
 	return vlans
 }
 
+func validateVPCMappings(mappings []interface{}) error {
+	for _, item := range mappings {
+		mapping := item.(map[string]interface{})
+		if mapping["dynamicvpcgroupid"].(int) > 0 && (mapping["id"].(int) > 0 || mapping["group"].(string) != "" || mapping["name"].(string) != "") {
+			return fmt.Errorf("vpcmapping %q: dynamicvpcgroupid conflicts with id, group and name", mapping["postfix"])
+		}
+	}
+	return nil
+}
+
 func expandVPCMappings(mappingsList []interface{}) []servercluster.VPCMapping {
 	mappings := []servercluster.VPCMapping{}
 	for _, item := range mappingsList {
@@ -180,6 +215,9 @@ func expandVPCMappings(mappingsList []interface{}) []servercluster.VPCMapping {
 			mapping.Name = name
 		}
 
+		if id := mappingMap["dynamicvpcgroupid"].(int); id > 0 {
+			mapping.DynamicVPCGroup = &servercluster.DynamicVPCGroupRef{ID: id}
+		}
 		mappings = append(mappings, mapping)
 	}
 
@@ -205,6 +243,9 @@ func flattenVPCMappings(mappings []servercluster.VPCMapping) []map[string]interf
 			flattenedMapping["name"] = mapping.Name
 		}
 
+		if mapping.DynamicVPCGroup != nil {
+			flattenedMapping["dynamicvpcgroupid"] = mapping.DynamicVPCGroup.ID
+		}
 		flattenedMappings = append(flattenedMappings, flattenedMapping)
 	}
 
@@ -230,6 +271,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	for _, server := range serversList {
 		servers = append(servers, server.(int))
 	}
+	if err := validateVPCMappings(d.Get("vpcmapping").(*schema.Set).List()); err != nil {
+		return err
+	}
+	if d.Get("dynamicvpcgroupid").(int) > 0 && (d.Get("vpcid").(int) > 0 || d.Get("vpcmapping").(*schema.Set).Len() > 0) {
+		return fmt.Errorf("dynamicvpcgroupid conflicts with vpcid and configured vpcmapping")
+	}
 	vpcMappings := expandVPCMappings(d.Get("vpcmapping").(*schema.Set).List())
 
 	sort.Ints(servers)
@@ -249,6 +296,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		SrvClusterTemplateVLANs: expandVLANs(d),
 		Tags:                    tags,
 		Servers:                 sortedServers,
+	}
+
+	if id := d.Get("dynamicvpcgroupid").(int); id > 0 {
+		serverclusterAdd.DynamicVPCGroup = &servercluster.DynamicVPCGroupRef{ID: id}
 	}
 
 	js, _ := json.Marshal(serverclusterAdd)
@@ -313,6 +364,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 	err = d.Set("siteid", apiServerCluster.Site.ID)
 	if err != nil {
+		return err
+	}
+	groupID := 0
+	if apiServerCluster.DynamicVPCGroup != nil {
+		groupID = apiServerCluster.DynamicVPCGroup.ID
+	}
+	if err := d.Set("dynamicvpcgroupid", groupID); err != nil {
 		return err
 	}
 	err = d.Set("vpcid", apiServerCluster.VPC.ID)

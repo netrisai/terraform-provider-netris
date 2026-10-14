@@ -28,6 +28,7 @@ import (
 	"github.com/netrisai/terraform-provider-netris/netris/bgpobject"
 	"github.com/netrisai/terraform-provider-netris/netris/controller"
 	"github.com/netrisai/terraform-provider-netris/netris/dhcpoptionset"
+	"github.com/netrisai/terraform-provider-netris/netris/dynamicvpcgroup"
 	"github.com/netrisai/terraform-provider-netris/netris/inventoryprofile"
 	"github.com/netrisai/terraform-provider-netris/netris/l4lb"
 	"github.com/netrisai/terraform-provider-netris/netris/lag"
@@ -74,6 +75,7 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
+			"netris_dynamic_vpc_group":     dynamicvpcgroup.Resource(),
 			"netris_vnet":                  vnet.Resource(),
 			"netris_bgp":                   bgp.Resource(),
 			"netris_l4lb":                  l4lb.Resource(),
@@ -107,6 +109,7 @@ func Provider() terraform.ResourceProvider {
 			"netris_serverclustertemplate": serverclustertemplate.Resource(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
+			"netris_dynamic_vpc_group": dynamicvpcgroup.DataResource(),
 			"netris_site":              site.DataResource(),
 			"netris_bgp_object":        bgpobject.DataResource(),
 			"netris_tenant":            tenant.DataResource(),

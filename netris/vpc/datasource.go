@@ -30,6 +30,11 @@ func DataResource() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data Source: VPC",
 		Schema: map[string]*schema.Schema{
+			"vrfname": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "VRF name supplied by the controller.",
+			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -97,6 +102,9 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 	d.SetId(strconv.Itoa(apiVPC.ID))
 	err = d.Set("name", apiVPC.Name)
 	if err != nil {
+		return err
+	}
+	if err := d.Set("vrfname", apiVPC.VrfName); err != nil {
 		return err
 	}
 	err = d.Set("tenantid", apiVPC.AdminTenant.ID)
