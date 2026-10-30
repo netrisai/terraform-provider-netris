@@ -66,7 +66,7 @@ func Resource() *schema.Resource {
 			"asnumber": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Server AS numbers. Valid value is ASN (example `420000002`) or `auto`.",
+				Description: "Server AS numbers. Valid value is ASN (example `420000002`), `auto`, or `asn-agnostic` (requires Netris Controller 4.21.0 or later).",
 				Default:     "0",
 			},
 			"portcount": {
@@ -115,7 +115,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	var asnAny interface{} = d.Get("asnumber").(string)
 	asn := asnAny.(string)
-	if !(asn == "auto" || asn == "") {
+	if !(asn == "auto" || asn == "asn-agnostic" || asn == "") {
 		asnInt, err := strconv.Atoi(asn)
 		if err != nil {
 			return err
@@ -227,7 +227,12 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	if asnumber := d.Get("asnumber"); asnumber.(string) != "auto" {
+	if sw.AsnMode == "asn-agnostic" {
+		err = d.Set("asnumber", "asn-agnostic")
+		if err != nil {
+			return err
+		}
+	} else if asnumber := d.Get("asnumber"); asnumber.(string) != "auto" {
 		err = d.Set("asnumber", strconv.Itoa(sw.Asn))
 		if err != nil {
 			return err
@@ -261,7 +266,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	var asnAny interface{} = d.Get("asnumber").(string)
 	asn := asnAny.(string)
-	if !(asn == "auto" || asn == "") {
+	if !(asn == "auto" || asn == "asn-agnostic" || asn == "") {
 		asnInt, err := strconv.Atoi(asn)
 		if err != nil {
 			return err
