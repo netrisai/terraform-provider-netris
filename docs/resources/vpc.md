@@ -19,6 +19,10 @@ resource "netris_vpc" "my-vpc" {
    guesttenantid {
      id = data.netris_tenant.admin.id
    }
+   vni = "auto"
+   importrt {
+     target { value = "65000:100" }
+   }
    # tags = ["foo", "bar"]
  }
 ```
@@ -35,6 +39,8 @@ resource "netris_vpc" "my-vpc" {
 
 ### Optional
 
+- **vni** (String) L3VNI: `"auto"` or a number from `1` to `16777215`. Omitted on create allocates automatically.
+- **importrt**, **exportrt** (Block List, max 1) Full desired route targets for each direction. Omit the block to leave that direction unmanaged; an empty block (for example, `exportrt {}`) removes all its targets. Requires Controller 4.21 or later, as does `vni`. (see [below](#nestedblock--route-targets))
 - **guesttenantid** (Block List) Tenant allowed to add/remove services to the VPC but not allowed to manage other parameters of it. (see [below for nested schema](#nestedblock--guesttenantid))
 - **tags** (List of String) List of tags. Example `["foo", "bar"]`
 
@@ -49,3 +55,11 @@ resource "netris_vpc" "my-vpc" {
 Required:
 
 - **id** (Number) The ID of a guest tenant who is authorized to add/remove services to the VPC but not allowed to manage other parameters of it.
+
+<a id="nestedblock--route-targets"></a>
+### Nested Schema for `importrt` and `exportrt`
+
+- **target** (Block List) Route-target entries. Keep an entry in place when editing its value to preserve its ID and type.
+- **target.value** (String, required) `ASN:number` or `IPv4:number`. Values must be unique within each direction.
+- **target.id** (Number, read-only) Controller-assigned route-target ID.
+- **target.type** (String, read-only) `default-RT`, `vpc-peering-RT`, or `custom-RT`.

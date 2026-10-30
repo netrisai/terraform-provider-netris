@@ -68,7 +68,7 @@ resource "netris_server" "my-server-2" {
 - **mainip** (String) A unique IP address which will be used as a loopback address of this unit. Valid value is ip address (example `198.51.100.11`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.
 - **mgmtip** (String) A unique IP address to be used on out of band management interface. Valid value is ip address (example `192.0.2.11`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.
 - **description** (String) Server description.
-- **asnumber** (String) Server AS numbers. Valid value is ASN (example `420000002`) or `auto`.
+- **asnumber** (String) Server AS numbers. Valid value is ASN (example `420000002`), `auto`, or `asn-agnostic` (requires Netris Controller 4.21.0 or later).
 - **customdata** (String) You may paste any custom data that can be assosiated with the object.
 - **tags** (List of String) List of tags. Example `["foo", "bar"]`
 - **role** (String) Server's role. Valid values are `generic` or `hyperv_cs`. The default value is `generic`.
