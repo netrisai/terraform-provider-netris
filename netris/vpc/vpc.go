@@ -78,11 +78,12 @@ func Resource() *schema.Resource {
 				},
 			},
 		},
-		Create: resourceCreate,
-		Read:   resourceRead,
-		Update: resourceUpdate,
-		Delete: resourceDelete,
-		Exists: resourceExists,
+		CustomizeDiff: validateRouteTargetDiff,
+		Create:        resourceCreate,
+		Read:          resourceRead,
+		Update:        resourceUpdate,
+		Delete:        resourceDelete,
+		Exists:        resourceExists,
 		Importer: &schema.ResourceImporter{
 			State: resourceImport,
 		},
@@ -114,12 +115,17 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		tags = append(tags, tag.(string))
 	}
 
+	routes, err := expandRouteTargets(d, nil)
+	if err != nil {
+		return err
+	}
 	vpcAdd := &vpc.VPCw{
-		VNI:         expandVNI(d),
-		Name:        d.Get("name").(string),
-		AdminTenant: vpc.AdminTenant{ID: d.Get("tenantid").(int)},
-		GuestTenant: guestTenants,
-		Tags:        tags,
+		RouteTargets: routes,
+		VNI:          expandVNI(d),
+		Name:         d.Get("name").(string),
+		AdminTenant:  vpc.AdminTenant{ID: d.Get("tenantid").(int)},
+		GuestTenant:  guestTenants,
+		Tags:         tags,
 	}
 
 	js, _ := json.Marshal(vpcAdd)
@@ -145,17 +151,6 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.SetId(strconv.Itoa(apiVPC.ID))
-	if routes := expandRouteTargets(d); routes != nil {
-		vpcAdd.VNI = nil
-		vpcAdd.RouteTargets = routes
-		reply, err := clientset.VPC().Update(apiVPC.ID, vpcAdd)
-		if err != nil {
-			return err
-		}
-		if _, err := parseWriteReply(reply); err != nil {
-			return err
-		}
-	}
 	return resourceRead(d, m)
 }
 
@@ -234,25 +229,31 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		tags = append(tags, tag.(string))
 	}
 
+	var current *vpc.VPC
+	if len(d.Get("importrt").([]interface{})) > 0 || len(d.Get("exportrt").([]interface{})) > 0 {
+		var err error
+		current, err = clientset.VPC().GetByID(vpcID)
+		if err != nil {
+			return err
+		}
+		if current == nil || current.ID <= 0 {
+			return fmt.Errorf("VPC response is missing a valid ID")
+		}
+	}
+	routes, err := expandRouteTargets(d, current)
+	if err != nil {
+		return err
+	}
 	vpcUpdate := &vpc.VPCw{
-		RouteTargets: expandRouteTargets(d),
+		RouteTargets: routes,
 		Name:         d.Get("name").(string),
 		AdminTenant:  vpc.AdminTenant{ID: d.Get("tenantid").(int)},
 		GuestTenant:  guestTenants,
 		Tags:         tags,
 	}
 
-	routes := vpcUpdate.RouteTargets
-	var before *vpc.VPC
 	if d.HasChange("vni") {
-		var err error
-		before, err = clientset.VPC().GetByID(vpcID)
-		if err != nil {
-			return err
-		}
 		vpcUpdate.VNI = expandVNI(d)
-		// The controller may replace default RT IDs when it changes the VNI.
-		vpcUpdate.RouteTargets = nil
 	}
 
 	js, _ := json.Marshal(vpcUpdate)
@@ -271,22 +272,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	if _, err := parseWriteReply(reply); err != nil {
 		return err
-	}
-	if d.HasChange("vni") && routes != nil {
-		current, err := clientset.VPC().GetByID(vpcID)
-		if err != nil {
-			return err
-		}
-		remapRouteTargetIDs(routes, before, current)
-		vpcUpdate.VNI = nil
-		vpcUpdate.RouteTargets = routes
-		reply, err = clientset.VPC().Update(vpcID, vpcUpdate)
-		if err != nil {
-			return err
-		}
-		if _, err := parseWriteReply(reply); err != nil {
-			return err
-		}
 	}
 	if err := resourceRead(d, m); err != nil {
 		return err

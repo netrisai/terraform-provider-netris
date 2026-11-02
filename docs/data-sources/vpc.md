@@ -30,7 +30,7 @@ data "netris_vpc" "my-vpc" {
 
 - **vni** (String) Allocated L3VNI, or an empty string when no VNI is reserved.
 - **vnimode** (String) `auto` or `manual`.
-- **importrt**, **exportrt** (Block List) Route targets, with nested `target` entries exposing **id** (Number), **value** (String), and **type** (String). These fields and `vni`/`vnimode` require Controller 4.21 or later.
+- **importrt**, **exportrt** (Block List) All route targets, including default and peering targets, with nested `target` entries exposing **id** (Number), **value** (String), and **type** (String). These fields and `vni`/`vnimode` require Controller 4.21 or later.
 - **vrfname** (String) VRF name supplied by the controller; useful for external RADIUS VRF assignment.
 
 - **id** (Number) The ID of this resource.

@@ -52,7 +52,7 @@ func routeTargetSchema(computed bool) *schema.Schema {
 		Type:        schema.TypeList,
 		Optional:    !computed,
 		Computed:    computed,
-		Description: "Managed route targets. Omit to preserve; an empty block removes all targets in this direction. Requires Controller 4.21 or later.",
+		Description: "Managed custom route targets. Omit to preserve; an empty block removes custom targets in this direction. Controller-generated targets are preserved. Requires Controller 4.21 or later.",
 		Elem: &schema.Resource{Schema: map[string]*schema.Schema{
 			"target": {
 				Type:     schema.TypeList,
@@ -106,41 +106,135 @@ func routeTargetRows(raw interface{}) []interface{} {
 	return blocks[0].(map[string]interface{})["target"].([]interface{})
 }
 
-func expandRouteTargets(d *schema.ResourceData) *vpc.RouteTargetsWrite {
+func validateRouteTargetDiff(d *schema.ResourceDiff, m interface{}) error {
+	for _, key := range []string{"importrt", "exportrt"} {
+		if !d.NewValueKnown(key) || !d.NewValueKnown(key+".0.target") {
+			continue
+		}
+		seen := make(map[string]bool)
+		for i, raw := range routeTargetRows(d.Get(key)) {
+			path := fmt.Sprintf("%s.0.target.%d.value", key, i)
+			if !d.NewValueKnown(path) {
+				continue
+			}
+			value := raw.(map[string]interface{})["value"].(string)
+			if seen[value] {
+				return fmt.Errorf("%s contains duplicate route target %q", key, value)
+			}
+			seen[value] = true
+		}
+	}
+	return nil
+}
+
+func expandRouteTargets(d *schema.ResourceData, current *vpc.VPC) (*vpc.RouteTargetsWrite, error) {
 	routes := &vpc.RouteTargetsWrite{}
+	vni := expandVNI(d)
+	changeVNI := current != nil && current.VNI != nil && d.HasChange("vni") &&
+		(vni == "auto" && current.VNIMode == "manual" || vni != nil && vni != "auto" && vni != *current.VNI)
 	for _, key := range []string{"importrt", "exportrt"} {
 		if len(d.Get(key).([]interface{})) == 0 {
 			continue
 		}
+		rows := routeTargetRows(d.Get(key))
+		desired := make(map[string]bool)
+		for _, raw := range rows {
+			desired[raw.(map[string]interface{})["value"].(string)] = true
+		}
+		var existing []vpc.RouteTarget
+		if current != nil && current.RouteTargets != nil {
+			existing = current.RouteTargets.Import
+			if key == "exportrt" {
+				existing = current.RouteTargets.Export
+			}
+		}
+		// Preserve generated rows from the current API response, including edited
+		// peering values. They are not owned by the managed custom list.
+		targets := make([]vpc.RouteTargetWrite, 0)
+		generated := make(map[string]bool)
+		for _, row := range existing {
+			if row.Type != "default-RT" && row.Type != "vpc-peering-RT" {
+				continue
+			}
+			value := row.Value
+			changingDefault := changeVNI && row.Type == "default-RT" && row.Value == fmt.Sprintf("0:%d", *current.VNI)
+			if changingDefault {
+				if desired[row.Value] {
+					return nil, fmt.Errorf("%s contains controller-generated default %q; remove this redundant target before changing vni so the controller can update it", key, row.Value)
+				}
+				if number, ok := vni.(int); ok {
+					value = fmt.Sprintf("0:%d", number)
+				}
+			}
+			autoDefault := changingDefault && vni == "auto"
+			if value != row.Value || autoDefault {
+				holder := false
+				for _, other := range existing {
+					if autoDefault {
+						number, err := strconv.Atoi(strings.TrimPrefix(other.Value, "0:"))
+						if other.Type != "custom-RT" || !strings.HasPrefix(other.Value, "0:") || err != nil || number < 1 || number > 16777215 {
+							continue
+						}
+					} else {
+						if other.ID == row.ID || other.Value != value {
+							continue
+						}
+						holder = true
+					}
+					if other.Type == "custom-RT" && !desired[other.Value] {
+						return nil, fmt.Errorf("%s custom target %q may become the new VNI default; remove or edit that target in a separate apply before changing vni", key, other.Value)
+					}
+				}
+				if holder {
+					continue
+				}
+			}
+			generated[value] = true
+			targets = append(targets, vpc.RouteTargetWrite{ID: row.ID, Value: row.Value})
+		}
+		// Manual POST replaces the complete direction; unlike auto POST it does
+		// not retain the newly allocated default unless it is included explicitly.
+		if current == nil {
+			if number, ok := vni.(int); ok {
+				value := fmt.Sprintf("0:%d", number)
+				generated[value] = true
+				targets = append(targets, vpc.RouteTargetWrite{Value: value})
+			}
+		}
 		old, _ := d.GetChange(key)
 		previous := routeTargetRows(old)
-		rows := routeTargetRows(d.Get(key))
-		targets := make([]vpc.RouteTargetWrite, len(rows))
+		custom := make([]vpc.RouteTargetWrite, len(rows))
 		used := make(map[int]bool)
-		// Match retained values before assigning IDs to edits, so reorder/deletion
-		// cannot accidentally turn a default or peering target into a custom one.
+		// Reserve retained custom IDs before assigning any ID to an edited value.
 		for i, raw := range rows {
-			row := raw.(map[string]interface{})
-			targets[i].Value = row["value"].(string)
-			for _, oldRaw := range previous {
-				prior := oldRaw.(map[string]interface{})
-				id := prior["id"].(int)
-				if prior["value"] == targets[i].Value && !used[id] {
-					targets[i].ID = id
-					used[id] = true
+			value := raw.(map[string]interface{})["value"].(string)
+			custom[i].Value = value
+			if generated[value] {
+				continue
+			}
+			for _, row := range existing {
+				if row.Type == "custom-RT" && row.Value == value && !used[row.ID] {
+					custom[i].ID = row.ID
+					used[row.ID] = true
 					break
 				}
 			}
 		}
-		for i := range targets {
-			if targets[i].ID != 0 || i >= len(previous) {
+		for i, row := range custom {
+			if generated[row.Value] {
 				continue
 			}
-			id := previous[i].(map[string]interface{})["id"].(int)
-			if !used[id] {
-				targets[i].ID = id
-				used[id] = true
+			if row.ID == 0 && i < len(previous) {
+				prior := previous[i].(map[string]interface{})
+				for _, existingRow := range existing {
+					if existingRow.ID == prior["id"] && existingRow.Type == "custom-RT" && !used[existingRow.ID] {
+						row.ID = existingRow.ID
+						used[row.ID] = true
+						break
+					}
+				}
 			}
+			targets = append(targets, row)
 		}
 		if key == "importrt" {
 			routes.Import = &targets
@@ -149,43 +243,12 @@ func expandRouteTargets(d *schema.ResourceData) *vpc.RouteTargetsWrite {
 		}
 	}
 	if routes.Import == nil && routes.Export == nil {
-		return nil
+		return nil, nil
 	}
-	return routes
+	return routes, nil
 }
 
-func remapRouteTargetIDs(writes *vpc.RouteTargetsWrite, before, current *vpc.VPC) {
-	if before == nil || current == nil || before.RouteTargets == nil || current.RouteTargets == nil {
-		return
-	}
-	for _, direction := range []struct {
-		writes          *[]vpc.RouteTargetWrite
-		before, current []vpc.RouteTarget
-	}{
-		{writes.Import, before.RouteTargets.Import, current.RouteTargets.Import},
-		{writes.Export, before.RouteTargets.Export, current.RouteTargets.Export},
-	} {
-		if direction.writes == nil {
-			continue
-		}
-		for i, row := range *direction.writes {
-			for _, old := range direction.before {
-				if row.ID == 0 || row.ID != old.ID || old.Type != "default-RT" {
-					continue
-				}
-				(*direction.writes)[i].ID = 0
-				for _, replacement := range direction.current {
-					if replacement.Type == "default-RT" {
-						(*direction.writes)[i].ID = replacement.ID
-						break
-					}
-				}
-			}
-		}
-	}
-}
-
-func flattenRouteTargets(rows []vpc.RouteTarget, previous []interface{}) []map[string]interface{} {
+func flattenRouteTargets(rows []vpc.RouteTarget, previous []interface{}, dataSource bool) []map[string]interface{} {
 	ordered := make([]vpc.RouteTarget, 0, len(rows))
 	used := make(map[int]bool)
 	for _, raw := range previous {
@@ -199,16 +262,7 @@ func flattenRouteTargets(rows []vpc.RouteTarget, previous []interface{}) []map[s
 		}
 		if match == nil {
 			for i := range rows {
-				if !used[rows[i].ID] && rows[i].ID == prior["id"] {
-					match = &rows[i]
-					break
-				}
-			}
-		}
-		// A VNI change can replace both the default target's ID and value.
-		if match == nil && prior["type"] == "default-RT" {
-			for i := range rows {
-				if !used[rows[i].ID] && rows[i].Type == "default-RT" {
+				if !used[rows[i].ID] && rows[i].ID == prior["id"] && (dataSource || rows[i].Type == "custom-RT") {
 					match = &rows[i]
 					break
 				}
@@ -220,7 +274,7 @@ func flattenRouteTargets(rows []vpc.RouteTarget, previous []interface{}) []map[s
 		}
 	}
 	for _, row := range rows {
-		if !used[row.ID] {
+		if !used[row.ID] && (dataSource || row.Type == "custom-RT") {
 			ordered = append(ordered, row)
 		}
 	}
@@ -267,7 +321,7 @@ func flattenVNIAndRouteTargets(d *schema.ResourceData, item *vpc.VPC, dataSource
 		if !dataSource && len(d.Get(direction.key).([]interface{})) == 0 {
 			continue
 		}
-		if err := d.Set(direction.key, flattenRouteTargets(direction.rows, routeTargetRows(d.Get(direction.key)))); err != nil {
+		if err := d.Set(direction.key, flattenRouteTargets(direction.rows, routeTargetRows(d.Get(direction.key)), dataSource)); err != nil {
 			return err
 		}
 	}
