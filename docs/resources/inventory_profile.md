@@ -209,6 +209,7 @@ Optional:
   - gb300_spx_3_tier_dual_plane
   - gb300_spx_2_tier_quad_plane
   - gb300_spx_3_tier_quad_plane
+  - rtx_pro_6000
 
 <a id="nestedblock--snmpv2"></a>
 ### Nested Schema for `snmpv2`
