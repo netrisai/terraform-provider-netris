@@ -30,6 +30,10 @@ func DataResource() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data Source: VPC",
 		Schema: map[string]*schema.Schema{
+			"vni":      {Type: schema.TypeString, Computed: true, Description: "Allocated L3VNI."},
+			"vnimode":  {Type: schema.TypeString, Computed: true, Description: "L3VNI allocation mode: auto or manual."},
+			"importrt": routeTargetSchema(true),
+			"exportrt": routeTargetSchema(true),
 			"vrfname": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -102,6 +106,9 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 	d.SetId(strconv.Itoa(apiVPC.ID))
 	err = d.Set("name", apiVPC.Name)
 	if err != nil {
+		return err
+	}
+	if err := flattenVNIAndRouteTargets(d, apiVPC, true); err != nil {
 		return err
 	}
 	if err := d.Set("vrfname", apiVPC.VrfName); err != nil {

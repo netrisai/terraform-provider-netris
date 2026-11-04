@@ -23,7 +23,6 @@ import (
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/netrisai/netriswebapi/http"
 	api "github.com/netrisai/netriswebapi/v2"
 	"github.com/netrisai/netriswebapi/v2/types/vpc"
 )
@@ -32,6 +31,15 @@ func Resource() *schema.Resource {
 	return &schema.Resource{
 		Description: "Creates and manages VPC",
 		Schema: map[string]*schema.Schema{
+			"vni": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validateVNI,
+				Description:  "L3VNI: auto or a number from 1 to 16777215. Requires Controller 4.21 or later.",
+			},
+			"importrt": routeTargetSchema(false),
+			"exportrt": routeTargetSchema(false),
 			"vrfname": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -70,11 +78,12 @@ func Resource() *schema.Resource {
 				},
 			},
 		},
-		Create: resourceCreate,
-		Read:   resourceRead,
-		Update: resourceUpdate,
-		Delete: resourceDelete,
-		Exists: resourceExists,
+		CustomizeDiff: validateRouteTargetDiff,
+		Create:        resourceCreate,
+		Read:          resourceRead,
+		Update:        resourceUpdate,
+		Delete:        resourceDelete,
+		Exists:        resourceExists,
 		Importer: &schema.ResourceImporter{
 			State: resourceImport,
 		},
@@ -106,11 +115,17 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		tags = append(tags, tag.(string))
 	}
 
+	routes, err := expandRouteTargets(d, nil)
+	if err != nil {
+		return err
+	}
 	vpcAdd := &vpc.VPCw{
-		Name:        d.Get("name").(string),
-		AdminTenant: vpc.AdminTenant{ID: d.Get("tenantid").(int)},
-		GuestTenant: guestTenants,
-		Tags:        tags,
+		RouteTargets: routes,
+		VNI:          expandVNI(d),
+		Name:         d.Get("name").(string),
+		AdminTenant:  vpc.AdminTenant{ID: d.Get("tenantid").(int)},
+		GuestTenant:  guestTenants,
+		Tags:         tags,
 	}
 
 	js, _ := json.Marshal(vpcAdd)
@@ -127,37 +142,16 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	log.Println("[DEBUG]", string(reply.Data))
 
-	idStruct := struct {
-		ID int `json:"id"`
-	}{}
-
-	data, err := reply.Parse()
-	if err != nil {
-		log.Println("[DEBUG]", err)
-		return err
-	}
-
-	err = http.Decode(data.Data, &idStruct)
-	if err != nil {
-		log.Println("[DEBUG]", err)
-		return err
-	}
-
-	log.Println("[DEBUG] ID:", idStruct.ID)
-
-	if reply.StatusCode != 200 {
-		return fmt.Errorf(string(reply.Data))
-	}
-
-	d.SetId(strconv.Itoa(idStruct.ID))
-	apiVPC, err := clientset.VPC().GetByID(idStruct.ID)
+	apiVPC, err := parseWriteReply(reply)
 	if err != nil {
 		return err
 	}
-	if apiVPC == nil || apiVPC.ID <= 0 {
+	if apiVPC.ID <= 0 {
 		return fmt.Errorf("VPC response is missing a valid ID")
 	}
-	return d.Set("vrfname", apiVPC.VrfName)
+
+	d.SetId(strconv.Itoa(apiVPC.ID))
+	return resourceRead(d, m)
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
@@ -168,12 +162,18 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	apiVPC, err := clientset.VPC().GetByID(id)
 
 	if err != nil {
-		return nil
+		return err
+	}
+	if apiVPC == nil || apiVPC.ID <= 0 {
+		return fmt.Errorf("VPC response is missing a valid ID")
 	}
 
 	d.SetId(strconv.Itoa(apiVPC.ID))
 	err = d.Set("name", apiVPC.Name)
 	if err != nil {
+		return err
+	}
+	if err := flattenVNIAndRouteTargets(d, apiVPC, false); err != nil {
 		return err
 	}
 	if err := d.Set("vrfname", apiVPC.VrfName); err != nil {
@@ -206,6 +206,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
+	d.Partial(true)
 	log.Println("[DEBUG] vpcUpdate")
 	clientset := m.(*api.Clientset)
 
@@ -228,11 +229,31 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		tags = append(tags, tag.(string))
 	}
 
+	var current *vpc.VPC
+	if len(d.Get("importrt").([]interface{})) > 0 || len(d.Get("exportrt").([]interface{})) > 0 {
+		var err error
+		current, err = clientset.VPC().GetByID(vpcID)
+		if err != nil {
+			return err
+		}
+		if current == nil || current.ID <= 0 {
+			return fmt.Errorf("VPC response is missing a valid ID")
+		}
+	}
+	routes, err := expandRouteTargets(d, current)
+	if err != nil {
+		return err
+	}
 	vpcUpdate := &vpc.VPCw{
-		Name:        d.Get("name").(string),
-		AdminTenant: vpc.AdminTenant{ID: d.Get("tenantid").(int)},
-		GuestTenant: guestTenants,
-		Tags:        tags,
+		RouteTargets: routes,
+		Name:         d.Get("name").(string),
+		AdminTenant:  vpc.AdminTenant{ID: d.Get("tenantid").(int)},
+		GuestTenant:  guestTenants,
+		Tags:         tags,
+	}
+
+	if d.HasChange("vni") {
+		vpcUpdate.VNI = expandVNI(d)
 	}
 
 	js, _ := json.Marshal(vpcUpdate)
@@ -249,28 +270,13 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	log.Println("[DEBUG]", string(reply.Data))
 
-	idStruct := struct {
-		ID int `json:"id"`
-	}{}
-
-	data, err := reply.Parse()
-	if err != nil {
-		log.Println("[DEBUG]", err)
+	if _, err := parseWriteReply(reply); err != nil {
 		return err
 	}
-
-	err = http.Decode(data.Data, &idStruct)
-	if err != nil {
-		log.Println("[DEBUG]", err)
+	if err := resourceRead(d, m); err != nil {
 		return err
 	}
-
-	log.Println("[DEBUG] ID:", idStruct.ID)
-
-	if reply.StatusCode != 200 {
-		return fmt.Errorf(string(reply.Data))
-	}
-
+	d.Partial(false)
 	return nil
 }
 
@@ -281,6 +287,7 @@ func resourceExists(d *schema.ResourceData, m interface{}) (bool, error) {
 	item, err := clientset.VPC().GetByID(id)
 	if err != nil {
 		log.Println("[DEBUG] vpcExist response err:", err)
+		return false, err
 	}
 
 	if item == nil {
