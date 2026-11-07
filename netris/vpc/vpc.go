@@ -115,7 +115,18 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		tags = append(tags, tag.(string))
 	}
 
-	routes, err := expandRouteTargets(d, nil)
+	var defaultASNs []int
+	if _, manual := expandVNI(d).(int); manual && (len(d.Get("importrt").([]interface{})) > 0 || len(d.Get("exportrt").([]interface{})) > 0) {
+		sites, err := clientset.Site().Get()
+		if err != nil {
+			return err
+		}
+		defaultASNs, err = defaultRouteTargetASNs(sites)
+		if err != nil {
+			return err
+		}
+	}
+	routes, err := expandRouteTargets(d, nil, defaultASNs)
 	if err != nil {
 		return err
 	}
@@ -240,7 +251,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 			return fmt.Errorf("VPC response is missing a valid ID")
 		}
 	}
-	routes, err := expandRouteTargets(d, current)
+	routes, err := expandRouteTargets(d, current, nil)
 	if err != nil {
 		return err
 	}

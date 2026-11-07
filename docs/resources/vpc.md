@@ -64,6 +64,8 @@ Required:
 - **target.id** (Number, read-only) Controller-assigned route-target ID.
 - **target.type** (String, read-only) `default-RT`, `vpc-peering-RT`, or `custom-RT`.
 
+On manual VNI creation, each managed direction preserves one default per distinct Site `defaultrtasn`. With no Sites, it uses `65000`; a nonempty response without this field uses legacy `0`. A mix of present and absent fields fails before creation. An empty response cannot identify an older controller's default.
+
 A value matching a generated target refers to the existing row; removing or changing that entry does not delete or edit the generated row. Omit the generated default target from these blocks when changing `vni`.
 
 If changing `vni` also removes or edits a custom target that could become the new default, apply that target change first, then change `vni`.
