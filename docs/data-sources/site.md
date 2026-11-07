@@ -28,4 +28,5 @@ data "netris_site" "santa_clara" {
 
 ### Attribute Reference
 
+- **defaultrtasn** (Number) Site default route-target ASN (`0`–`65535`), when returned by the controller.
 - **id** (String) The ID of this resource.

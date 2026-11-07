@@ -26,6 +26,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 
 	"github.com/netrisai/netriswebapi/http"
+	"github.com/netrisai/netriswebapi/v2/types/site"
 	"github.com/netrisai/netriswebapi/v2/types/vpc"
 )
 
@@ -127,7 +128,39 @@ func validateRouteTargetDiff(d *schema.ResourceDiff, m interface{}) error {
 	return nil
 }
 
-func expandRouteTargets(d *schema.ResourceData, current *vpc.VPC) (*vpc.RouteTargetsWrite, error) {
+// A nonempty legacy Site response omits the ASN on every row. Mixed
+// responses cannot identify all defaults safely before the replacing POST.
+func defaultRouteTargetASNs(sites []*site.Site) ([]int, error) {
+	if len(sites) == 0 {
+		return []int{65000}, nil
+	}
+	asns := make([]int, 0)
+	seen := make(map[int]bool)
+	missing := false
+	for _, item := range sites {
+		if item.DefaultRtAsn == nil {
+			missing = true
+			continue
+		}
+		asn := *item.DefaultRtAsn
+		if asn < 0 || asn > 65535 {
+			return nil, fmt.Errorf("site %d returned an invalid default route-target ASN: %d", item.ID, asn)
+		}
+		if !seen[asn] {
+			asns = append(asns, asn)
+			seen[asn] = true
+		}
+	}
+	if missing {
+		if len(asns) > 0 {
+			return nil, fmt.Errorf("sites returned inconsistent default route-target ASNs; every site must include defaultRtAsn before creating a VPC with managed route targets")
+		}
+		return []int{0}, nil
+	}
+	return asns, nil
+}
+
+func expandRouteTargets(d *schema.ResourceData, current *vpc.VPC, defaultASNs []int) (*vpc.RouteTargetsWrite, error) {
 	routes := &vpc.RouteTargetsWrite{}
 	vni := expandVNI(d)
 	changeVNI := current != nil && current.VNI != nil && d.HasChange("vni") &&
@@ -157,13 +190,15 @@ func expandRouteTargets(d *schema.ResourceData, current *vpc.VPC) (*vpc.RouteTar
 				continue
 			}
 			value := row.Value
-			changingDefault := changeVNI && row.Type == "default-RT" && row.Value == fmt.Sprintf("0:%d", *current.VNI)
+			prefix := ""
+			changingDefault := changeVNI && row.Type == "default-RT" && strings.HasSuffix(row.Value, fmt.Sprintf(":%d", *current.VNI))
 			if changingDefault {
+				prefix = strings.TrimSuffix(row.Value, strconv.Itoa(*current.VNI))
 				if desired[row.Value] {
 					return nil, fmt.Errorf("%s contains controller-generated default %q; remove this redundant target before changing vni so the controller can update it", key, row.Value)
 				}
 				if number, ok := vni.(int); ok {
-					value = fmt.Sprintf("0:%d", number)
+					value = prefix + strconv.Itoa(number)
 				}
 			}
 			autoDefault := changingDefault && vni == "auto"
@@ -171,8 +206,8 @@ func expandRouteTargets(d *schema.ResourceData, current *vpc.VPC) (*vpc.RouteTar
 				holder := false
 				for _, other := range existing {
 					if autoDefault {
-						number, err := strconv.Atoi(strings.TrimPrefix(other.Value, "0:"))
-						if other.Type != "custom-RT" || !strings.HasPrefix(other.Value, "0:") || err != nil || number < 1 || number > 16777215 {
+						number, err := strconv.Atoi(strings.TrimPrefix(other.Value, prefix))
+						if other.Type != "custom-RT" || !strings.HasPrefix(other.Value, prefix) || err != nil || number < 1 || number > 16777215 {
 							continue
 						}
 					} else {
@@ -196,9 +231,13 @@ func expandRouteTargets(d *schema.ResourceData, current *vpc.VPC) (*vpc.RouteTar
 		// not retain the newly allocated default unless it is included explicitly.
 		if current == nil {
 			if number, ok := vni.(int); ok {
-				value := fmt.Sprintf("0:%d", number)
-				generated[value] = true
-				targets = append(targets, vpc.RouteTargetWrite{Value: value})
+				for _, asn := range defaultASNs {
+					value := fmt.Sprintf("%d:%d", asn, number)
+					if !generated[value] {
+						generated[value] = true
+						targets = append(targets, vpc.RouteTargetWrite{Value: value})
+					}
+				}
 			}
 		}
 		old, _ := d.GetChange(key)
