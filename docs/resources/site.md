@@ -15,6 +15,7 @@ Each separate deployment (each data center) should be defined as a Site. All net
 resource "netris_site" "santa-clara" {
   name              = "Santa Clara"
   publicasn         = 65001
+  defaultrtasn       = 65000
   acldefaultpolicy  = "permit"
 }
 ```
