@@ -165,6 +165,22 @@ func Resource() *schema.Resource {
 				},
 			},
 		},
+		CustomizeDiff: func(d *schema.ResourceDiff, m interface{}) error {
+			if _, ok := d.GetOkExists("defaultrtasn"); !ok || len(d.GetChangedKeysPrefix("defaultrtasn")) == 0 {
+				return nil
+			}
+			sites, err := m.(*api.Clientset).Site().Get()
+			if err != nil {
+				return err
+			}
+			id, _ := strconv.Atoi(d.Id())
+			for _, site := range sites {
+				if (d.Id() == "" || site.ID == id) && site.DefaultRtAsn == nil {
+					return fmt.Errorf("controller does not support defaultrtasn")
+				}
+			}
+			return nil
+		},
 		Create: resourceCreate,
 		Read:   resourceRead,
 		Update: resourceUpdate,
@@ -337,6 +353,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
+	_, hasDefaultRtAsn := d.GetOkExists("defaultrtasn")
+	checkDefaultRtAsn := hasDefaultRtAsn && (d.IsNewResource() || d.HasChange("defaultrtasn"))
 	var site *site.Site
 	sites, err := clientset.Site().Get()
 	if err != nil {
@@ -352,7 +370,13 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if site == nil {
+		if checkDefaultRtAsn {
+			return fmt.Errorf("site %s not found while checking defaultrtasn support", d.Id())
+		}
 		return nil
+	}
+	if checkDefaultRtAsn && site.DefaultRtAsn == nil {
+		return fmt.Errorf("controller does not support defaultrtasn")
 	}
 
 	d.SetId(strconv.Itoa(site.ID))
@@ -580,7 +604,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	return nil
+	return resourceRead(d, m)
 }
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
