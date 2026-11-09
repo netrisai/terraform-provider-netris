@@ -28,6 +28,11 @@ func DataResource() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data Source: Sites",
 		Schema: map[string]*schema.Schema{
+			"defaultrtasn": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Site default route-target ASN, when returned by the controller.",
+			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -61,6 +66,11 @@ func dataResourceRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
+	if site.DefaultRtAsn != nil {
+		if err := d.Set("defaultrtasn", *site.DefaultRtAsn); err != nil {
+			return err
+		}
+	}
 	d.SetId(strconv.Itoa(site.ID))
 	err = d.Set("name", site.Name)
 	if err != nil {

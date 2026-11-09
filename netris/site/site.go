@@ -26,6 +26,7 @@ import (
 	"github.com/netrisai/netriswebapi/v2/types/site"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	api "github.com/netrisai/netriswebapi/v2"
 )
 
@@ -43,6 +44,13 @@ func Resource() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The name of the site",
+			},
+			"defaultrtasn": {
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.IntBetween(0, 65535),
+				Description:  "Default route-target ASN, from 0 to 65535. Omit to use the controller value.",
 			},
 			"publicasn": {
 				Required:    true,
@@ -157,6 +165,22 @@ func Resource() *schema.Resource {
 				},
 			},
 		},
+		CustomizeDiff: func(d *schema.ResourceDiff, m interface{}) error {
+			if _, ok := d.GetOkExists("defaultrtasn"); !ok || len(d.GetChangedKeysPrefix("defaultrtasn")) == 0 {
+				return nil
+			}
+			sites, err := m.(*api.Clientset).Site().Get()
+			if err != nil {
+				return err
+			}
+			id, _ := strconv.Atoi(d.Id())
+			for _, site := range sites {
+				if (d.Id() == "" || site.ID == id) && site.DefaultRtAsn == nil {
+					return fmt.Errorf("controller does not support defaultrtasn")
+				}
+			}
+			return nil
+		},
 		Create: resourceCreate,
 		Read:   resourceRead,
 		Update: resourceUpdate,
@@ -198,6 +222,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		SiteMesh:     site.IDName{Value: siteMeshDisabled},
 		AclPolicy:    d.Get("acldefaultpolicy").(string),
 		SwitchFabric: fabric,
+	}
+
+	if value, ok := d.GetOkExists("defaultrtasn"); ok {
+		asn := value.(int)
+		siteW.DefaultRtAsn = &asn
 	}
 
 	// rohroutingprofile is deprecated (ROH is obsolete). Only send the profile
@@ -319,11 +348,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	d.SetId(strconv.Itoa(idStruct.ID))
 
-	return nil
+	return resourceRead(d, m)
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	clientset := m.(*api.Clientset)
+	_, hasDefaultRtAsn := d.GetOkExists("defaultrtasn")
+	checkDefaultRtAsn := hasDefaultRtAsn && (d.IsNewResource() || d.HasChange("defaultrtasn"))
 	var site *site.Site
 	sites, err := clientset.Site().Get()
 	if err != nil {
@@ -339,13 +370,24 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if site == nil {
+		if checkDefaultRtAsn {
+			return fmt.Errorf("site %s not found while checking defaultrtasn support", d.Id())
+		}
 		return nil
+	}
+	if checkDefaultRtAsn && site.DefaultRtAsn == nil {
+		return fmt.Errorf("controller does not support defaultrtasn")
 	}
 
 	d.SetId(strconv.Itoa(site.ID))
 	err = d.Set("name", site.Name)
 	if err != nil {
 		return err
+	}
+	if site.DefaultRtAsn != nil {
+		if err := d.Set("defaultrtasn", *site.DefaultRtAsn); err != nil {
+			return err
+		}
 	}
 	err = d.Set("publicasn", site.PublicAsn)
 	if err != nil {
@@ -455,6 +497,11 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		SwitchFabric: fabric,
 	}
 
+	if value, ok := d.GetOkExists("defaultrtasn"); ok {
+		asn := value.(int)
+		siteW.DefaultRtAsn = &asn
+	}
+
 	// rohroutingprofile is deprecated (ROH is obsolete). Only send the profile
 	// when explicitly set to avoid the controller rejecting an empty profile.
 	if rp, ok := d.GetOk("rohroutingprofile"); ok {
@@ -557,7 +604,7 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(string(reply.Data))
 	}
 
-	return nil
+	return resourceRead(d, m)
 }
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {

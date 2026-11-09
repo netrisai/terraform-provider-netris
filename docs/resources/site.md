@@ -15,6 +15,7 @@ Each separate deployment (each data center) should be defined as a Site. All net
 resource "netris_site" "santa-clara" {
   name              = "Santa Clara"
   publicasn         = 65001
+  defaultrtasn       = 65000
   acldefaultpolicy  = "permit"
 }
 ```
@@ -39,6 +40,7 @@ resource "netris_site" "seattle" {
 
 ### Optional
 
+- **defaultrtasn** (Number) Default route-target ASN (`0`–`65535`). Omit to use the controller value (`65000` for new sites on supporting controllers). Changing it keeps existing targets and appends the new `ASN:VNI` to the site's VNIs. Older controllers may omit this field.
 - **sitemesh** (String, Deprecated) Site to site VPN mode. Site Mesh is obsolete and no longer used, the only available value is `disabled`. Legacy values (`hub`, `spoke`, `dspoke`) are still accepted but ignored. This field will be removed in a future release.
 - **switchfabric** (String, Deprecated) Switch fabric selection is obsolete and no longer used, every site is managed as `netris`. Legacy values (`equinix_metal`, `dot1q_trunk`, `phoenixnap_bmc`) are still accepted but ignored. This field will be removed in a future release.
 - **vlanrange** (String) Range of VLAN IDs allowed for use at this site.

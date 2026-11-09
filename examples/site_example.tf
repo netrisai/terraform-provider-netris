@@ -1,6 +1,7 @@
 resource "netris_site" "santa-clara" {
   name              = "Santa Clara"
   publicasn         = 65001
+  defaultrtasn       = 65000
   acldefaultpolicy  = "permit"
   # switchfabric      = "equinix_metal"
   # # vlanrange         = "2-3999"
