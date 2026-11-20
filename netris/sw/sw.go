@@ -89,8 +89,7 @@ func Resource() *schema.Resource {
 			"portcount": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "Preliminary port count is used for definition of topology. Possible values: `16`, `32`, `48`, `54`, `56`, `64`",
-				ForceNew:    true,
+				Description: "Preliminary port count for the initial topology. Can only be set when creating the switch.",
 			},
 			"breakout": {
 				Type:        schema.TypeString,
@@ -119,6 +118,12 @@ func Resource() *schema.Resource {
 				Default:     false,
 				Description: "Enable EVPN Route Server on this switch.",
 			},
+		},
+		CustomizeDiff: func(d *schema.ResourceDiff, m interface{}) error {
+			if d.Id() != "" && d.NewValueKnown("portcount") && d.HasChange("portcount") {
+				return fmt.Errorf("portcount cannot be changed after the switch is created")
+			}
+			return nil
 		},
 		Create: resourceCreate,
 		Read:   resourceRead,
