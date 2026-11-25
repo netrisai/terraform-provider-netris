@@ -58,7 +58,7 @@ resource "netris_switch" "my-switch" {
 - **mgmtip** (String) A unique IP address to be used on out of band management interface. Valid value is ip address (example `192.0.2.21`) or `auto`. If set `auto` the controller will assign an ip address automatically from subnets with relevant purpose.
 - **name** (String) User assigned name of switch.
 - **nos** (String) Switch OS. Possible values: `arista_eos`, `cumulus_nvue`, `dell_sonic`, `ec_sonic`
-- **portcount** (Number) Preliminary port count is used for definition of topology. Possible values: `16`, `32`, `48`, `54`, `56`, `64` 
+- **portcount** (Number) Preliminary port count for the initial topology. Can only be set when creating the switch.
 - **siteid** (Number) The site ID where this switch belongs.
 - **tenantid** (Number) ID of tenant. Users of this tenant will be permitted to edit this unit.
 
