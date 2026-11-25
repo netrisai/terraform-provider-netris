@@ -22,6 +22,7 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/netrisai/netriswebapi/http"
 	api "github.com/netrisai/netriswebapi/v2"
@@ -81,11 +82,12 @@ func Resource() *schema.Resource {
 							Description:  "MC-LAG shared IPV4 address. Shall be part of any IPAM defined subnet with the purpose set to loopback.",
 						},
 						"anycastmacaddr": {
-							ValidateFunc: validateMAC,
-							Type:         schema.TypeString,
-							Required:     true,
-							ForceNew:     true,
-							Description:  "MC-LAG anycast MAC address. Recommended range 44:38:39:ff:00:00 - 44:38:39:ff:ff:ff",
+							ValidateFunc:     validateMAC,
+							DiffSuppressFunc: macDiffSuppress,
+							Type:             schema.TypeString,
+							Required:         true,
+							ForceNew:         true,
+							Description:      "MC-LAG anycast MAC address (case-insensitive). Recommended range 44:38:39:ff:00:00 - 44:38:39:ff:ff:ff",
 						},
 					},
 				},
@@ -104,6 +106,10 @@ func Resource() *schema.Resource {
 
 func DiffSuppress(k, old, new string, d *schema.ResourceData) bool {
 	return true
+}
+
+func macDiffSuppress(k, old, new string, d *schema.ResourceData) bool {
+	return strings.EqualFold(old, new)
 }
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
